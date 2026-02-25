@@ -1,0 +1,53 @@
+{
+  "name": "CoC7核心规则",
+  "description": "Call of Cthulhu 7th Edition 基础规则世界书。包括技能、检定公式、伤害、恐怖与魔法机制。",
+  "scan_depth": 4,
+  "token_budget": 2000,
+  "recursive_scanning": true,
+  "entries": [
+    {
+      "uid": 1,
+      "key": ["技能检定", "Skill Check"],
+      "comment": "技能检定公式说明",
+      "content": "CoC7使用百分制检定。成功=掷骰结果 <= 技能值。不同难度调整技能值，困难-20，容易+20。",
+      "constant": true,
+      "selective": true,
+      "insertion_order": 100,
+      "enabled": true,
+      "position": "before_char"
+    },
+    {
+      "uid": 2,
+      "key": ["伤害", "Damage"],
+      "comment": "攻击与伤害规则",
+      "content": "近战伤害=武器伤害值，远程伤害=武器伤害+力量修正。受伤会影响生命值和能力值。重伤可能触发昏迷。",
+      "constant": true,
+      "selective": true,
+      "insertion_order": 101,
+      "enabled": true,
+      "position": "before_char"
+    },
+    {
+      "uid": 3,
+      "key": ["恐怖值", "Sanity"],
+      "comment": "理智值机制",
+      "content": "恐怖检定失败会损失理智值(SAN)。理智值低会引发疯狂行为和心理障碍。",
+      "constant": true,
+      "selective": true,
+      "insertion_order": 102,
+      "enabled": true,
+      "position": "before_char"
+    },
+    {
+      "uid": 4,
+      "key": ["魔法", "Magic"],
+      "comment": "魔法使用规则",
+      "content": "魔法卷轴和仪式需要特定技能和道具，使用失败可能损失理智值。禁止AI自行施法或决定结果。",
+      "constant": true,
+      "selective": true,
+      "insertion_order": 103,
+      "enabled": true,
+      "position": "before_char"
+    }
+  ]
+}
