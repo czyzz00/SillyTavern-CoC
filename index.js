@@ -1,30 +1,27 @@
 import { getContext } from "../../../extensions.js";
 
 export async function onLoad() {
-    console.log("COC TEST EXTENSION LOADED");
+    console.log("COC EXTENSION LOADED");
 
     const context = getContext();
 
-    context.addExtensionTab({
+    context.addTab({
         id: "coc-test-tab",
-        name: "COC TEST",
-        icon: "fa-solid fa-dice",
-        content: `
-            <div style="padding:20px;">
-                <h2>COC 扩展已成功加载</h2>
-                <button id="coc-roll-btn">投 1d100</button>
-                <div id="coc-result" style="margin-top:10px;"></div>
-            </div>
-        `
-    });
+        title: "COC TEST",
+        icon: "fa-dice",
+        render: (container) => {
+            container.innerHTML = `
+                <div style="padding:20px;">
+                    <h2>COC 扩展成功加载</h2>
+                    <button id="roll-btn">投 1d100</button>
+                    <div id="result" style="margin-top:10px;"></div>
+                </div>
+            `;
 
-    setTimeout(() => {
-        const btn = document.getElementById("coc-roll-btn");
-        if (btn) {
-            btn.onclick = () => {
+            container.querySelector("#roll-btn").onclick = () => {
                 const roll = Math.floor(Math.random() * 100) + 1;
-                document.getElementById("coc-result").innerText = "结果: " + roll;
+                container.querySelector("#result").innerText = "结果: " + roll;
             };
         }
-    }, 500);
+    });
 }
