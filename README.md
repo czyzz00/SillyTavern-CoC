@@ -1,4 +1,3 @@
-```markdown
 # COC Universal Core
 
 适用于SillyTavern的克苏鲁呼唤7版规则扩展
