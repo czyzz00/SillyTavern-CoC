@@ -1,24 +1,22 @@
-import { extension_settings } from "../../extensions.js";
+(function () {
+    console.log("COC legacy extension loaded");
 
-export async function onLoad() {
-    const div = document.createElement("div");
-    div.style.position = "fixed";
-    div.style.bottom = "20px";
-    div.style.right = "20px";
-    div.style.background = "black";
-    div.style.color = "white";
-    div.style.padding = "10px";
-    div.style.zIndex = "9999";
-    div.innerHTML = `
-        COC扩展运行中<br>
-        <button id="coc-btn">测试</button>
-    `;
+    function addButton() {
+        const btn = document.createElement("button");
+        btn.innerText = "COC骰子";
+        btn.style.position = "fixed";
+        btn.style.bottom = "20px";
+        btn.style.right = "20px";
+        btn.style.zIndex = "9999";
+        btn.onclick = () => alert("1d100 = " + (Math.floor(Math.random() * 100) + 1));
+        document.body.appendChild(btn);
+    }
 
-    document.body.appendChild(div);
-
-    document
-        .getElementById("coc-btn")
-        ?.addEventListener("click", () => {
-            alert("UI 注入成功");
-        });
-}
+    // 等待页面加载完成
+    const interval = setInterval(() => {
+        if (document.body) {
+            clearInterval(interval);
+            addButton();
+        }
+    }, 500);
+})();
