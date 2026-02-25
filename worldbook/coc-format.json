@@ -1,0 +1,31 @@
+{
+  "name": "CoC7跑团输出模版",
+  "description": "通用AI跑团叙事模板，控制输出格式，严格遵守CoC7规则，便于KP管理骰子和玩家行为。",
+  "scan_depth": 4,
+  "token_budget": 1500,
+  "recursive_scanning": true,
+  "entries": [
+    {
+      "uid": 10,
+      "key": ["输出模版", "Narrative Template"],
+      "comment": "叙事结构示例",
+      "content": "1. 描述环境\n2. 玩家动作提示\n3. 技能/战斗检定提示\n4. 检定结果与叙事结果\n5. 理智变化与奖励\n示例:\n<START>\nKP: 你进入一个阴暗的小巷，空气中弥漫着霉味。\n玩家A: 我掷侦查(侦查技能)看看有没有异常。\nKP: 骰子判定成功，你发现墙角有一具破碎的骷髅。\n<END>",
+      "constant": true,
+      "selective": true,
+      "insertion_order": 200,
+      "enabled": true,
+      "position": "before_char"
+    },
+    {
+      "uid": 11,
+      "key": ["骰子检定格式", "Dice Roll Template"],
+      "comment": "规范化骰子显示",
+      "content": "玩家投骰: [技能名: 掷骰值 / 成功目标]\nKP反馈: [结果: 成功/失败, 效果描述]\n例: [侦查: 45/50 成功] 你发现墙角有骷髅。",
+      "constant": true,
+      "selective": true,
+      "insertion_order": 201,
+      "enabled": true,
+      "position": "before_char"
+    }
+  ]
+}
