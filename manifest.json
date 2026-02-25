@@ -1,13 +1,6 @@
 {
-  "display_name": "COC Test Extension",
-  "loading_order": 10,
-  "requires": [],
-  "optional": [],
-  "dependencies": [],
-  "js": "index.js",
-  "author": "zeen",
-  "version": "1.0.1",
-  "homePage": "https://github.com/czyzz00/SillyTavern-CoC",
-  "auto_update": true,
-  "minimum_client_version": "1.10.0"
+  "name": "CoC Core",
+  "version": "1.0.0",
+  "author": "you",
+  "entry": "server.js"
 }
