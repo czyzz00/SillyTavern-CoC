@@ -1,27 +1,16 @@
-import { getContext } from "../../../extensions.js";
-
 export async function onLoad() {
-    console.log("COC EXTENSION LOADED");
+    // 强制修改整个页面背景色
+    document.body.style.background = "red";
 
-    const context = getContext();
-
-    context.addTab({
-        id: "coc-test-tab",
-        title: "COC TEST",
-        icon: "fa-dice",
-        render: (container) => {
-            container.innerHTML = `
-                <div style="padding:20px;">
-                    <h2>COC 扩展成功加载</h2>
-                    <button id="roll-btn">投 1d100</button>
-                    <div id="result" style="margin-top:10px;"></div>
-                </div>
-            `;
-
-            container.querySelector("#roll-btn").onclick = () => {
-                const roll = Math.floor(Math.random() * 100) + 1;
-                container.querySelector("#result").innerText = "结果: " + roll;
-            };
-        }
-    });
+    // 强制在页面最顶层插入一个大字
+    const div = document.createElement("div");
+    div.innerText = "COC MODULE RUNNING";
+    div.style.position = "fixed";
+    div.style.top = "50%";
+    div.style.left = "50%";
+    div.style.transform = "translate(-50%, -50%)";
+    div.style.fontSize = "40px";
+    div.style.color = "white";
+    div.style.zIndex = "999999";
+    document.body.appendChild(div);
 }
