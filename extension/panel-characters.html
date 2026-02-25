@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>COC角色管理</title>
+</head>
+<body>
+<h2>角色管理</h2>
+<div id="list"></div>
+
+<button onclick="addCharacter()">新增角色</button>
+
+<script>
+let characters = JSON.parse(localStorage.getItem("coc_characters") || "{}");
+
+function save() {
+    localStorage.setItem("coc_characters", JSON.stringify(characters));
+    render();
+}
+
+function render() {
+    let html = "";
+    for (let name in characters) {
+        let c = characters[name];
+        html += `<div>
+        <h3>${name}</h3>
+        绑定：<input value="${c.bind}" onchange="characters['${name}'].bind=this.value;save();"><br>
+        STR:<input value="${c.STR}" onchange="characters['${name}'].STR=parseInt(this.value);save();"><br>
+        DEX:<input value="${c.DEX}" onchange="characters['${name}'].DEX=parseInt(this.value);save();"><br>
+        HP:<input value="${c.HP}" onchange="characters['${name}'].HP=parseInt(this.value);save();"><br>
+        SAN:<input value="${c.SAN}" onchange="characters['${name}'].SAN=parseInt(this.value);save();"><br>
+        <button onclick="delete characters['${name}'];save();">删除</button>
+        </div><hr>`;
+    }
+    document.getElementById("list").innerHTML = html;
+}
+
+function addCharacter() {
+    let name = prompt("角色名");
+    characters[name] = {
+        bind: "",
+        STR: 50,
+        DEX: 50,
+        HP: 10,
+        SAN: 60,
+        skills: {
+            "侦查": 50,
+            "聆听": 50
+        }
+    };
+    save();
+}
+
+render();
+</script>
+</body>
+</html>
