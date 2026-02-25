@@ -13,7 +13,13 @@
 ## 安装方法
 
 ### 手动安装
-1. 克隆仓库到扩展目录：
+克隆仓库到扩展目录：
 ```bash
 cd SillyTavern/scripts/extensions/third-party/
 git clone https://github.com/yourusername/coc-universal-core.git
+
+## License
+
+MIT License © 2024 [YourName]
+
+This extension is not affiliated with or endorsed by Chaosium Inc. Call of Cthulhu is a trademark of Chaosium Inc.
