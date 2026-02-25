@@ -48,6 +48,21 @@
       "insertion_order": 103,
       "enabled": true,
       "position": "before_char"
+    },
+    {
+      "uid": 5,
+      "key": ["骰子触发规则", "Dice Trigger Rules"],
+      "comment": "骰子系统触发指令说明",
+      "content": "当玩家或AI角色说出包含关键词 '骰子' 或 'roll' 的消息时，需要触发骰子系统。格式如下：\n" +
+                 "1. '骰子 d100' 或 'roll d100' → 掷d100（百分制技能检定）\n" +
+                 "2. '骰子 [技能名]' 或 'roll [技能名]' → 按角色卡技能值掷d100，成功等级按CoC7规则判定\n" +
+                 "3. '骰子 d[数字]' 或 'roll d[数字]' → 普通骰子（用于伤害、幸运或随机事件）\n" +
+                 "应遵循以上规则，不要自行决定成功或失败，输出必须调用骰子HTML面板显示结果。",
+      "constant": true,
+      "selective": true,
+      "insertion_order": 104,
+      "enabled": true,
+      "position": "before_char"
     }
   ]
 }
