@@ -1,68 +1,18 @@
 {
-  "name": "CoC7核心规则",
-  "description": "Call of Cthulhu 7th Edition 基础规则世界书。包括技能、检定公式、伤害、恐怖与魔法机制。",
-  "scan_depth": 4,
-  "token_budget": 2000,
-  "recursive_scanning": true,
-  "entries": [
-    {
-      "uid": 1,
-      "key": ["技能检定", "Skill Check"],
-      "comment": "技能检定公式说明",
-      "content": "CoC7使用百分制检定。成功=掷骰结果 <= 技能值。不同难度调整技能值，困难-20，容易+20。",
-      "constant": true,
-      "selective": true,
-      "insertion_order": 100,
-      "enabled": true,
-      "position": "before_char"
-    },
-    {
-      "uid": 2,
-      "key": ["伤害", "Damage"],
-      "comment": "攻击与伤害规则",
-      "content": "近战伤害=武器伤害值，远程伤害=武器伤害+力量修正。受伤会影响生命值和能力值。重伤可能触发昏迷。",
-      "constant": true,
-      "selective": true,
-      "insertion_order": 101,
-      "enabled": true,
-      "position": "before_char"
-    },
-    {
-      "uid": 3,
-      "key": ["恐怖值", "Sanity"],
-      "comment": "理智值机制",
-      "content": "恐怖检定失败会损失理智值(SAN)。理智值低会引发疯狂行为和心理障碍。",
-      "constant": true,
-      "selective": true,
-      "insertion_order": 102,
-      "enabled": true,
-      "position": "before_char"
-    },
-    {
-      "uid": 4,
-      "key": ["魔法", "Magic"],
-      "comment": "魔法使用规则",
-      "content": "魔法卷轴和仪式需要特定技能和道具，使用失败可能损失理智值。禁止AI自行施法或决定结果。",
-      "constant": true,
-      "selective": true,
-      "insertion_order": 103,
-      "enabled": true,
-      "position": "before_char"
-    },
-    {
-      "uid": 5,
-      "key": ["骰子触发规则", "Dice Trigger Rules"],
-      "comment": "骰子系统触发指令说明",
-      "content": "当玩家或AI角色说出包含关键词 '骰子' 或 'roll' 的消息时，需要触发骰子系统。格式如下：\n" +
-                 "1. '骰子 d100' 或 'roll d100' → 掷d100（百分制技能检定）\n" +
-                 "2. '骰子 [技能名]' 或 'roll [技能名]' → 按角色卡技能值掷d100，成功等级按CoC7规则判定\n" +
-                 "3. '骰子 d[数字]' 或 'roll d[数字]' → 普通骰子（用于伤害、幸运或随机事件）\n" +
-                 "应遵循以上规则，不要自行决定成功或失败，输出必须调用骰子HTML面板显示结果。",
-      "constant": true,
-      "selective": true,
-      "insertion_order": 104,
-      "enabled": true,
-      "position": "before_char"
-    }
-  ]
+    "name": "COC7 规则书",
+    "description": "克苏鲁呼唤7版核心规则",
+    "entries": [
+        {
+            "keys": ["COC规则", "克苏鲁规则", "coc规则", "技能检定", "成功等级"],
+            "content": "【COC7版规则】\n技能检定分为五个等级：\n• 大失败：骰出100，或骰出96-99且技能值<50\n• 失败：骰值>技能值且非大失败\n• 成功：骰值≤技能值\n• 困难成功：骰值≤技能值/2\n• 极难成功：骰值≤技能值/5\n\n对抗规则：\n• 常规对抗：比较成功等级\n• 极难成功＞困难成功＞成功＞失败＞大失败\n• 同等级时，数值低者胜",
+            "order": 10,
+            "enabled": true
+        },
+        {
+            "keys": ["属性", "STR", "DEX", "CON", "APP", "POW", "SIZ", "INT", "EDU", "HP", "SAN"],
+            "content": "【COC7版属性说明】\n• 力量(STR)：物理力量\n• 敏捷(DEX)：速度和协调性\n• 体质(CON)：健康和耐力\n• 外貌(APP)：魅力和外表\n• 意志(POW)：精神力和意志\n• 体型(SIZ)：身高体重\n• 智力(INT)：聪明才智\n• 教育(EDU)：知识和教育\n• 生命值(HP)：(体型+体质)/10，向下取整\n• 理智(SAN)：初始等于意志值",
+            "order": 20,
+            "enabled": true
+        }
+    ]
 }
