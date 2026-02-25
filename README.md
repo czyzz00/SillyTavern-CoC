@@ -2,9 +2,9 @@
 
 适用于SillyTavern的克苏鲁呼唤7版规则扩展
 
-## 📦 安装扩展
+📦 安装扩展
 
-### 方法1：Git克隆（推荐）
+方法1：Git克隆（推荐）
 ```bash
 cd SillyTavern/scripts/extensions/third-party/
 git clone https://github.com/yourusername/coc-universal-core.git
