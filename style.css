@@ -1,0 +1,213 @@
+/* COC Universal Core Styles */
+
+.coc-characters-container {
+    padding: 15px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.coc-character-card {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.coc-character-card h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #666;
+    padding-bottom: 5px;
+}
+
+.coc-character-field {
+    margin: 10px 0;
+}
+
+.coc-character-field label {
+    display: inline-block;
+    width: 80px;
+    font-weight: bold;
+}
+
+.coc-character-field input {
+    width: 150px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.coc-attributes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.coc-attr-row {
+    display: flex;
+    align-items: center;
+}
+
+.coc-attr-row label {
+    width: 60px;
+    font-weight: bold;
+}
+
+.coc-attr-row input {
+    width: 80px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.coc-skills {
+    margin: 15px 0;
+}
+
+.coc-skills h4 {
+    margin: 0 0 10px 0;
+    color: #555;
+}
+
+.coc-skill-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.coc-skill-name {
+    width: 120px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.coc-skill-value {
+    width: 60px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.coc-remove-skill-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #ff4444;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.coc-remove-skill-btn:hover {
+    background: #cc0000;
+}
+
+.coc-add-skill-btn {
+    padding: 5px 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.coc-add-skill-btn:hover {
+    background: #45a049;
+}
+
+.coc-delete-btn {
+    padding: 8px 15px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.coc-delete-btn:hover {
+    background: #cc0000;
+}
+
+/* 骰子面板样式 */
+.coc-dice-container {
+    padding: 15px;
+}
+
+.coc-quick-skills {
+    margin-bottom: 20px;
+}
+
+.coc-quick-skills h3,
+.coc-custom-roll h3,
+.coc-attr-roll h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.coc-quick-skill-btn {
+    padding: 8px 15px;
+    margin: 0 8px 8px 0;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.coc-quick-skill-btn:hover {
+    background: #1976D2;
+}
+
+.coc-custom-roll {
+    margin-bottom: 20px;
+}
+
+.coc-custom-roll input {
+    width: 150px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.coc-custom-roll button {
+    padding: 8px 15px;
+    background: #FF9800;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.coc-custom-roll button:hover {
+    background: #F57C00;
+}
+
+.coc-attr-roll select {
+    width: 150px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.coc-attr-roll button {
+    padding: 8px 15px;
+    background: #9C27B0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.coc-attr-roll button:hover {
+    background: #7B1FA2;
+}
