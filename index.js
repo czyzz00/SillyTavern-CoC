@@ -1,30 +1,24 @@
-import { addTab, extension_settings } from "../../../extensions.js";
-
-const extensionName = "coc-universal-core";
-
-if (!extension_settings[extensionName]) {
-    extension_settings[extensionName] = {
-        test: "ok"
-    };
-}
+import { extension_settings } from "../../../extensions.js";
 
 export async function onLoad() {
-    addTab({
-        id: "coc-test-tab",
-        title: "COC测试",
-        icon: "🎲",
-        html: `
-            <div style="padding:15px;">
-                <h2>COC 扩展正常运行</h2>
-                <button id="coc-test-btn">点我测试</button>
-            </div>
-        `,
-        onOpen: () => {
-            document
-                .getElementById("coc-test-btn")
-                ?.addEventListener("click", () => {
-                    alert("面板交互正常");
-                });
-        }
-    });
+    const div = document.createElement("div");
+    div.style.position = "fixed";
+    div.style.bottom = "20px";
+    div.style.right = "20px";
+    div.style.background = "black";
+    div.style.color = "white";
+    div.style.padding = "10px";
+    div.style.zIndex = "9999";
+    div.innerHTML = `
+        COC扩展运行中<br>
+        <button id="coc-btn">测试</button>
+    `;
+
+    document.body.appendChild(div);
+
+    document
+        .getElementById("coc-btn")
+        ?.addEventListener("click", () => {
+            alert("UI 注入成功");
+        });
 }
