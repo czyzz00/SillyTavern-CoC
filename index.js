@@ -1,4 +1,4 @@
-import { extension_settings } from "../../../extensions.js";
+import { extension_settings } from "../../extensions.js";
 
 export async function onLoad() {
     const div = document.createElement("div");
