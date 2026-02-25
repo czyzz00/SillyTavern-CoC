@@ -1,0 +1,7 @@
+{
+  "name": "COC Universal Core",
+  "author": "Zeen",
+  "version": "1.0",
+  "description": "COC7 Universal Rule Engine for SillyTavern",
+  "entry": "index.js"
+}
