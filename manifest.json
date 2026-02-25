@@ -1,6 +1,9 @@
 {
-  "name": "CoC Core",
-  "version": "1.0.0",
-  "author": "you",
-  "entry": "index.js"
+    "name": "coc-universal-core",
+    "display_name": "COC测试面板",
+    "author": "YourName",
+    "version": "1.0.0",
+    "description": "COC测试面板",
+    "js": "index.js",
+    "minimum_client_version": "1.10.0"
 }
