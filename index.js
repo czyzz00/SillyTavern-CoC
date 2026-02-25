@@ -1,42 +1,47 @@
-// 扩展被加载时立即执行
-alert("✅ COC扩展文件被加载");
+alert('COC扩展加载');
 
-// 扩展主函数 - SillyTavern 1.15+ 会调用这个 export
 export async function onLoad() {
-    alert("✅ COC onLoad 被执行");
+    alert('onLoad执行');
     
-    // 注册面板到侧边栏（三道杠菜单）
-    const panel = SillyTavern.getContext().createPanel({
-        id: 'coc-test-panel',
-        title: 'COC测试',
-        content: getPanelHTML(),
-        visible: true
-    });
-    
-    alert("✅ 面板创建成功，请查看左上角三道杠菜单");
-    
-    // 也可以直接操作DOM添加提示
+    // 等待页面完全加载
     setTimeout(() => {
-        const menuItems = document.querySelectorAll('.menu_item');
-        alert(`当前菜单项数量: ${menuItems.length}`);
-    }, 2000);
+        // 查找左下角区域
+        const bottomLeft = document.querySelector('.bottom-bar, .footer, [class*="bottom"]');
+        
+        if (bottomLeft) {
+            const btn = document.createElement('button');
+            btn.textContent = '🎲 COC';
+            btn.style.cssText = `
+                padding: 8px 12px;
+                margin: 5px;
+                background: #8B4513;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            `;
+            btn.onclick = () => {
+                alert('COC规则面板');
+                showCOCDialog();
+            };
+            bottomLeft.appendChild(btn);
+            alert('按钮已添加到左下角');
+        } else {
+            alert('未找到左下角区域');
+        }
+    }, 3000);
 }
 
-// 也可以使用 onImport 如果存在
-export async function onImport() {
-    alert("✅ COC onImport 被执行");
-}
-
-// 获取面板HTML
-function getPanelHTML() {
-    return `
-        <div style="padding: 20px; font-family: Arial, sans-serif;">
-            <h2 style="color: #333;">COC测试面板</h2>
-            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px;">
-                <p style="color: green; font-weight: bold;">✅ 扩展加载成功！</p>
-                <p>扩展名称: coc-universal-core</p>
-                <p>加载时间: ${new Date().toLocaleString()}</p>
-            </div>
-        </div>
-    `;
+function showCOCDialog() {
+    // 使用SillyTavern的弹窗API
+    const context = SillyTavern.getContext();
+    if (context.createPopup) {
+        context.createPopup({
+            title: 'COC规则',
+            content: '这是COC规则测试',
+            buttons: ['确定']
+        });
+    } else {
+        alert('COC规则测试');
+    }
 }
