@@ -2,5 +2,5 @@
   "name": "CoC Core",
   "version": "1.0.0",
   "author": "you",
-  "entry": "server.js"
+  "entry": "index.js"
 }
