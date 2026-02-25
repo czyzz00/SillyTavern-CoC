@@ -1,0 +1,12 @@
+{
+    "display_name": "COC Universal Core",
+    "author": "zeen",
+    "version": "1.0.0",
+    "description": "COC7 Universal Rule Engine for SillyTavern",
+    "js": "index.js",
+    "css": "style.css",
+    "homePage": "https://github.com/czyzz00/SillyTavern-CoC",
+    "auto_update": true,
+    "loading_order": 10,
+    "minimum_client_version": "1.10.0"
+}
