@@ -1,5 +1,5 @@
-// COC骰子系统 - 稳定版
-// 用法: /coc skill=侦查 name=KP
+// COC骰子系统 - 带自动补全和消息保存
+// 用法: /coc 技能名 name=角色名 或 /coc 100 name=角色名
 
 (function() {
     'use strict';
@@ -8,44 +8,59 @@
         try {
             const context = SillyTavern.getContext();
             
-            // 注册/coc命令
+            // ==================== 注册/coc命令 ====================
             context.registerSlashCommand('coc', (args, value) => {
-                const input = value || '';
-                
                 // 解析参数
                 let skillName = '';
-                let diceNum = '';
-                let formula = '';
-                let targetName = context.name2 || '未知角色';
+                let targetChar = '未知角色';
                 
-                // 解析 name=xxx
-                const nameMatch = input.match(/name=(\S+)/);
-                if (nameMatch) {
-                    targetName = nameMatch[1];
+                // 检查是否有name=参数
+                if (args && args.name) {
+                    targetChar = args.name;
+                    skillName = value || '';
+                } else {
+                    // 兼容旧格式：侦查 @KP
+                    const input = value || '';
+                    const atMatch = input.match(/@(\S+)/);
+                    if (atMatch) {
+                        targetChar = atMatch[1];
+                        skillName = input.replace(/@\S+/, '').trim();
+                    } else {
+                        skillName = input;
+                        targetChar = context.name2 || '未知角色';
+                    }
                 }
                 
-                // 解析 skill=xxx
-                const skillMatch = input.match(/skill=(\S+)/);
-                if (skillMatch) {
-                    skillName = skillMatch[1];
+                if (!skillName) {
+                    sendAndSaveSystemMessage('❌ 用法: /coc 侦查 name=KP');
+                    return '';
                 }
                 
-                // 解析 dice=xxx
-                const diceMatch = input.match(/dice=(\d+)/);
-                if (diceMatch) {
-                    diceNum = diceMatch[1];
-                }
-                
-                // 解析 formula=xxx
-                const formulaMatch = input.match(/formula=(\S+)/);
-                if (formulaMatch) {
-                    formula = formulaMatch[1];
-                }
-                
-                // 生成结果
+                // 处理骰子逻辑
                 let message = '';
                 
-                if (skillName) {
+                // 纯数字
+                if (/^\d+$/.test(skillName)) {
+                    const max = parseInt(skillName);
+                    const roll = Math.floor(Math.random() * max) + 1;
+                    message = `🎲 ${targetChar} 掷出 d${max} = **${roll}**`;
+                }
+                // 骰子公式
+                else if (skillName.includes('d')) {
+                    try {
+                        const result = parseDiceFormula(skillName);
+                        message = `🎲 ${targetChar} 掷出 ${skillName} = `;
+                        if (result.details) {
+                            message += `${result.details} = **${result.total}**`;
+                        } else {
+                            message += `**${result.total}**`;
+                        }
+                    } catch (e) {
+                        message = `❌ 骰子公式错误: ${skillName}`;
+                    }
+                }
+                // 技能检定
+                else {
                     const roll = Math.floor(Math.random() * 100) + 1;
                     const skillValue = 50;
                     
@@ -66,39 +81,63 @@
                         result = '失败'; emoji = '❌';
                     }
                     
-                    message = `**${targetName}** 进行 **${skillName}** 检定\n` +
+                    message = `**${targetChar}** 进行 **${skillName}** 检定\n` +
                              `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
                              `结果: ${emoji} **${result}**`;
                 }
-                else if (diceNum) {
-                    const max = parseInt(diceNum);
-                    const roll = Math.floor(Math.random() * max) + 1;
-                    message = `🎲 ${targetName} 掷出 d${max} = **${roll}**`;
-                }
-                else if (formula) {
-                    try {
-                        const result = parseDiceFormula(formula);
-                        message = `🎲 ${targetName} 掷出 ${formula} = `;
-                        if (result.details) {
-                            message += `${result.details} = **${result.total}**`;
-                        } else {
-                            message += `**${result.total}**`;
-                        }
-                    } catch (e) {
-                        message = `❌ 骰子公式错误: ${formula}`;
-                    }
-                }
-                else {
-                    message = '用法: /coc skill=侦查 name=KP 或 /coc dice=100 name=李昂';
-                }
                 
-                // 直接用你之前测试成功的方式发送
-                appendMessageToChat('system', message);
+                // 发送并保存系统消息
+                sendAndSaveSystemMessage(message);
                 return '';
                 
-            }, ['cocroll', 'cr'], 'COC命令');
+            }, 
+            ['cocroll', 'cr'], 
+            'COC命令 - 用 name=角色名 指定角色',
+            // 参数定义 - 这会触发自动补全
+            {
+                name: {
+                    type: 'string',
+                    description: '角色名',
+                    choices: () => {
+                        // 获取所有可用的角色名
+                        const context = SillyTavern.getContext();
+                        const characters = [];
+                        
+                        // 添加当前聊天中的角色
+                        if (context.characters) {
+                            context.characters.forEach(char => {
+                                if (char && char.name) {
+                                    characters.push(char.name);
+                                }
+                            });
+                        }
+                        
+                        // 如果是群聊，添加群成员
+                        if (context.groups && context.groupId) {
+                            const currentGroup = context.groups.find(g => g.id === context.groupId);
+                            if (currentGroup && currentGroup.members) {
+                                currentGroup.members.forEach(member => {
+                                    if (member && member.name) {
+                                        characters.push(member.name);
+                                    }
+                                });
+                            }
+                        }
+                        
+                        // 去重
+                        return [...new Set(characters)];
+                    }
+                }
+            });
             
-            alert('✅ COC命令注册成功！\n用法: /coc skill=侦查 name=KP');
+            alert('✅ COC命令注册成功！\n\n' +
+                  '【用法】\n' +
+                  '/coc 100 name=KP - 掷D100\n' +
+                  '/coc 2d6+3 name=李昂 - 掷骰子\n' +
+                  '/coc 侦查 name=张薇 - 技能检定\n\n' +
+                  '【提示】\n' +
+                  '输入 name= 时会自动弹出角色列表供选择\n' +
+                  '系统消息会自动保存，刷新后不会消失');
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
@@ -137,15 +176,15 @@ function parseDiceFormula(formula) {
     return { total, details };
 }
 
-// 你测试成功的发送函数
-function appendMessageToChat(sender, message) {
+// 发送并保存系统消息
+function sendAndSaveSystemMessage(message) {
     try {
         const context = SillyTavern.getContext();
         
         const messageObj = {
-            name: sender,
+            name: 'system',
             is_user: false,
-            is_system: sender === 'system',
+            is_system: true,
             send_date: new Date().toLocaleString(),
             mes: message
         };
@@ -153,7 +192,11 @@ function appendMessageToChat(sender, message) {
         if (!context.chat) context.chat = [];
         context.chat.push(messageObj);
         
-        // 用你之前测试成功的方式
+        // 保存到聊天记录
+        if (typeof context.saveChat === 'function') {
+            context.saveChat();
+        }
+        
         if (typeof context.addOneMessage === 'function') {
             context.addOneMessage(messageObj);
         }
