@@ -1,4 +1,4 @@
-// COC角色管理 - RPG Companion结构版
+// COC角色管理
 
 (function() {
     'use strict';
