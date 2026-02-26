@@ -1,5 +1,6 @@
-// COC骰子系统 - 可指定角色版
+// COC骰子系统 - 系统发出结果版
 // 用法: /coc 技能名 @角色名 或 /coc 100 @角色名
+// 结果由【系统】发出，避免AI混淆
 
 (function() {
     'use strict';
@@ -14,13 +15,19 @@
                 const input = value || '';
                 
                 // 解析角色名（如果有@）
-                let targetChar = context.name2 || '未知角色'; // 默认当前说话者
+                let targetChar = '未知角色';
                 let command = input;
                 
                 const atMatch = input.match(/@(\S+)/);
                 if (atMatch) {
                     targetChar = atMatch[1];
                     command = input.replace(/@\S+/, '').trim();
+                }
+                
+                // 如果命令为空，显示帮助
+                if (!command) {
+                    appendSystemMessage('❌ 用法: /coc 侦查 @KP 或 /coc 100 @李昂');
+                    return '';
                 }
                 
                 // 处理骰子逻辑
@@ -47,7 +54,7 @@
                     }
                 }
                 // 技能检定 - 例如 /coc 侦查 @KP
-                else if (command) {
+                else {
                     const skillName = command;
                     const roll = Math.floor(Math.random() * 100) + 1;
                     const skillValue = 50;
@@ -72,23 +79,24 @@
                     message = `**${targetChar}** 进行 **${skillName}** 检定\n` +
                              `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
                              `结果: ${emoji} **${result}**`;
-                } else {
-                    message = '❌ 用法: /coc 侦查 @KP 或 /coc 100 @李昂';
                 }
                 
-                // 由当前用户发出消息（你）
-                appendMessageToChat(context.name1, message);
+                // 由系统发出消息
+                appendSystemMessage(message);
                 return '';
                 
-            }, ['cocroll', 'cr'], 'COC命令 - 可用@指定角色');
+            }, ['cocroll', 'cr'], 'COC命令 - 用@指定角色，结果由系统发出');
             
             alert('✅ COC命令注册成功！\n\n' +
                   '【用法】\n' +
                   '/coc 100 @角色名 - 掷D100\n' +
                   '/coc 2d6+3 @角色名 - 掷骰子\n' +
                   '/coc 侦查 @角色名 - 技能检定\n\n' +
-                  '例如: /coc 侦查 @KP\n' +
-                  '结果由你发出，但显示是KP的检定');
+                  '【示例】\n' +
+                  '/coc 侦查 @KP\n' +
+                  '/coc 100 @李昂\n\n' +
+                  '【注意】\n' +
+                  '结果由【系统】发出，AI不会混淆');
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
@@ -127,15 +135,15 @@ function parseDiceFormula(formula) {
     return { total, details };
 }
 
-// 发送消息到聊天窗口
-function appendMessageToChat(sender, message) {
+// 发送系统消息
+function appendSystemMessage(message) {
     try {
         const context = SillyTavern.getContext();
         
         const messageObj = {
-            name: sender,
-            is_user: true,  // 由用户发出
-            is_system: false,
+            name: 'system',
+            is_user: false,
+            is_system: true,
             send_date: new Date().toLocaleString(),
             mes: message
         };
