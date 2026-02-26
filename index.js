@@ -1,252 +1,257 @@
-// COC角色数据管理 - 纯测试版
-// 用官方 chatMetadata 存储角色数据
+// COC角色管理 - UI面板版
+// 基于官方API实现
 
 (function() {
     'use strict';
 
-    setTimeout(() => {
+    const MODULE_NAME = 'coc-character-manager';
+    
+    setTimeout(async () => {
         try {
             const context = SillyTavern.getContext();
             
-            // 模块唯一标识
-            const MODULE_NAME = 'coc-character-data';
-            
-            // ==================== 数据操作函数 ====================
-            
-            // 初始化存储结构
-            function initStorage() {
-                if (!context.chatMetadata[MODULE_NAME]) {
-                    context.chatMetadata[MODULE_NAME] = {
-                        characters: {}  // { "李昂": { stats: {...} } }
-                    };
-                }
-                return context.chatMetadata[MODULE_NAME];
+            // ==================== 初始化存储 ====================
+            if (!context.extensionSettings[MODULE_NAME]) {
+                context.extensionSettings[MODULE_NAME] = {
+                    characters: {}  // { "李昂": { stats: {...} } }
+                };
             }
             
-            // 保存数据（立即生效）
-            function saveData() {
-                context.saveMetadata();
-                console.log('[COC] 数据已保存');
+            // 保存设置
+            function saveSettings() {
+                context.saveSettingsDebounced();
             }
             
-            // 获取所有角色数据
+            // ==================== 数据操作 ====================
             function getAllCharacters() {
-                const storage = initStorage();
-                return storage.characters || {};
+                return context.extensionSettings[MODULE_NAME].characters || {};
             }
             
-            // 获取单个角色数据
-            function getCharacter(characterName) {
-                const storage = initStorage();
-                return storage.characters?.[characterName] || null;
+            function getCharacter(name) {
+                return getAllCharacters()[name] || null;
             }
             
-            // 保存角色数据
-            function setCharacter(characterName, stats) {
-                const storage = initStorage();
-                if (!storage.characters) storage.characters = {};
-                storage.characters[characterName] = {
+            function setCharacter(name, stats) {
+                const settings = context.extensionSettings[MODULE_NAME];
+                if (!settings.characters) settings.characters = {};
+                settings.characters[name] = {
                     stats: stats,
                     updatedAt: new Date().toISOString()
                 };
-                saveData();
+                saveSettings();
                 return true;
             }
             
-            // 删除角色数据
-            function deleteCharacter(characterName) {
-                const storage = initStorage();
-                if (storage.characters?.[characterName]) {
-                    delete storage.characters[characterName];
-                    saveData();
+            function deleteCharacter(name) {
+                const settings = context.extensionSettings[MODULE_NAME];
+                if (settings.characters?.[name]) {
+                    delete settings.characters[name];
+                    saveSettings();
                     return true;
                 }
                 return false;
             }
             
-            // ==================== 注册数据管理命令 ====================
-            
-            context.registerSlashCommand(
-                'cocdata',  // 命令名
-                (args, value) => {
-                    // 解析参数
-                    const action = args?.action || 'list';
-                    const character = args?.char || context.name2;
-                    const jsonData = args?.data || value || '';
-                    
-                    switch (action) {
-                        case 'list':
-                            const allChars = getAllCharacters();
-                            const names = Object.keys(allChars);
-                            if (names.length === 0) {
-                                sendMessage('📭 还没有任何角色数据');
-                            } else {
-                                sendMessage(`📋 已有角色数据: ${names.join('、')}`);
-                            }
-                            break;
-                            
-                        case 'get':
-                            const charData = getCharacter(character);
-                            if (charData) {
-                                sendMessage(`📊 ${character} 的数据:\n${JSON.stringify(charData.stats, null, 2)}`);
-                            } else {
-                                sendMessage(`❌ ${character} 没有数据`);
-                            }
-                            break;
-                            
-                        case 'save':
-                            // 如果没有提供data，保存示例数据
-                            let statsToSave;
-                            if (jsonData) {
-                                try {
-                                    statsToSave = JSON.parse(jsonData);
-                                } catch (e) {
-                                    sendMessage(`❌ JSON解析失败: ${e.message}`);
-                                    return '';
-                                }
-                            } else {
-                                // 示例数据
-                                statsToSave = {
-                                    STR: 70,
-                                    DEX: 50,
-                                    CON: 60,
-                                    skills: {
-                                        '侦查': 80,
-                                        '聆听': 70,
-                                        '图书馆使用': 60
-                                    }
-                                };
-                            }
-                            
-                            if (setCharacter(character, statsToSave)) {
-                                sendMessage(`✅ ${character} 的数据已保存`);
-                            }
-                            break;
-                            
-                        case 'delete':
-                            if (deleteCharacter(character)) {
-                                sendMessage(`✅ ${character} 的数据已删除`);
-                            } else {
-                                sendMessage(`❌ ${character} 没有数据`);
-                            }
-                            break;
-                            
-                        case 'export':
-                            const exportData = getCharacter(character);
-                            if (exportData) {
-                                const exportJson = JSON.stringify({
-                                    character: character,
-                                    stats: exportData.stats,
-                                    exportDate: new Date().toISOString()
-                                }, null, 2);
-                                
-                                // 创建下载
-                                const blob = new Blob([exportJson], {type: 'application/json'});
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = `${character}-coc-stats.json`;
-                                a.click();
-                                sendMessage(`✅ ${character} 的数据已导出`);
-                            } else {
-                                sendMessage(`❌ ${character} 没有数据`);
-                            }
-                            break;
-                            
-                        case 'import':
-                            if (!jsonData) {
-                                sendMessage('❌ 请提供JSON数据');
-                                return '';
-                            }
-                            try {
-                                const importData = JSON.parse(jsonData);
-                                // 支持两种格式：直接stats对象，或带character字段的包装
-                                const targetChar = importData.character || character;
-                                const stats = importData.stats || importData;
-                                
-                                if (setCharacter(targetChar, stats)) {
-                                    sendMessage(`✅ ${targetChar} 的数据已导入`);
-                                }
-                            } catch (e) {
-                                sendMessage(`❌ 导入失败: ${e.message}`);
-                            }
-                            break;
-                            
-                        default:
-                            sendMessage(
-                                '📋 COC数据管理命令:\n' +
-                                '/cocdata list - 列出所有角色\n' +
-                                '/cocdata action=get char=角色 - 读取\n' +
-                                '/cocdata action=save char=角色 - 保存示例\n' +
-                                '/cocdata action=save char=角色 data=\'{...}\' - 保存自定义\n' +
-                                '/cocdata action=delete char=角色 - 删除\n' +
-                                '/cocdata action=export char=角色 - 导出\n' +
-                                '/cocdata action=import char=角色 data=\'{...}\' - 导入'
-                            );
-                    }
-                    
-                    return '';
-                },
-                ['cocd'],  // 别名
-                '管理COC角色数据',
-                [  // 命名参数定义
-                    {
-                        name: 'action',
-                        type: 'string',
-                        description: '操作: list/get/save/delete/export/import',
-                        enumProvider: () => ['list', 'get', 'save', 'delete', 'export', 'import']
-                    },
-                    {
-                        name: 'char',
-                        type: 'string',
-                        description: '角色名',
-                        required: false
-                    },
-                    {
-                        name: 'data',
-                        type: 'string',
-                        description: 'JSON数据（用于save/import）',
-                        required: false
-                    }
-                ]
+            // ==================== 加载HTML模板 ====================
+            const panelHtml = await context.renderExtensionTemplateAsync(
+                'third-party/coc-universal-core',  // 扩展文件夹名
+                'templates/character-panel'        // 模板名（不带.html）
             );
             
-            // 发送消息的辅助函数
-            function sendMessage(text) {
-                try {
-                    const context = SillyTavern.getContext();
-                    const messageObj = {
-                        name: 'system',
-                        is_user: false,
-                        is_system: true,
-                        send_date: new Date().toLocaleString(),
-                        mes: text
+            // ==================== 注册面板 ====================
+            SillyTavern.registerPanel({
+                panelId: 'coc-character-panel',
+                title: 'COC角色管理',
+                content: panelHtml,
+                visible: true,
+                onShow: initializePanel
+            });
+            
+            // ==================== 初始化面板UI ====================
+            function initializePanel(panelElement) {
+                console.log('[COC] 面板显示');
+                
+                // 获取DOM元素
+                const select = panelElement.querySelector('#coc-character-select');
+                const dataDisplay = panelElement.querySelector('#coc-data-display');
+                const dataContent = panelElement.querySelector('#coc-data-content');
+                const currentCharSpan = panelElement.querySelector('#coc-current-char');
+                const editSection = panelElement.querySelector('#coc-edit-section');
+                const editTextarea = panelElement.querySelector('#coc-edit-textarea');
+                const editCharSpan = panelElement.querySelector('#coc-edit-char');
+                const newCharName = panelElement.querySelector('#coc-new-char-name');
+                const newCharData = panelElement.querySelector('#coc-new-char-data');
+                
+                // 刷新下拉列表
+                function refreshSelect() {
+                    const characters = getAllCharacters();
+                    const names = Object.keys(characters);
+                    
+                    select.innerHTML = '<option value="">-- 请选择角色 --</option>';
+                    names.sort().forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        select.appendChild(option);
+                    });
+                }
+                
+                // 显示角色数据
+                function showCharacter(name) {
+                    const char = getCharacter(name);
+                    if (!char) return;
+                    
+                    currentCharSpan.textContent = name;
+                    dataContent.textContent = JSON.stringify(char.stats, null, 2);
+                    dataDisplay.style.display = 'block';
+                    editSection.style.display = 'none';
+                }
+                
+                // 刷新列表
+                refreshSelect();
+                
+                // ===== 选择角色 =====
+                select.addEventListener('change', (e) => {
+                    const name = e.target.value;
+                    if (name) {
+                        showCharacter(name);
+                    } else {
+                        dataDisplay.style.display = 'none';
+                    }
+                });
+                
+                // ===== 刷新列表按钮 =====
+                panelElement.querySelector('#coc-refresh-list').addEventListener('click', () => {
+                    refreshSelect();
+                });
+                
+                // ===== 编辑按钮 =====
+                panelElement.querySelector('#coc-edit-btn').addEventListener('click', () => {
+                    const currentName = select.value;
+                    if (!currentName) return;
+                    
+                    const char = getCharacter(currentName);
+                    editCharSpan.textContent = currentName;
+                    editTextarea.value = JSON.stringify(char.stats, null, 2);
+                    dataDisplay.style.display = 'none';
+                    editSection.style.display = 'block';
+                });
+                
+                // ===== 保存编辑 =====
+                panelElement.querySelector('#coc-save-edit').addEventListener('click', () => {
+                    const name = editCharSpan.textContent;
+                    try {
+                        const newStats = JSON.parse(editTextarea.value);
+                        setCharacter(name, newStats);
+                        showCharacter(name);
+                        sendSystemMessage(`✅ ${name} 的数据已更新`);
+                    } catch (e) {
+                        sendSystemMessage(`❌ JSON解析错误: ${e.message}`);
+                    }
+                });
+                
+                // ===== 取消编辑 =====
+                panelElement.querySelector('#coc-cancel-edit').addEventListener('click', () => {
+                    const currentName = select.value;
+                    if (currentName) {
+                        showCharacter(currentName);
+                    } else {
+                        dataDisplay.style.display = 'none';
+                        editSection.style.display = 'none';
+                    }
+                });
+                
+                // ===== 导出按钮 =====
+                panelElement.querySelector('#coc-export-btn').addEventListener('click', () => {
+                    const name = select.value;
+                    if (!name) return;
+                    
+                    const char = getCharacter(name);
+                    const exportData = {
+                        character: name,
+                        stats: char.stats,
+                        exportDate: new Date().toISOString()
                     };
                     
-                    if (!context.chat) context.chat = [];
-                    context.chat.push(messageObj);
+                    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${name}-coc-stats.json`;
+                    a.click();
+                    sendSystemMessage(`✅ ${name} 的数据已导出`);
+                });
+                
+                // ===== 删除按钮 =====
+                panelElement.querySelector('#coc-delete-btn').addEventListener('click', () => {
+                    const name = select.value;
+                    if (!name) return;
                     
-                    if (typeof context.addOneMessage === 'function') {
-                        context.addOneMessage(messageObj);
+                    if (confirm(`确定删除 ${name} 的数据吗？`)) {
+                        deleteCharacter(name);
+                        refreshSelect();
+                        dataDisplay.style.display = 'none';
+                        sendSystemMessage(`✅ ${name} 的数据已删除`);
+                    }
+                });
+                
+                // ===== 保存新角色 =====
+                panelElement.querySelector('#coc-save-new').addEventListener('click', () => {
+                    const name = newCharName.value.trim();
+                    const data = newCharData.value.trim();
+                    
+                    if (!name) {
+                        sendSystemMessage('❌ 请输入角色名');
+                        return;
                     }
                     
-                    if (typeof context.saveChat === 'function') {
-                        context.saveChat();
+                    try {
+                        const stats = JSON.parse(data);
+                        setCharacter(name, stats);
+                        refreshSelect();
+                        newCharName.value = '';
+                        newCharData.value = '';
+                        sendSystemMessage(`✅ ${name} 的数据已保存`);
+                        
+                        // 自动选中新角色
+                        select.value = name;
+                        showCharacter(name);
+                    } catch (e) {
+                        sendSystemMessage(`❌ JSON解析错误: ${e.message}`);
                     }
-                } catch (e) {
-                    console.error('发送消息失败:', e);
-                }
+                });
+                
+                // ===== 示例数据按钮 =====
+                panelElement.querySelectorAll('.example-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        newCharData.value = JSON.stringify(JSON.parse(btn.dataset.example), null, 2);
+                    });
+                });
             }
             
-            alert('✅ COC数据管理注册成功！\n\n' +
-                  '可用命令:\n' +
-                  '/cocdata list - 列出所有角色\n' +
-                  '/cocdata action=get char=李昂 - 读取\n' +
-                  '/cocdata action=save char=李昂 - 保存示例\n' +
-                  '/cocdata action=delete char=李昂 - 删除\n' +
-                  '/cocdata action=export char=李昂 - 导出\n' +
-                  '/cocdata action=import char=李昂 data=\'{"STR":60}\' - 导入\n\n' +
-                  '数据保存在聊天元数据中，切换聊天会变化');
+            // ==================== 保留命令行作为补充 ====================
+            context.registerSlashCommand(
+                'coclist',
+                () => {
+                    const chars = Object.keys(getAllCharacters());
+                    if (chars.length === 0) {
+                        sendSystemMessage('📭 还没有任何角色数据');
+                    } else {
+                        sendSystemMessage(`📋 已有角色: ${chars.join('、')}`);
+                    }
+                    return '';
+                },
+                [],
+                '列出所有COC角色'
+            );
+            
+            // 发送系统消息的辅助函数
+            function sendSystemMessage(text) {
+                const context = SillyTavern.getContext();
+                context.sendMessage(text, 'system');
+            }
+            
+            alert('✅ COC角色管理面板加载成功！\n\n点击左上角三道杠 → COC角色管理');
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
