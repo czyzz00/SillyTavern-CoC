@@ -51,10 +51,10 @@
                 return false;
             }
             
-            // ==================== 加载HTML模板并注入到扩展区域 ====================
+            // ==================== 加载HTML模板（修正路径）====================
             const panelHtml = await context.renderExtensionTemplateAsync(
-                'third-party/coc-universal-core',  // 扩展文件夹名
-                'templates/character-panel'        // 模板名（不带.html）
+                'third-party/SillyTavern-CoC',  // ✅ 改成你的仓库名
+                'templates/character-panel'
             );
             
             // 等待DOM加载完成
