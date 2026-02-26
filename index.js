@@ -2,21 +2,29 @@
 
     alert("测试启动");
 
-    const div = document.createElement("div");
+    function waitForBody() {
+        if (!document.body) {
+            setTimeout(waitForBody, 100);
+            return;
+        }
 
-    div.style.position = "fixed";
-    div.style.top = "0";
-    div.style.left = "0";
-    div.style.width = "100vw";
-    div.style.height = "100vh";
-    div.style.background = "red";
-    div.style.zIndex = "2147483647";
+        const div = document.createElement("div");
 
-    div.innerText = "如果你看到红色，全屏覆盖成功";
+        div.style.position = "fixed";
+        div.style.top = "0";
+        div.style.left = "0";
+        div.style.width = "100vw";
+        div.style.height = "100vh";
+        div.style.background = "red";
+        div.style.zIndex = "2147483647";
 
-    window.addEventListener("load", () => {
+        div.innerText = "红色覆盖测试成功";
+
         document.body.appendChild(div);
+
         console.log("已插入");
-    });
+    }
+
+    waitForBody();
 
 })();
