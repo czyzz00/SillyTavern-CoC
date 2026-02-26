@@ -1,50 +1,63 @@
-// COC骰子系统 - 支持AI自动触发版
+// COC骰子系统 - 可指定角色版
+// 用法: /coc 技能名 @角色名 或 /coc 100 @角色名
 
 (function() {
     'use strict';
 
-    let isProcessingAI = false; // 防止递归触发
-
     setTimeout(() => {
         try {
             const context = SillyTavern.getContext();
-
-            /* ===============================
-               核心骰子处理函数（统一入口）
-            =============================== */
-            function handleCocCommand(input, speaker) {
-                input = input.trim();
-                let message = '';
-
-                // 纯数字
-                if (/^\d+$/.test(input)) {
-                    const max = parseInt(input);
-                    const roll = Math.floor(Math.random() * max) + 1;
-                    message = `🎲 ${speaker} 掷出 d${max} = **${roll}**`;
+            
+            // 注册/coc命令
+            context.registerSlashCommand('coc', (args, value) => {
+                // 解析输入，支持格式: "侦查 @KP" 或 "100 @李昂"
+                const input = value || '';
+                
+                // 解析角色名（如果有@）
+                let targetChar = context.name2 || '未知角色'; // 默认当前说话者
+                let command = input;
+                
+                const atMatch = input.match(/@(\S+)/);
+                if (atMatch) {
+                    targetChar = atMatch[1];
+                    command = input.replace(/@\S+/, '').trim();
                 }
-
-                // 骰子公式
-                else if (/^\d*d\d+([+-]\d+)?$/i.test(input)) {
+                
+                // 处理骰子逻辑
+                let message = '';
+                
+                // 纯数字 - 例如 /coc 100 @KP
+                if (/^\d+$/.test(command)) {
+                    const max = parseInt(command);
+                    const roll = Math.floor(Math.random() * max) + 1;
+                    message = `🎲 ${targetChar} 掷出 d${max} = **${roll}**`;
+                }
+                // 骰子公式 - 例如 /coc 2d6+3 @KP
+                else if (command.includes('d')) {
                     try {
-                        const result = parseDiceFormula(input);
-                        message = `🎲 ${speaker} 掷出 ${input} = `;
-                        message += result.details
-                            ? `${result.details} = **${result.total}**`
-                            : `**${result.total}**`;
+                        const result = parseDiceFormula(command);
+                        message = `🎲 ${targetChar} 掷出 ${command} = `;
+                        if (result.details) {
+                            message += `${result.details} = **${result.total}**`;
+                        } else {
+                            message += `**${result.total}**`;
+                        }
                     } catch (e) {
-                        message = `❌ 骰子公式错误: ${input}`;
+                        message = `❌ 骰子公式错误: ${command}`;
                     }
                 }
-
-                // 技能检定
-                else if (input) {
+                // 技能检定 - 例如 /coc 侦查 @KP
+                else if (command) {
+                    const skillName = command;
                     const roll = Math.floor(Math.random() * 100) + 1;
                     const skillValue = 50;
-
+                    
                     let result = '';
                     let emoji = '';
-
-                    if (roll === 100 || (roll >= 96 && skillValue < 50)) {
+                    
+                    if (roll === 100) {
+                        result = '大失败'; emoji = '💀';
+                    } else if (roll >= 96 && skillValue < 50) {
                         result = '大失败'; emoji = '💀';
                     } else if (roll <= Math.floor(skillValue / 5)) {
                         result = '极难成功'; emoji = '✨';
@@ -55,63 +68,91 @@
                     } else {
                         result = '失败'; emoji = '❌';
                     }
-
-                    message = `**${speaker}** 进行 **${input}** 检定\n` +
-                              `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
-                              `结果: ${emoji} **${result}**`;
+                    
+                    message = `**${targetChar}** 进行 **${skillName}** 检定\n` +
+                             `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
+                             `结果: ${emoji} **${result}**`;
+                } else {
+                    message = '❌ 用法: /coc 侦查 @KP 或 /coc 100 @李昂';
                 }
-
-                else {
-                    message = '❌ 用法: /coc 100 或 /coc 侦查 或 /coc 2d6+3';
-                }
-
-                appendMessageToChat(speaker, message);
-            }
-
-            /* ===============================
-               注册 Slash 命令
-            =============================== */
-            context.registerSlashCommand(
-                'coc',
-                (args, value) => {
-                    const speaker = context.name2 || '未知角色';
-                    handleCocCommand(value || '', speaker);
-                    return '';
-                },
-                ['cocroll', 'cr'],
-                'COC多功能命令'
-            );
-
-            /* ===============================
-               监听 AI 消息自动触发
-            =============================== */
-            if (context.eventSource) {
-                context.eventSource.on('ai_message', (event) => {
-                    if (isProcessingAI) return;
-
-                    const text = event?.data?.message || '';
-                    const match = text.match(/\/coc\s+([^\n]+)/i);
-
-                    if (match) {
-                        isProcessingAI = true;
-
-                        const speaker = context.name2 || 'AI';
-                        const commandArg = match[1];
-
-                        handleCocCommand(commandArg, speaker);
-
-                        setTimeout(() => {
-                            isProcessingAI = false;
-                        }, 100);
-                    }
-                });
-            }
-
-            console.log('✅ COC命令注册 + AI监听成功');
-
+                
+                // 由当前用户发出消息（你）
+                appendMessageToChat(context.name1, message);
+                return '';
+                
+            }, ['cocroll', 'cr'], 'COC命令 - 可用@指定角色');
+            
+            alert('✅ COC命令注册成功！\n\n' +
+                  '【用法】\n' +
+                  '/coc 100 @角色名 - 掷D100\n' +
+                  '/coc 2d6+3 @角色名 - 掷骰子\n' +
+                  '/coc 侦查 @角色名 - 技能检定\n\n' +
+                  '例如: /coc 侦查 @KP\n' +
+                  '结果由你发出，但显示是KP的检定');
+            
         } catch (error) {
-            console.error('❌ 初始化失败:', error);
+            alert('❌ 初始化失败: ' + error.message);
         }
-
     }, 2000);
 })();
+
+// 解析骰子公式
+function parseDiceFormula(formula) {
+    formula = formula.toLowerCase().replace(/\s+/g, '');
+    const match = formula.match(/^(\d*)d(\d+)([+-]\d+)?$/);
+    if (!match) throw new Error('无效的骰子格式');
+    
+    const diceCount = match[1] ? parseInt(match[1]) : 1;
+    const diceSides = parseInt(match[2]);
+    const modifier = match[3] ? parseInt(match[3]) : 0;
+    
+    let total = 0;
+    let rolls = [];
+    for (let i = 0; i < diceCount; i++) {
+        const roll = Math.floor(Math.random() * diceSides) + 1;
+        rolls.push(roll);
+        total += roll;
+    }
+    
+    if (modifier !== 0) total += modifier;
+    
+    let details = '';
+    if (diceCount > 1) {
+        details = `[${rolls.join('+')}]`;
+        if (modifier !== 0) {
+            details += `${modifier > 0 ? '+' : ''}${modifier}`;
+        }
+    }
+    
+    return { total, details };
+}
+
+// 发送消息到聊天窗口
+function appendMessageToChat(sender, message) {
+    try {
+        const context = SillyTavern.getContext();
+        
+        const messageObj = {
+            name: sender,
+            is_user: true,  // 由用户发出
+            is_system: false,
+            send_date: new Date().toLocaleString(),
+            mes: message
+        };
+        
+        if (!context.chat) context.chat = [];
+        context.chat.push(messageObj);
+        
+        if (typeof context.addOneMessage === 'function') {
+            context.addOneMessage(messageObj);
+        }
+        
+        setTimeout(() => {
+            const chatArea = document.getElementById('chat');
+            if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
+        }, 100);
+        
+    } catch (e) {
+        console.error('发送消息失败:', e);
+    }
+}
