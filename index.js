@@ -1,7 +1,6 @@
 // COC骰子系统 - 完整版（带角色数据存储）
 // 用法: /coc 技能名 @角色名 或 /coc 100 @角色名
 // 结果由【系统】发出，避免AI混淆
-// 角色数据保存在 data/[用户]/attachments/characters/[角色名]/coc-stats.json
 
 (function() {
     'use strict';
@@ -108,98 +107,133 @@
                 return 50; // 默认值
             }
 
-            // ==================== 注册/cocstat命令 ====================
-            context.registerSlashCommand('cocstat', (args, value) => {
-                const action = args?.action || '';
-                const character = args?.char || context.name2;
-                const data = args?.data || '';
-                
-                if (!character) {
-                    sendAndSaveSystemMessage('❌ 请指定角色名: /cocstat get char=李昂');
+            // ==================== 注册/cocstat命令（修正版）====================
+            
+            // 获取角色列表的枚举提供器
+            function getCharacterEnumProvider() {
+                const characters = [];
+                if (context.characters) {
+                    context.characters.forEach(char => {
+                        if (char?.name) {
+                            characters.push(char.name);
+                        }
+                    });
+                }
+                return characters;
+            }
+
+            // 注册命令 - 使用正确格式
+            context.registerSlashCommand(
+                'cocstat',  // 命令名
+                (args, value) => {  // 回调函数
+                    // args 是命名参数对象，如 { action: "get", char: "李昂", data: "..." }
+                    // value 是未命名参数
+                    
+                    const action = args?.action || 'list';
+                    const character = args?.char || context.name2;
+                    const data = args?.data || '';
+                    
+                    if (!character && action !== 'list') {
+                        sendAndSaveSystemMessage('❌ 请指定角色名: /cocstat get char=李昂');
+                        return '';
+                    }
+                    
+                    switch (action) {
+                        case 'get':
+                            const stats = loadCharacterStats(character);
+                            if (stats) {
+                                sendAndSaveSystemMessage(`📊 ${character} 的数据:\n${JSON.stringify(stats, null, 2)}`);
+                            } else {
+                                sendAndSaveSystemMessage(`❌ ${character} 没有数据`);
+                            }
+                            break;
+                            
+                        case 'save':
+                            const exampleStats = {
+                                STR: 70,
+                                DEX: 50,
+                                CON: 60,
+                                APP: 50,
+                                POW: 60,
+                                SIZ: 60,
+                                INT: 70,
+                                EDU: 60,
+                                skills: {
+                                    '侦查': 80,
+                                    '聆听': 70,
+                                    '图书馆使用': 60,
+                                    '说服': 50,
+                                    '潜行': 40,
+                                    '格斗(斗殴)': 60,
+                                    '射击': 50,
+                                    '急救': 50,
+                                    '医学': 30
+                                }
+                            };
+                            if (saveCharacterStats(character, exampleStats)) {
+                                sendAndSaveSystemMessage(`✅ ${character} 的示例数据已保存`);
+                            }
+                            break;
+                            
+                        case 'export':
+                            const exportJson = exportCharacterStats(character);
+                            if (exportJson) {
+                                const blob = new Blob([exportJson], {type: 'application/json'});
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${character}-coc-stats.json`;
+                                a.click();
+                                sendAndSaveSystemMessage(`✅ ${character} 的数据已导出`);
+                            }
+                            break;
+                            
+                        case 'import':
+                            if (data) {
+                                if (importCharacterStats(character, data)) {
+                                    sendAndSaveSystemMessage(`✅ ${character} 的数据已导入`);
+                                }
+                            } else {
+                                sendAndSaveSystemMessage('❌ 请提供数据: /cocstat import char=李昂 data=\'{"stats":{...}}\'');
+                            }
+                            break;
+                            
+                        case 'list':
+                        default:
+                            sendAndSaveSystemMessage('📋 COC数据管理命令:\n' +
+                                '/cocstat action=get char=角色 - 读取\n' +
+                                '/cocstat action=save char=角色 - 保存示例\n' +
+                                '/cocstat action=export char=角色 - 导出\n' +
+                                '/cocstat action=import char=角色 data=\'{...}\' - 导入');
+                    }
+                    
                     return '';
-                }
-                
-                switch (action) {
-                    case 'get':
-                        const stats = loadCharacterStats(character);
-                        if (stats) {
-                            sendAndSaveSystemMessage(`📊 ${character} 的数据:\n${JSON.stringify(stats, null, 2)}`);
-                        } else {
-                            sendAndSaveSystemMessage(`❌ ${character} 没有数据`);
-                        }
-                        break;
-                        
-                    case 'save':
-                        // 示例数据
-                        const exampleStats = {
-                            STR: 70,
-                            DEX: 50,
-                            CON: 60,
-                            APP: 50,
-                            POW: 60,
-                            SIZ: 60,
-                            INT: 70,
-                            EDU: 60,
-                            skills: {
-                                '侦查': 80,
-                                '聆听': 70,
-                                '图书馆使用': 60,
-                                '说服': 50,
-                                '潜行': 40,
-                                '格斗(斗殴)': 60,
-                                '射击': 50,
-                                '急救': 50,
-                                '医学': 30
-                            }
-                        };
-                        if (saveCharacterStats(character, exampleStats)) {
-                            sendAndSaveSystemMessage(`✅ ${character} 的示例数据已保存`);
-                        }
-                        break;
-                        
-                    case 'edit':
-                        const currentStats = loadCharacterStats(character) || {};
-                        sendAndSaveSystemMessage(`📝 请使用 /cocstat import char=${character} data='{...}' 导入修改后的数据`);
-                        break;
-                        
-                    case 'export':
-                        const exportJson = exportCharacterStats(character);
-                        if (exportJson) {
-                            const blob = new Blob([exportJson], {type: 'application/json'});
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${character}-coc-stats.json`;
-                            a.click();
-                            sendAndSaveSystemMessage(`✅ ${character} 的数据已导出`);
-                        }
-                        break;
-                        
-                    case 'import':
-                        if (data) {
-                            if (importCharacterStats(character, data)) {
-                                sendAndSaveSystemMessage(`✅ ${character} 的数据已导入`);
-                            }
-                        } else {
-                            sendAndSaveSystemMessage('❌ 请提供数据: /cocstat import char=李昂 data=\'{"stats":{...}}\'');
-                        }
-                        break;
-                        
-                    case 'list':
-                        sendAndSaveSystemMessage('📋 可用命令:\n' +
-                            '/cocstat get char=角色 - 读取\n' +
-                            '/cocstat save char=角色 - 保存示例\n' +
-                            '/cocstat edit char=角色 - 编辑\n' +
-                            '/cocstat export char=角色 - 导出\n' +
-                            '/cocstat import char=角色 data=\'{...}\' - 导入');
-                        break;
-                        
-                    default:
-                        sendAndSaveSystemMessage('用法:\n/cocstat list - 查看所有命令');
-                }
-                
-                return '';
-            }, ['cocstats'], '管理COC角色数据');
+                },
+                ['cocstats'],  // 别名
+                '管理COC角色数据 - 用法: /cocstat action=get|save|export|import char=角色名 data=可选',  // 帮助文本
+                [  // 命名参数定义数组
+                    {
+                        name: 'action',
+                        type: 'string',
+                        description: '操作类型: get/save/export/import/list',
+                        required: false,
+                        enumProvider: () => ['get', 'save', 'export', 'import', 'list']
+                    },
+                    {
+                        name: 'char',
+                        type: 'string',
+                        description: '角色名',
+                        required: false,
+                        enumProvider: getCharacterEnumProvider
+                    },
+                    {
+                        name: 'data',
+                        type: 'string',
+                        description: '导入的JSON数据',
+                        required: false
+                    }
+                ]
+            );
             
             // ==================== 注册/coc命令 ====================
             context.registerSlashCommand('coc', (args, value) => {
@@ -287,16 +321,15 @@
                   '/coc 2d6+3 @角色名 - 掷骰子\n' +
                   '/coc 侦查 @角色名 - 技能检定\n\n' +
                   '【数据管理】\n' +
-                  '/cocstat save char=角色 - 保存示例数据\n' +
-                  '/cocstat get char=角色 - 读取数据\n' +
-                  '/cocstat export char=角色 - 导出数据\n' +
-                  '/cocstat import char=角色 data=\'{...}\' - 导入数据\n\n' +
+                  '/cocstat action=save char=角色 - 保存示例数据\n' +
+                  '/cocstat action=get char=角色 - 读取数据\n' +
+                  '/cocstat action=export char=角色 - 导出数据\n' +
+                  '/cocstat action=import char=角色 data=\'{...}\' - 导入数据\n\n' +
                   '【示例】\n' +
                   '/coc 侦查 @KP\n' +
-                  '/coc 100 @李昂\n\n' +
-                  '【注意】\n' +
-                  '结果由【系统】发出，AI不会混淆\n' +
-                  '技能值会从存储自动读取');
+                  '/coc 100 @李昂\n' +
+                  '/cocstat action=save char=李昂\n' +
+                  '/cocstat action=get char=李昂');
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
