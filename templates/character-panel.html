@@ -1,0 +1,58 @@
+<div class="coc-panel">
+    <h2>🎲 COC角色数据管理</h2>
+    
+    <!-- 角色选择区 -->
+    <div class="coc-section">
+        <label>选择角色：</label>
+        <select id="coc-character-select" class="coc-select">
+            <option value="">-- 请选择角色 --</option>
+        </select>
+        <button id="coc-refresh-list" class="coc-button small">↻</button>
+    </div>
+    
+    <!-- 数据展示区 -->
+    <div id="coc-data-display" class="coc-section" style="display: none;">
+        <div class="coc-header">
+            <h3 id="coc-current-char"></h3>
+            <div class="coc-actions">
+                <button id="coc-edit-btn" class="coc-button small">✏️ 编辑</button>
+                <button id="coc-export-btn" class="coc-button small">📤 导出</button>
+                <button id="coc-delete-btn" class="coc-button small danger">🗑️ 删除</button>
+            </div>
+        </div>
+        <pre id="coc-data-content" class="coc-data-box"></pre>
+    </div>
+    
+    <!-- 编辑区（默认隐藏） -->
+    <div id="coc-edit-section" class="coc-section" style="display: none;">
+        <h3>编辑数据 <span id="coc-edit-char"></span></h3>
+        <textarea id="coc-edit-textarea" class="coc-textarea" rows="10"></textarea>
+        <div class="coc-button-group">
+            <button id="coc-save-edit" class="coc-button">💾 保存</button>
+            <button id="coc-cancel-edit" class="coc-button secondary">取消</button>
+        </div>
+    </div>
+    
+    <!-- 新建数据区 -->
+    <div class="coc-section">
+        <h3>➕ 新建角色数据</h3>
+        <div class="coc-form">
+            <input type="text" id="coc-new-char-name" placeholder="角色名" class="coc-input">
+            <textarea id="coc-new-char-data" placeholder='{"STR":70,"skills":{"侦查":80}}' class="coc-textarea" rows="5"></textarea>
+            <button id="coc-save-new" class="coc-button">💾 保存新角色</button>
+        </div>
+    </div>
+    
+    <!-- 示例数据快速填充 -->
+    <div class="coc-section">
+        <details>
+            <summary>📋 快速插入示例数据</summary>
+            <button class="coc-button small example-btn" data-example='{"STR":70,"DEX":50,"skills":{"侦查":80,"聆听":70}}'>
+                调查员李昂
+            </button>
+            <button class="coc-button small example-btn" data-example='{"STR":60,"DEX":70,"skills":{"侦查":90,"潜行":60}}'>
+                调查员张薇
+            </button>
+        </details>
+    </div>
+</div>
