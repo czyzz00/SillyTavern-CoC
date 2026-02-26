@@ -1,34 +1,45 @@
-console.log("CoC SMART INIT");
+console.log("CoC PERMANENT UI INIT");
 
-(function waitForST() {
+(function () {
 
-    const main = document.querySelector("#app") 
-              || document.querySelector(".app-content") 
-              || document.body;
+    function createPanel() {
 
-    if (!main) {
-        console.log("等待 ST 容器...");
-        setTimeout(waitForST, 300);
-        return;
+        if (document.getElementById("coc-floating-panel")) return;
+
+        const panel = document.createElement("div");
+        panel.id = "coc-floating-panel";
+
+        panel.style.position = "fixed";
+        panel.style.top = "80px";
+        panel.style.right = "20px";
+        panel.style.width = "260px";
+        panel.style.background = "#111";
+        panel.style.color = "white";
+        panel.style.padding = "15px";
+        panel.style.borderRadius = "10px";
+        panel.style.zIndex = "999999999";
+
+        panel.innerHTML = `
+            <b>CoC UI</b><br>
+            稳定运行中
+        `;
+
+        document.body.appendChild(panel);
+
+        console.log("UI 已插入");
     }
 
-    if (document.getElementById("coc-floating-panel")) return;
+    // 立即尝试创建
+    createPanel();
 
-    const panel = document.createElement("div");
-    panel.id = "coc-floating-panel";
+    // 防止被 ST 刷新机制清掉
+    const observer = new MutationObserver(() => {
+        if (!document.getElementById("coc-floating-panel")) {
+            console.log("UI 被移除，重新创建");
+            createPanel();
+        }
+    });
 
-    panel.innerHTML = `
-        <div class="coc-title">
-            CoC 面板
-        </div>
-        <div class="coc-content">
-            UI 已稳定挂载。<br>
-            这是正确初始化方式。
-        </div>
-    `;
-
-    main.appendChild(panel);
-
-    console.log("CoC UI 插入完成");
+    observer.observe(document.body, { childList: true });
 
 })();
