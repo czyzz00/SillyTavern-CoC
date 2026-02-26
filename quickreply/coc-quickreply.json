@@ -1,5 +1,4 @@
 {
-  "name": "COC骰子系统",
   "qrList": [
     {
       "label": "🎲 COC检定",
@@ -7,8 +6,7 @@
       "icon": "fa-dice-d20",
       "executeOnAi": true,
       "isHidden": false,
-      "preventAutoExecute": false,
-      "showLabel": true
+      "preventAutoExecute": false
     },
     {
       "label": "D100",
@@ -16,8 +14,7 @@
       "icon": "fa-dice-d100",
       "executeOnAi": true,
       "isHidden": false,
-      "preventAutoExecute": false,
-      "showLabel": true
+      "preventAutoExecute": false
     },
     {
       "label": "D20",
@@ -25,8 +22,7 @@
       "icon": "fa-dice-d20",
       "executeOnAi": true,
       "isHidden": false,
-      "preventAutoExecute": false,
-      "showLabel": true
+      "preventAutoExecute": false
     },
     {
       "label": "📋 COC帮助",
@@ -34,14 +30,7 @@
       "icon": "fa-question-circle",
       "executeOnAi": false,
       "isHidden": false,
-      "preventAutoExecute": false,
-      "showLabel": true
+      "preventAutoExecute": false
     }
-  ],
-  "settings": {
-    "disableSend": false,
-    "placeBeforeInput": false,
-    "injectInput": false,
-    "showLabel": true
-  }
+  ]
 }
