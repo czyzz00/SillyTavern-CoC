@@ -1,30 +1,34 @@
-console.log("CoC DIRECT EXECUTE");
+console.log("CoC SMART INIT");
 
-(function(){
+(function waitForST() {
 
-    console.log("开始创建UI");
+    const main = document.querySelector("#app") 
+              || document.querySelector(".app-content") 
+              || document.body;
+
+    if (!main) {
+        console.log("等待 ST 容器...");
+        setTimeout(waitForST, 300);
+        return;
+    }
 
     if (document.getElementById("coc-floating-panel")) return;
 
     const panel = document.createElement("div");
     panel.id = "coc-floating-panel";
 
-    panel.style.position = "fixed";
-    panel.style.top = "80px";
-    panel.style.right = "20px";
-    panel.style.width = "260px";
-    panel.style.background = "black";
-    panel.style.color = "white";
-    panel.style.padding = "15px";
-    panel.style.zIndex = "999999999";
-
     panel.innerHTML = `
-        CoC UI 成功插入<br>
-        如果你能看到我，说明OK
+        <div class="coc-title">
+            CoC 面板
+        </div>
+        <div class="coc-content">
+            UI 已稳定挂载。<br>
+            这是正确初始化方式。
+        </div>
     `;
 
-    document.body.appendChild(panel);
+    main.appendChild(panel);
 
-    console.log("UI 已插入");
+    console.log("CoC UI 插入完成");
 
 })();
