@@ -1,4 +1,4 @@
-// COC骰子系统 - AI自动触发版（基于官方文档）
+// COC骰子系统 - AI自动触发版（官方事件系统）
 
 (function() {
     'use strict';
@@ -9,12 +9,12 @@
         try {
             const context = SillyTavern.getContext();
             
-            // 注册/coc命令（保持不变）
+            // 注册/coc命令
             context.registerSlashCommand('coc', (args, value) => {
                 const input = value || '';
                 const speaker = context.name2 || '未知角色';
                 
-                // 处理骰子逻辑（同上）
+                // 处理骰子逻辑
                 let message = '';
                 if (/^\d+$/.test(input)) {
                     const max = parseInt(input);
@@ -63,32 +63,37 @@
                 return '';
             }, ['cocroll', 'cr'], 'COC多功能命令');
             
-            // ✅ 官方方式：监听AI消息事件
-            // 根据文档，CHARACTER_MESSAGE_RENDERED 在AI消息显示后触发[citation:7]
-            context.eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (messageIndex, generationType) => {
-                // 获取刚发送的AI消息
+            // ✅ 官方正确方式：监听消息事件
+            // 根据文档，eventSource 是全局事件总线 [citation:1]
+            const eventSource = context.eventSource;
+            
+            // 监听消息接收事件（AI消息添加到聊天后触发）
+            eventSource.on('MESSAGE_RECEIVED', (messageId) => {
+                // 获取最后一条消息
                 const lastMessage = context.chat[context.chat.length - 1];
+                
+                // 只处理AI消息
                 if (!lastMessage || lastMessage.is_user || lastMessage.is_system) return;
                 
-                // 检查消息中是否包含/coc指令
+                // 检查是否包含/coc指令
                 const content = lastMessage.mes || '';
                 const cocMatch = content.match(/\/coc\s+(.+)/);
                 
                 if (cocMatch) {
                     const commandText = cocMatch[1];
                     
-                    // 延迟执行，避免与当前消息处理冲突
+                    // 延迟执行，避免冲突
                     setTimeout(() => {
-                        // 临时切换当前说话者为AI（让骰子结果显示为AI发的）
+                        // 临时设置当前说话者为AI（让骰子结果显示为AI触发的）
                         const originalName = context.name2;
                         context.name2 = lastMessage.name;
                         
-                        // 执行命令 - 使用官方提供的API[citation:5]
+                        // 执行命令
                         context.executeSlashCommands(`/coc ${commandText}`);
                         
-                        // 恢复当前说话者
+                        // 恢复
                         context.name2 = originalName;
-                    }, 100);
+                    }, 200);
                 }
             });
             
@@ -103,7 +108,7 @@
     }, 2000);
 })();
 
-// 辅助函数（保持不变）
+// 辅助函数
 function parseDiceFormula(formula) {
     formula = formula.toLowerCase().replace(/\s+/g, '');
     const match = formula.match(/^(\d*)d(\d+)([+-]\d+)?$/);
@@ -137,7 +142,6 @@ function parseDiceFormula(formula) {
 function sendAsCharacter(characterName, message) {
     try {
         const context = SillyTavern.getContext();
-        // 使用官方 /send 命令[citation:1][citation:8]
         context.executeSlashCommands(`/send ${characterName} ${message}`);
     } catch (e) {
         console.error('发送消息失败:', e);
