@@ -1,35 +1,26 @@
-// COC骰子系统 - 严谨版
-// 所有消息由指定的SYSTEM角色发出，使用精确的角色选择方式
+// COC骰子系统 - AI自动触发版（基于官方文档）
 
 (function() {
     'use strict';
 
-    // 配置：指定谁发出消息（改成你的AI角色名）
-    const SYSTEM_CHARACTER = "KP";  // ← 改成你的AI角色名
+    const SYSTEM_CHARACTER = "KP";  // 改成你的KP角色名
 
     setTimeout(() => {
         try {
             const context = SillyTavern.getContext();
             
-            // ==================== 单一命令：/coc ====================
+            // 注册/coc命令（保持不变）
             context.registerSlashCommand('coc', (args, value) => {
-                // 获取用户输入
                 const input = value || '';
-                
-                // 获取当前说话的角色（谁触发的命令）
                 const speaker = context.name2 || '未知角色';
                 
-                // 生成骰子结果
+                // 处理骰子逻辑（同上）
                 let message = '';
-                
-                // ===== 1. 纯数字 =====
                 if (/^\d+$/.test(input)) {
                     const max = parseInt(input);
                     const roll = Math.floor(Math.random() * max) + 1;
                     message = `🎲 ${speaker} 掷出 d${max} = **${roll}**`;
-                }
-                // ===== 2. 骰子公式 =====
-                else if (input.includes('d')) {
+                } else if (input.includes('d')) {
                     try {
                         const result = parseDiceFormula(input);
                         message = `🎲 ${speaker} 掷出 ${input} = `;
@@ -41,9 +32,7 @@
                     } catch (e) {
                         message = `❌ 骰子公式错误: ${input}`;
                     }
-                }
-                // ===== 3. 技能检定 =====
-                else {
+                } else {
                     const skillName = input;
                     const roll = Math.floor(Math.random() * 100) + 1;
                     const skillValue = 50;
@@ -52,23 +41,17 @@
                     let emoji = '';
                     
                     if (roll === 100) {
-                        result = '大失败';
-                        emoji = '💀';
+                        result = '大失败'; emoji = '💀';
                     } else if (roll >= 96 && skillValue < 50) {
-                        result = '大失败';
-                        emoji = '💀';
+                        result = '大失败'; emoji = '💀';
                     } else if (roll <= Math.floor(skillValue / 5)) {
-                        result = '极难成功';
-                        emoji = '✨';
+                        result = '极难成功'; emoji = '✨';
                     } else if (roll <= Math.floor(skillValue / 2)) {
-                        result = '困难成功';
-                        emoji = '⭐';
+                        result = '困难成功'; emoji = '⭐';
                     } else if (roll <= skillValue) {
-                        result = '成功';
-                        emoji = '✅';
+                        result = '成功'; emoji = '✅';
                     } else {
-                        result = '失败';
-                        emoji = '❌';
+                        result = '失败'; emoji = '❌';
                     }
                     
                     message = `**${speaker}** 进行 **${skillName}** 检定\n` +
@@ -76,13 +59,43 @@
                              `结果: ${emoji} **${result}**`;
                 }
                 
-                // 使用精确的角色发送方式
-                sendMessageAsCharacter(SYSTEM_CHARACTER, message);
+                sendAsCharacter(SYSTEM_CHARACTER, message);
                 return '';
-                
             }, ['cocroll', 'cr'], 'COC多功能命令');
             
-            alert(`✅ COC命令注册成功！\n\n所有消息将由【${SYSTEM_CHARACTER}】发出`);
+            // ✅ 官方方式：监听AI消息事件
+            // 根据文档，CHARACTER_MESSAGE_RENDERED 在AI消息显示后触发[citation:7]
+            context.eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (messageIndex, generationType) => {
+                // 获取刚发送的AI消息
+                const lastMessage = context.chat[context.chat.length - 1];
+                if (!lastMessage || lastMessage.is_user || lastMessage.is_system) return;
+                
+                // 检查消息中是否包含/coc指令
+                const content = lastMessage.mes || '';
+                const cocMatch = content.match(/\/coc\s+(.+)/);
+                
+                if (cocMatch) {
+                    const commandText = cocMatch[1];
+                    
+                    // 延迟执行，避免与当前消息处理冲突
+                    setTimeout(() => {
+                        // 临时切换当前说话者为AI（让骰子结果显示为AI发的）
+                        const originalName = context.name2;
+                        context.name2 = lastMessage.name;
+                        
+                        // 执行命令 - 使用官方提供的API[citation:5]
+                        context.executeSlashCommands(`/coc ${commandText}`);
+                        
+                        // 恢复当前说话者
+                        context.name2 = originalName;
+                    }, 100);
+                }
+            });
+            
+            alert(`✅ COC命令注册成功！\n\n` +
+                  `用户输入: /coc 100\n` +
+                  `AI输入: AI可以在回复中包含 /coc 侦查\n` +
+                  `所有结果由【${SYSTEM_CHARACTER}】发出`);
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
@@ -90,11 +103,7 @@
     }, 2000);
 })();
 
-// ==================== 辅助函数 ====================
-
-/**
- * 解析骰子公式
- */
+// 辅助函数（保持不变）
 function parseDiceFormula(formula) {
     formula = formula.toLowerCase().replace(/\s+/g, '');
     const match = formula.match(/^(\d*)d(\d+)([+-]\d+)?$/);
@@ -125,38 +134,12 @@ function parseDiceFormula(formula) {
     return { total, details };
 }
 
-/**
- * 以指定角色身份发送消息 - 精确版本
- * 使用官方 /send 命令并指定角色ID
- */
-function sendMessageAsCharacter(characterName, message) {
+function sendAsCharacter(characterName, message) {
     try {
         const context = SillyTavern.getContext();
-        
-        // 方法1: 使用 /send 命令（最精确）
-        // 格式: /send 角色名|角色ID 消息内容
+        // 使用官方 /send 命令[citation:1][citation:8]
         context.executeSlashCommands(`/send ${characterName} ${message}`);
-        
     } catch (e) {
         console.error('发送消息失败:', e);
-        // 降级方案：如果精确发送失败，直接添加到聊天记录
-        try {
-            const messageObj = {
-                name: characterName,
-                is_user: false,
-                is_system: false,
-                send_date: new Date().toLocaleString(),
-                mes: message
-            };
-            
-            if (!context.chat) context.chat = [];
-            context.chat.push(messageObj);
-            
-            if (typeof context.addOneMessage === 'function') {
-                context.addOneMessage(messageObj);
-            }
-        } catch (e2) {
-            console.error('降级发送也失败:', e2);
-        }
     }
 }
