@@ -1,9 +1,11 @@
-// COC角色管理 - UI面板版（修正）
+// COC角色管理 - 模板加载版
 
 (function() {
     'use strict';
 
     const MODULE_NAME = 'coc-character-manager';
+    let panelElement = null;
+    let buttonElement = null;
     
     setTimeout(async () => {
         try {
@@ -12,16 +14,14 @@
             // ==================== 初始化存储 ====================
             if (!context.extensionSettings[MODULE_NAME]) {
                 context.extensionSettings[MODULE_NAME] = {
-                    characters: {}  // { "李昂": { stats: {...} } }
+                    characters: {}
                 };
             }
             
-            // 保存设置
             function saveSettings() {
                 context.saveSettingsDebounced();
             }
             
-            // ==================== 数据操作 ====================
             function getAllCharacters() {
                 return context.extensionSettings[MODULE_NAME].characters || {};
             }
@@ -51,81 +51,98 @@
                 return false;
             }
             
-            // ==================== 加载HTML模板（修正路径）====================
-            const panelHtml = await context.renderExtensionTemplateAsync(
-                'third-party/SillyTavern-CoC',  // ✅ 改成你的仓库名
-                'templates/character-panel'
-            );
+            // ==================== 加载模板 ====================
+            let panelHtml = '';
+            try {
+                panelHtml = await context.renderExtensionTemplateAsync(
+                    'third-party/SillyTavern-CoC',
+                    'templates/character-panel'
+                );
+                console.log('[COC] 模板加载成功');
+            } catch (e) {
+                console.error('[COC] 模板加载失败:', e);
+                panelHtml = '<div style="padding:20px; color:red;">模板加载失败</div>';
+            }
             
-            // 等待DOM加载完成
-            setTimeout(() => {
-                // 查找扩展放置区域
-                const extensionsContainer = document.getElementById('extensions_container') || 
-                                            document.querySelector('.extensions-container') ||
-                                            document.getElementById('extensions_panel');
+            // ==================== 创建UI ====================
+            
+            // 1. 创建侧边栏按钮
+            function createSidebarButton() {
+                const buttonContainer = document.getElementById('extensions_menu_container') || 
+                                        document.querySelector('.extensions-menu') ||
+                                        document.getElementById('extensions-menu');
                 
-                if (!extensionsContainer) {
-                    console.error('[COC] 未找到扩展容器');
+                if (!buttonContainer) {
+                    setTimeout(createSidebarButton, 1000);
                     return;
                 }
                 
-                // 创建面板容器
-                const panelDiv = document.createElement('div');
-                panelDiv.id = 'coc-character-panel';
-                panelDiv.className = 'extension-panel';
-                panelDiv.innerHTML = panelHtml;
+                buttonElement = document.createElement('div');
+                buttonElement.id = 'coc-menu-button';
+                buttonElement.className = 'list-group-item flex-container flexGap5 extensions-menu-item';
+                buttonElement.setAttribute('data-extension', 'coc');
+                buttonElement.setAttribute('title', 'COC角色数据管理');
+                buttonElement.innerHTML = `
+                    <div class="flex-container alignItemsCenter">
+                        <span class="fa-regular fa-dice-d20 extension-button-icon"></span>
+                        <span class="extension-button-text">COC角色管理</span>
+                    </div>
+                `;
                 
-                // 添加到扩展容器
-                extensionsContainer.appendChild(panelDiv);
+                buttonElement.addEventListener('click', togglePanel);
+                buttonContainer.appendChild(buttonElement);
+                console.log('[COC] 侧边栏按钮已添加');
+            }
+            
+            // 2. 创建主面板
+            function createPanel() {
+                const mainContainer = document.getElementById('chat')?.parentElement ||
+                                      document.querySelector('.chat-container');
                 
-                // 隐藏面板（默认不显示）
-                panelDiv.style.display = 'none';
-                
-                // ==================== 添加侧边栏按钮 ====================
-                const sidebar = document.getElementById('extensions-menu') || 
-                               document.querySelector('.extensions-menu') ||
-                               document.querySelector('.side_panel');
-                
-                if (sidebar) {
-                    const menuButton = document.createElement('div');
-                    menuButton.className = 'extension-button';
-                    menuButton.innerHTML = '🎲 COC角色';
-                    menuButton.title = 'COC角色数据管理';
-                    menuButton.onclick = () => {
-                        // 切换面板显示
-                        if (panelDiv.style.display === 'none') {
-                            // 隐藏其他扩展面板
-                            document.querySelectorAll('.extension-panel').forEach(p => p.style.display = 'none');
-                            panelDiv.style.display = 'block';
-                        } else {
-                            panelDiv.style.display = 'none';
-                        }
-                    };
-                    sidebar.appendChild(menuButton);
+                if (!mainContainer) {
+                    setTimeout(createPanel, 1000);
+                    return;
                 }
                 
-                // ==================== 初始化面板UI ====================
-                initializePanel(panelDiv);
+                panelElement = document.createElement('div');
+                panelElement.id = 'coc-character-panel';
+                panelElement.className = 'coc-panel';
+                panelElement.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 600px;
+                    max-width: 90vw;
+                    max-height: 80vh;
+                    background: var(--bg-color, #1a1a1a);
+                    border: 1px solid var(--border-color, #444);
+                    border-radius: 8px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                    z-index: 10000;
+                    display: none;
+                    overflow: auto;
+                `;
                 
-            }, 1000); // 等待1秒确保DOM加载完成
+                // 设置模板内容
+                panelElement.innerHTML = panelHtml;
+                
+                document.body.appendChild(panelElement);
+                console.log('[COC] 面板已创建');
+                
+                // 绑定事件
+                bindPanelEvents();
+            }
             
-            // ==================== 初始化面板UI函数 ====================
-            function initializePanel(panelElement) {
-                console.log('[COC] 初始化面板');
-                
-                // 获取DOM元素
-                const select = panelElement.querySelector('#coc-character-select');
-                const dataDisplay = panelElement.querySelector('#coc-data-display');
-                const dataContent = panelElement.querySelector('#coc-data-content');
-                const currentCharSpan = panelElement.querySelector('#coc-current-char');
-                const editSection = panelElement.querySelector('#coc-edit-section');
-                const editTextarea = panelElement.querySelector('#coc-edit-textarea');
-                const editCharSpan = panelElement.querySelector('#coc-edit-char');
-                const newCharName = panelElement.querySelector('#coc-new-char-name');
-                const newCharData = panelElement.querySelector('#coc-new-char-data');
+            // 3. 绑定面板事件
+            function bindPanelEvents() {
+                if (!panelElement) return;
                 
                 // 刷新下拉列表
                 function refreshSelect() {
+                    const select = panelElement.querySelector('#coc-character-select');
+                    if (!select) return;
+                    
                     const characters = getAllCharacters();
                     const names = Object.keys(characters);
                     
@@ -143,181 +160,186 @@
                     const char = getCharacter(name);
                     if (!char) return;
                     
-                    currentCharSpan.textContent = name;
-                    dataContent.textContent = JSON.stringify(char.stats, null, 2);
-                    dataDisplay.style.display = 'block';
-                    editSection.style.display = 'none';
+                    const currentCharSpan = panelElement.querySelector('#coc-current-char');
+                    const dataContent = panelElement.querySelector('#coc-data-content');
+                    const dataDisplay = panelElement.querySelector('#coc-data-display');
+                    const editSection = panelElement.querySelector('#coc-edit-section');
+                    
+                    if (currentCharSpan) currentCharSpan.textContent = name;
+                    if (dataContent) dataContent.textContent = JSON.stringify(char.stats, null, 2);
+                    if (dataDisplay) dataDisplay.style.display = 'block';
+                    if (editSection) editSection.style.display = 'none';
                 }
                 
-                // 刷新列表
-                refreshSelect();
+                // 关闭按钮
+                panelElement.querySelector('#coc-close-panel')?.addEventListener('click', () => {
+                    panelElement.style.display = 'none';
+                });
                 
-                // ===== 选择角色 =====
-                select.addEventListener('change', (e) => {
+                // 选择角色
+                panelElement.querySelector('#coc-character-select')?.addEventListener('change', (e) => {
                     const name = e.target.value;
                     if (name) {
                         showCharacter(name);
                     } else {
-                        dataDisplay.style.display = 'none';
+                        const dataDisplay = panelElement.querySelector('#coc-data-display');
+                        if (dataDisplay) dataDisplay.style.display = 'none';
                     }
                 });
                 
-                // ===== 刷新列表按钮 =====
-                const refreshBtn = panelElement.querySelector('#coc-refresh-list');
-                if (refreshBtn) {
-                    refreshBtn.addEventListener('click', () => {
+                // 刷新列表
+                panelElement.querySelector('#coc-refresh-list')?.addEventListener('click', refreshSelect);
+                
+                // 编辑按钮
+                panelElement.querySelector('#coc-edit-btn')?.addEventListener('click', () => {
+                    const select = panelElement.querySelector('#coc-character-select');
+                    const name = select?.value;
+                    if (!name) return;
+                    
+                    const char = getCharacter(name);
+                    const editCharSpan = panelElement.querySelector('#coc-edit-char');
+                    const editTextarea = panelElement.querySelector('#coc-edit-textarea');
+                    const dataDisplay = panelElement.querySelector('#coc-data-display');
+                    const editSection = panelElement.querySelector('#coc-edit-section');
+                    
+                    if (editCharSpan) editCharSpan.textContent = name;
+                    if (editTextarea) editTextarea.value = JSON.stringify(char.stats, null, 2);
+                    if (dataDisplay) dataDisplay.style.display = 'none';
+                    if (editSection) editSection.style.display = 'block';
+                });
+                
+                // 保存编辑
+                panelElement.querySelector('#coc-save-edit')?.addEventListener('click', () => {
+                    const name = panelElement.querySelector('#coc-edit-char')?.textContent;
+                    const textarea = panelElement.querySelector('#coc-edit-textarea');
+                    
+                    if (!name || !textarea) return;
+                    
+                    try {
+                        const stats = JSON.parse(textarea.value);
+                        setCharacter(name, stats);
                         refreshSelect();
-                    });
-                }
+                        showCharacter(name);
+                        sendSystemMessage(`✅ ${name} 的数据已更新`);
+                    } catch (e) {
+                        sendSystemMessage(`❌ JSON错误: ${e.message}`);
+                    }
+                });
                 
-                // ===== 编辑按钮 =====
-                const editBtn = panelElement.querySelector('#coc-edit-btn');
-                if (editBtn) {
-                    editBtn.addEventListener('click', () => {
-                        const currentName = select.value;
-                        if (!currentName) return;
-                        
-                        const char = getCharacter(currentName);
-                        editCharSpan.textContent = currentName;
-                        editTextarea.value = JSON.stringify(char.stats, null, 2);
-                        dataDisplay.style.display = 'none';
-                        editSection.style.display = 'block';
-                    });
-                }
+                // 取消编辑
+                panelElement.querySelector('#coc-cancel-edit')?.addEventListener('click', () => {
+                    const select = panelElement.querySelector('#coc-character-select');
+                    const dataDisplay = panelElement.querySelector('#coc-data-display');
+                    const editSection = panelElement.querySelector('#coc-edit-section');
+                    
+                    if (select?.value && dataDisplay) {
+                        dataDisplay.style.display = 'block';
+                    }
+                    if (editSection) editSection.style.display = 'none';
+                });
                 
-                // ===== 保存编辑 =====
-                const saveEditBtn = panelElement.querySelector('#coc-save-edit');
-                if (saveEditBtn) {
-                    saveEditBtn.addEventListener('click', () => {
-                        const name = editCharSpan.textContent;
-                        try {
-                            const newStats = JSON.parse(editTextarea.value);
-                            setCharacter(name, newStats);
-                            showCharacter(name);
-                            sendSystemMessage(`✅ ${name} 的数据已更新`);
-                        } catch (e) {
-                            sendSystemMessage(`❌ JSON解析错误: ${e.message}`);
-                        }
-                    });
-                }
+                // 导出按钮
+                panelElement.querySelector('#coc-export-btn')?.addEventListener('click', () => {
+                    const select = panelElement.querySelector('#coc-character-select');
+                    const name = select?.value;
+                    if (!name) return;
+                    
+                    const char = getCharacter(name);
+                    const blob = new Blob([JSON.stringify({character: name, stats: char.stats}, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${name}-coc-stats.json`;
+                    a.click();
+                    sendSystemMessage(`✅ ${name} 的数据已导出`);
+                });
                 
-                // ===== 取消编辑 =====
-                const cancelEditBtn = panelElement.querySelector('#coc-cancel-edit');
-                if (cancelEditBtn) {
-                    cancelEditBtn.addEventListener('click', () => {
-                        const currentName = select.value;
-                        if (currentName) {
-                            showCharacter(currentName);
-                        } else {
-                            dataDisplay.style.display = 'none';
-                            editSection.style.display = 'none';
-                        }
-                    });
-                }
+                // 删除按钮
+                panelElement.querySelector('#coc-delete-btn')?.addEventListener('click', () => {
+                    const select = panelElement.querySelector('#coc-character-select');
+                    const name = select?.value;
+                    if (!name) return;
+                    
+                    if (confirm(`确定删除 ${name} 的数据吗？`)) {
+                        deleteCharacter(name);
+                        refreshSelect();
+                        const dataDisplay = panelElement.querySelector('#coc-data-display');
+                        if (dataDisplay) dataDisplay.style.display = 'none';
+                        sendSystemMessage(`✅ ${name} 的数据已删除`);
+                    }
+                });
                 
-                // ===== 导出按钮 =====
-                const exportBtn = panelElement.querySelector('#coc-export-btn');
-                if (exportBtn) {
-                    exportBtn.addEventListener('click', () => {
-                        const name = select.value;
-                        if (!name) return;
+                // 保存新角色
+                panelElement.querySelector('#coc-save-new')?.addEventListener('click', () => {
+                    const nameInput = panelElement.querySelector('#coc-new-char-name');
+                    const dataInput = panelElement.querySelector('#coc-new-char-data');
+                    
+                    const name = nameInput?.value.trim();
+                    const data = dataInput?.value.trim();
+                    
+                    if (!name) {
+                        sendSystemMessage('❌ 请输入角色名');
+                        return;
+                    }
+                    
+                    try {
+                        const stats = JSON.parse(data);
+                        setCharacter(name, stats);
+                        if (nameInput) nameInput.value = '';
+                        if (dataInput) dataInput.value = '';
+                        refreshSelect();
+                        sendSystemMessage(`✅ ${name} 的数据已保存`);
                         
-                        const char = getCharacter(name);
-                        const exportData = {
-                            character: name,
-                            stats: char.stats,
-                            exportDate: new Date().toISOString()
-                        };
-                        
-                        const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${name}-coc-stats.json`;
-                        a.click();
-                        sendSystemMessage(`✅ ${name} 的数据已导出`);
-                    });
-                }
-                
-                // ===== 删除按钮 =====
-                const deleteBtn = panelElement.querySelector('#coc-delete-btn');
-                if (deleteBtn) {
-                    deleteBtn.addEventListener('click', () => {
-                        const name = select.value;
-                        if (!name) return;
-                        
-                        if (confirm(`确定删除 ${name} 的数据吗？`)) {
-                            deleteCharacter(name);
-                            refreshSelect();
-                            dataDisplay.style.display = 'none';
-                            sendSystemMessage(`✅ ${name} 的数据已删除`);
-                        }
-                    });
-                }
-                
-                // ===== 保存新角色 =====
-                const saveNewBtn = panelElement.querySelector('#coc-save-new');
-                if (saveNewBtn) {
-                    saveNewBtn.addEventListener('click', () => {
-                        const name = newCharName.value.trim();
-                        const data = newCharData.value.trim();
-                        
-                        if (!name) {
-                            sendSystemMessage('❌ 请输入角色名');
-                            return;
-                        }
-                        
-                        try {
-                            const stats = JSON.parse(data);
-                            setCharacter(name, stats);
-                            refreshSelect();
-                            newCharName.value = '';
-                            newCharData.value = '';
-                            sendSystemMessage(`✅ ${name} 的数据已保存`);
-                            
-                            // 自动选中新角色
+                        // 自动选中新角色
+                        const select = panelElement.querySelector('#coc-character-select');
+                        if (select) {
                             select.value = name;
                             showCharacter(name);
-                        } catch (e) {
-                            sendSystemMessage(`❌ JSON解析错误: ${e.message}`);
                         }
-                    });
-                }
+                    } catch (e) {
+                        sendSystemMessage(`❌ JSON错误: ${e.message}`);
+                    }
+                });
                 
-                // ===== 示例数据按钮 =====
+                // 示例按钮
                 panelElement.querySelectorAll('.example-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        newCharData.value = JSON.stringify(JSON.parse(btn.dataset.example), null, 2);
+                        const dataInput = panelElement.querySelector('#coc-new-char-data');
+                        if (dataInput) {
+                            dataInput.value = JSON.stringify(JSON.parse(btn.dataset.example), null, 2);
+                        }
                     });
                 });
+                
+                // 初始化刷新
+                refreshSelect();
             }
             
-            // ==================== 保留命令行 ====================
-            context.registerSlashCommand(
-                'coclist',
-                () => {
-                    const chars = Object.keys(getAllCharacters());
-                    if (chars.length === 0) {
-                        sendSystemMessage('📭 还没有任何角色数据');
-                    } else {
-                        sendSystemMessage(`📋 已有角色: ${chars.join('、')}`);
-                    }
-                    return '';
-                },
-                [],
-                '列出所有COC角色'
-            );
+            // 4. 切换面板显示
+            function togglePanel() {
+                if (!panelElement) return;
+                
+                if (panelElement.style.display === 'none') {
+                    panelElement.style.display = 'block';
+                } else {
+                    panelElement.style.display = 'none';
+                }
+            }
             
-            // 发送系统消息的辅助函数
+            // 5. 发送系统消息
             function sendSystemMessage(text) {
                 const context = SillyTavern.getContext();
                 context.sendMessage(text, 'system');
             }
             
-            alert('✅ COC角色管理加载成功！\n\n点击左侧扩展菜单中的"🎲 COC角色"按钮打开面板');
+            // 6. 开始创建UI
+            createSidebarButton();
+            createPanel();
+            
+            console.log('[COC] UI扩展初始化完成');
             
         } catch (error) {
-            alert('❌ 初始化失败: ' + error.message);
+            console.error('[COC] 初始化失败:', error);
         }
     }, 2000);
 })();
