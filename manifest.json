@@ -5,5 +5,6 @@
     "version": "1.0.0",
     "description": "COC测试面板",
     "js": "index.js",
+    "css": "style.css",
     "minimum_client_version": "1.10.0"
 }
