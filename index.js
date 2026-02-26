@@ -1,30 +1,30 @@
 // COC骰子系统 - 精简版
-// 让KP发出检定结果
+// 所有消息由指定的SYSTEM角色发出，删除了/sayas
 
 (function() {
     'use strict';
 
-    // KP角色名（必须与角色卡一致）
-    const KP_NAME = 'KP';
+    // 配置：指定谁发出消息（改成你的AI角色名）
+    const SYSTEM_CHARACTER = "KP";  // ← 改成你的AI角色名
 
     setTimeout(() => {
         try {
             const context = SillyTavern.getContext();
             
-            // ==================== 核心命令：/coc ====================
+            // ==================== 单一命令：/coc ====================
             context.registerSlashCommand('coc', (args, value) => {
-                // 解析输入
-                const input = value || (args && args[0]) || '';
+                // 获取用户输入（value就是斜杠后面的所有内容）
+                const input = value || '';
                 
-                // 获取当前说话的角色
-                const actor = context.name2 || '调查员';
+                // 获取当前说话的角色（谁触发的命令）
+                const speaker = context.name2 || '未知角色';
                 
-                // ===== 1. 纯数字掷骰 =====
+                // ===== 1. 纯数字 =====
                 if (/^\d+$/.test(input)) {
                     const max = parseInt(input);
                     const roll = Math.floor(Math.random() * max) + 1;
-                    const message = `🎲 ${actor} 掷出 d${max} = **${roll}**`;
-                    sendAsKP(message);
+                    // 由SYSTEM_CHARACTER发出消息
+                    sendAsCharacter(SYSTEM_CHARACTER, `🎲 ${speaker} 掷出 d${max} = **${roll}**`);
                     return '';
                 }
                 
@@ -32,15 +32,15 @@
                 if (input.includes('d')) {
                     try {
                         const result = parseDiceFormula(input);
-                        let message = `🎲 ${actor} 掷出 ${input} = `;
+                        let message = `🎲 ${speaker} 掷出 ${input} = `;
                         if (result.details) {
                             message += `${result.details} = **${result.total}**`;
                         } else {
                             message += `**${result.total}**`;
                         }
-                        sendAsKP(message);
+                        sendAsCharacter(SYSTEM_CHARACTER, message);
                     } catch (e) {
-                        sendAsKP(`❌ 骰子公式错误: ${input}`);
+                        sendAsCharacter(SYSTEM_CHARACTER, `❌ 骰子公式错误: ${input}`);
                     }
                     return '';
                 }
@@ -74,17 +74,21 @@
                     emoji = '❌';
                 }
                 
-                const message = `**${actor}** 进行 **${skillName}** 检定\n` +
+                const message = `**${speaker}** 进行 **${skillName}** 检定\n` +
                                `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
                                `结果: ${emoji} **${result}**`;
                 
-                sendAsKP(message);
+                sendAsCharacter(SYSTEM_CHARACTER, message);
                 return '';
                 
-            }, ['cocroll', 'cr'], 'COC骰子系统');
+            }, ['cocroll', 'cr'], 'COC多功能命令\n用法:\n/coc 100 - 掷D100\n/coc 2d6+3 - 掷骰子\n/coc 侦查 - 技能检定');
             
             // 弹出成功提示
-            alert(`✅ COC骰子系统已加载\n所有结果由 ${KP_NAME} 发出`);
+            alert(`✅ COC命令注册成功！\n\n所有消息将由【${SYSTEM_CHARACTER}】发出\n\n` +
+                  '用法:\n' +
+                  '/coc 100 - 掷D100\n' +
+                  '/coc 2d6+3 - 掷骰子\n' +
+                  '/coc 侦查 - 技能检定');
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
@@ -92,31 +96,31 @@
     }, 2000);
 })();
 
-// ==================== 骰子公式解析 ====================
+// ==================== 辅助函数 ====================
+
+/**
+ * 解析骰子公式
+ */
 function parseDiceFormula(formula) {
     formula = formula.toLowerCase().replace(/\s+/g, '');
     const match = formula.match(/^(\d*)d(\d+)([+-]\d+)?$/);
-    
-    if (!match) {
-        throw new Error('无效的骰子格式');
-    }
+    if (!match) throw new Error('无效的骰子格式');
     
     const diceCount = match[1] ? parseInt(match[1]) : 1;
     const diceSides = parseInt(match[2]);
     const modifier = match[3] ? parseInt(match[3]) : 0;
     
+    if (diceCount > 100) throw new Error('骰子数量不能超过100');
+    
     let total = 0;
     let rolls = [];
-    
     for (let i = 0; i < diceCount; i++) {
         const roll = Math.floor(Math.random() * diceSides) + 1;
         rolls.push(roll);
         total += roll;
     }
     
-    if (modifier !== 0) {
-        total += modifier;
-    }
+    if (modifier !== 0) total += modifier;
     
     let details = '';
     if (diceCount > 1) {
@@ -129,41 +133,16 @@ function parseDiceFormula(formula) {
     return { total, details };
 }
 
-// ==================== 消息发送 ====================
-function sendAsKP(message) {
+/**
+ * 以指定角色身份发送消息
+ * 使用官方内置的 /sendas 命令[citation:5]
+ */
+function sendAsCharacter(characterName, message) {
     try {
         const context = SillyTavern.getContext();
-        
-        // 创建消息对象
-        const messageObj = {
-            name: KP_NAME,
-            is_user: false,
-            is_system: false,
-            send_date: new Date().toLocaleString(),
-            mes: message
-        };
-        
-        // 添加到聊天记录
-        if (!context.chat) {
-            context.chat = [];
-        }
-        context.chat.push(messageObj);
-        
-        // 显示在界面上
-        if (typeof context.addOneMessage === 'function') {
-            context.addOneMessage(messageObj);
-        }
-        
-        // 滚动到底部
-        setTimeout(() => {
-            const chatArea = document.getElementById('chat');
-            if (chatArea) {
-                chatArea.scrollTop = chatArea.scrollHeight;
-            }
-        }, 100);
-        
+        // 使用官方内置命令 /sendas [citat
+        context.executeSlashCommands(`/sendas ${characterName} ${message}`);
     } catch (e) {
         console.error('发送消息失败:', e);
-        alert(`KP: ${message}`); // 备用
     }
 }
