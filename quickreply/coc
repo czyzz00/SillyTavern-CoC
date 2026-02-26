@@ -1,0 +1,39 @@
+{
+  "name": "COC骰子系统",
+  "qrList": [
+    {
+      "id": "coc-roll",
+      "label": "🎲 COC检定",
+      "message": "/coc 侦查",
+      "executeOnAi": true,
+      "isHidden": false
+    },
+    {
+      "id": "coc-d100",
+      "label": "D100",
+      "message": "/coc 100",
+      "executeOnAi": true,
+      "isHidden": false
+    },
+    {
+      "id": "coc-d20",
+      "label": "D20",
+      "message": "/coc 20",
+      "executeOnAi": true,
+      "isHidden": false
+    },
+    {
+      "id": "coc-help",
+      "label": "📋 COC帮助",
+      "message": "/send KP 【COC命令帮助】\n/coc 100 - 掷D100\n/coc 侦查 - 技能检定\n/coc 2d6+3 - 掷骰子公式\n\nAI可以直接在回复中包含 /coc 技能名 自动触发",
+      "executeOnAi": false,
+      "isHidden": false
+    }
+  ],
+  "qrSettings": {
+    "disableSend": false,
+    "placeBeforeInput": false,
+    "injectInput": false,
+    "showLabel": true
+  }
+}
