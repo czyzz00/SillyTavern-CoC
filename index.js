@@ -1,4 +1,4 @@
-// COC骰子系统 - 修正版
+// COC骰子系统 - 官方API版
 
 (function() {
     'use strict';
@@ -7,101 +7,115 @@
         try {
             const context = SillyTavern.getContext();
             
-            // ==================== 注册/coc命令 ====================
-            context.registerSlashCommand('coc', (args, value) => {
-                // 解析参数
-                // args 是 { name: "zeen" } 这样的对象
-                // value 是 "侦查"
+            // 定义name参数的枚举提供器（用于自动补全）
+            const characterEnumProvider = () => {
+                const characters = [];
                 
-                const skillName = value || '';
-                const targetChar = args?.name || context.name2 || '未知角色';
-                
-                if (!skillName) {
-                    sendAndSaveSystemMessage('❌ 用法: /coc 侦查 name=zeen');
-                    return '';
+                // 获取所有角色
+                if (context.characters) {
+                    context.characters.forEach(char => {
+                        if (char?.name) {
+                            characters.push(char.name);
+                        }
+                    });
                 }
                 
-                // 处理骰子逻辑
-                let message = '';
-                
-                // 纯数字
-                if (/^\d+$/.test(skillName)) {
-                    const max = parseInt(skillName);
-                    const roll = Math.floor(Math.random() * max) + 1;
-                    message = `🎲 ${targetChar} 掷出 d${max} = **${roll}**`;
+                // 群聊成员
+                if (context.groups && context.groupId) {
+                    const currentGroup = context.groups.find(g => g.id === context.groupId);
+                    if (currentGroup?.members) {
+                        currentGroup.members.forEach(member => {
+                            if (member?.name) {
+                                characters.push(member.name);
+                            }
+                        });
+                    }
                 }
-                // 骰子公式
-                else if (skillName.includes('d')) {
-                    try {
-                        const result = parseDiceFormula(skillName);
-                        message = `🎲 ${targetChar} 掷出 ${skillName} = `;
-                        if (result.details) {
-                            message += `${result.details} = **${result.total}**`;
+                
+                return [...new Set(characters)];
+            };
+            
+            // 注册/coc命令 - 按照官方API格式
+            context.registerSlashCommand(
+                'coc',                                   // 命令名
+                (args, value) => {                       // 回调函数
+                    const skillName = value || '';
+                    const targetChar = args?.name || context.name2 || '未知角色';
+                    
+                    if (!skillName) {
+                        sendAndSaveSystemMessage('❌ 用法: /coc 侦查 name=zeen');
+                        return '';
+                    }
+                    
+                    // 处理骰子逻辑
+                    let message = '';
+                    
+                    if (/^\d+$/.test(skillName)) {
+                        const max = parseInt(skillName);
+                        const roll = Math.floor(Math.random() * max) + 1;
+                        message = `🎲 ${targetChar} 掷出 d${max} = **${roll}**`;
+                    }
+                    else if (skillName.includes('d')) {
+                        try {
+                            const result = parseDiceFormula(skillName);
+                            message = `🎲 ${targetChar} 掷出 ${skillName} = `;
+                            if (result.details) {
+                                message += `${result.details} = **${result.total}**`;
+                            } else {
+                                message += `**${result.total}**`;
+                            }
+                        } catch (e) {
+                            message = `❌ 骰子公式错误: ${skillName}`;
+                        }
+                    }
+                    else {
+                        const roll = Math.floor(Math.random() * 100) + 1;
+                        const skillValue = 50;
+                        
+                        let result = '';
+                        let emoji = '';
+                        
+                        if (roll === 100) {
+                            result = '大失败'; emoji = '💀';
+                        } else if (roll >= 96 && skillValue < 50) {
+                            result = '大失败'; emoji = '💀';
+                        } else if (roll <= Math.floor(skillValue / 5)) {
+                            result = '极难成功'; emoji = '✨';
+                        } else if (roll <= Math.floor(skillValue / 2)) {
+                            result = '困难成功'; emoji = '⭐';
+                        } else if (roll <= skillValue) {
+                            result = '成功'; emoji = '✅';
                         } else {
-                            message += `**${result.total}**`;
-                        }
-                    } catch (e) {
-                        message = `❌ 骰子公式错误: ${skillName}`;
-                    }
-                }
-                // 技能检定
-                else {
-                    const roll = Math.floor(Math.random() * 100) + 1;
-                    const skillValue = 50;
-                    
-                    let result = '';
-                    let emoji = '';
-                    
-                    if (roll === 100) {
-                        result = '大失败'; emoji = '💀';
-                    } else if (roll >= 96 && skillValue < 50) {
-                        result = '大失败'; emoji = '💀';
-                    } else if (roll <= Math.floor(skillValue / 5)) {
-                        result = '极难成功'; emoji = '✨';
-                    } else if (roll <= Math.floor(skillValue / 2)) {
-                        result = '困难成功'; emoji = '⭐';
-                    } else if (roll <= skillValue) {
-                        result = '成功'; emoji = '✅';
-                    } else {
-                        result = '失败'; emoji = '❌';
-                    }
-                    
-                    message = `**${targetChar}** 进行 **${skillName}** 检定\n` +
-                             `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
-                             `结果: ${emoji} **${result}**`;
-                }
-                
-                sendAndSaveSystemMessage(message);
-                return '';
-                
-            }, 
-            'COC命令 - 用 name=角色名 指定角色', // 描述
-            ['cocroll', 'cr'], // 别名
-            [ // 参数定义数组
-                {
-                    name: 'name',
-                    type: 'string',
-                    description: '选择角色',
-                    isNamed: true,  // 命名参数
-                    choices: () => {
-                        // 获取所有可用的角色名
-                        const context = SillyTavern.getContext();
-                        const characters = [];
-                        
-                        // 添加所有角色
-                        if (context.characters) {
-                            context.characters.forEach(char => {
-                                if (char?.name) {
-                                    characters.push(char.name);
-                                }
-                            });
+                            result = '失败'; emoji = '❌';
                         }
                         
-                        // 去重
-                        return [...new Set(characters)];
+                        message = `**${targetChar}** 进行 **${skillName}** 检定\n` +
+                                 `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
+                                 `结果: ${emoji} **${result}**`;
                     }
-                }
-            ]);
+                    
+                    sendAndSaveSystemMessage(message);
+                    return '';
+                },
+                ['cocroll', 'cr'],                        // 别名数组
+                'COC命令 - 用 name=角色名 指定角色',       // 帮助文本
+                [                                          // 命名参数定义
+                    {
+                        name: 'name',
+                        type: 'string',
+                        description: '选择角色',
+                        enumProvider: characterEnumProvider, // 自动补全提供器
+                        required: false
+                    }
+                ],
+                [                                          // 无名参数定义（可选）
+                    {
+                        type: 'string',
+                        description: '技能名或骰子公式',
+                        required: true
+                    }
+                ]
+            );
             
             alert('✅ COC命令注册成功！\n\n' +
                   '【用法】\n' +
@@ -167,7 +181,6 @@ function sendAndSaveSystemMessage(message) {
             context.addOneMessage(messageObj);
         }
         
-        // 保存聊天
         if (typeof context.saveChat === 'function') {
             context.saveChat();
         }
