@@ -1,27 +1,30 @@
-console.log("CoC UI START");
+console.log("CoC DIRECT EXECUTE");
 
-window.addEventListener("load", function () {
+(function(){
+
+    console.log("开始创建UI");
 
     if (document.getElementById("coc-floating-panel")) return;
 
     const panel = document.createElement("div");
     panel.id = "coc-floating-panel";
 
+    panel.style.position = "fixed";
+    panel.style.top = "80px";
+    panel.style.right = "20px";
+    panel.style.width = "260px";
+    panel.style.background = "black";
+    panel.style.color = "white";
+    panel.style.padding = "15px";
+    panel.style.zIndex = "999999999";
+
     panel.innerHTML = `
-        <div class="coc-title">
-            CoC 面板
-            <button id="coc-toggle">—</button>
-        </div>
-        <div class="coc-content">
-            UI 已成功挂载。<br>
-            现在这是一个固定浮动层。
-        </div>
+        CoC UI 成功插入<br>
+        如果你能看到我，说明OK
     `;
 
     document.body.appendChild(panel);
 
-    document.getElementById("coc-toggle").onclick = function () {
-        panel.classList.toggle("collapsed");
-    };
+    console.log("UI 已插入");
 
-});
+})();
