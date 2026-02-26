@@ -1,5 +1,4 @@
-// COC骰子系统 - 带自动补全和消息保存
-// 用法: /coc 技能名 name=角色名 或 /coc 100 name=角色名
+// COC骰子系统 - 修正版
 
 (function() {
     'use strict';
@@ -11,28 +10,14 @@
             // ==================== 注册/coc命令 ====================
             context.registerSlashCommand('coc', (args, value) => {
                 // 解析参数
-                let skillName = '';
-                let targetChar = '未知角色';
+                // args 是 { name: "zeen" } 这样的对象
+                // value 是 "侦查"
                 
-                // 检查是否有name=参数
-                if (args && args.name) {
-                    targetChar = args.name;
-                    skillName = value || '';
-                } else {
-                    // 兼容旧格式：侦查 @KP
-                    const input = value || '';
-                    const atMatch = input.match(/@(\S+)/);
-                    if (atMatch) {
-                        targetChar = atMatch[1];
-                        skillName = input.replace(/@\S+/, '').trim();
-                    } else {
-                        skillName = input;
-                        targetChar = context.name2 || '未知角色';
-                    }
-                }
+                const skillName = value || '';
+                const targetChar = args?.name || context.name2 || '未知角色';
                 
                 if (!skillName) {
-                    sendAndSaveSystemMessage('❌ 用法: /coc 侦查 name=KP');
+                    sendAndSaveSystemMessage('❌ 用法: /coc 侦查 name=zeen');
                     return '';
                 }
                 
@@ -86,58 +71,44 @@
                              `结果: ${emoji} **${result}**`;
                 }
                 
-                // 发送并保存系统消息
                 sendAndSaveSystemMessage(message);
                 return '';
                 
             }, 
-            ['cocroll', 'cr'], 
-            'COC命令 - 用 name=角色名 指定角色',
-            // 参数定义 - 这会触发自动补全
-            {
-                name: {
+            'COC命令 - 用 name=角色名 指定角色', // 描述
+            ['cocroll', 'cr'], // 别名
+            [ // 参数定义数组
+                {
+                    name: 'name',
                     type: 'string',
-                    description: '角色名',
+                    description: '选择角色',
+                    isNamed: true,  // 命名参数
                     choices: () => {
                         // 获取所有可用的角色名
                         const context = SillyTavern.getContext();
                         const characters = [];
                         
-                        // 添加当前聊天中的角色
+                        // 添加所有角色
                         if (context.characters) {
                             context.characters.forEach(char => {
-                                if (char && char.name) {
+                                if (char?.name) {
                                     characters.push(char.name);
                                 }
                             });
-                        }
-                        
-                        // 如果是群聊，添加群成员
-                        if (context.groups && context.groupId) {
-                            const currentGroup = context.groups.find(g => g.id === context.groupId);
-                            if (currentGroup && currentGroup.members) {
-                                currentGroup.members.forEach(member => {
-                                    if (member && member.name) {
-                                        characters.push(member.name);
-                                    }
-                                });
-                            }
                         }
                         
                         // 去重
                         return [...new Set(characters)];
                     }
                 }
-            });
+            ]);
             
             alert('✅ COC命令注册成功！\n\n' +
                   '【用法】\n' +
-                  '/coc 100 name=KP - 掷D100\n' +
-                  '/coc 2d6+3 name=李昂 - 掷骰子\n' +
-                  '/coc 侦查 name=张薇 - 技能检定\n\n' +
-                  '【提示】\n' +
-                  '输入 name= 时会自动弹出角色列表供选择\n' +
-                  '系统消息会自动保存，刷新后不会消失');
+                  '/coc 侦查 name=zeen\n' +
+                  '/coc 100 name=KP\n' +
+                  '/coc 2d6+3 name=李昂\n\n' +
+                  '输入 name= 时会自动弹出角色列表');
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
@@ -192,13 +163,13 @@ function sendAndSaveSystemMessage(message) {
         if (!context.chat) context.chat = [];
         context.chat.push(messageObj);
         
-        // 保存到聊天记录
-        if (typeof context.saveChat === 'function') {
-            context.saveChat();
-        }
-        
         if (typeof context.addOneMessage === 'function') {
             context.addOneMessage(messageObj);
+        }
+        
+        // 保存聊天
+        if (typeof context.saveChat === 'function') {
+            context.saveChat();
         }
         
         setTimeout(() => {
