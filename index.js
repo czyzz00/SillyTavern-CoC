@@ -1,45 +1,160 @@
-console.log("CoC PERMANENT UI INIT");
+// ==================== COC 角色面板 MVP 一体版 ====================
 
 (function () {
+    'use strict';
 
-    function createPanel() {
+    setTimeout(() => {
+        try {
 
-        if (document.getElementById("coc-floating-panel")) return;
+            const context = SillyTavern.getContext();
+            const MODULE_NAME = 'coc-character-data';
 
-        const panel = document.createElement("div");
-        panel.id = "coc-floating-panel";
+            // ==================== 数据层 ====================
 
-        panel.style.position = "fixed";
-        panel.style.top = "80px";
-        panel.style.right = "20px";
-        panel.style.width = "260px";
-        panel.style.background = "#111";
-        panel.style.color = "white";
-        panel.style.padding = "15px";
-        panel.style.borderRadius = "10px";
-        panel.style.zIndex = "999999999";
+            function initStorage() {
+                if (!context.chatMetadata[MODULE_NAME]) {
+                    context.chatMetadata[MODULE_NAME] = {
+                        characters: {}
+                    };
+                }
+                return context.chatMetadata[MODULE_NAME];
+            }
 
-        panel.innerHTML = `
-            <b>CoC UI</b><br>
-            稳定运行中
-        `;
+            function saveData() {
+                context.saveMetadata();
+                console.log('[COC] 数据已保存');
+            }
 
-        document.body.appendChild(panel);
+            function getCharacter(name) {
+                const storage = initStorage();
+                return storage.characters?.[name] || null;
+            }
 
-        console.log("UI 已插入");
-    }
+            function setCharacter(name, stats) {
+                const storage = initStorage();
+                if (!storage.characters) storage.characters = {};
+                storage.characters[name] = {
+                    stats: stats,
+                    updatedAt: new Date().toISOString()
+                };
+                saveData();
+            }
 
-    // 立即尝试创建
-    createPanel();
+            // ==================== UI 层 ====================
 
-    // 防止被 ST 刷新机制清掉
-    const observer = new MutationObserver(() => {
-        if (!document.getElementById("coc-floating-panel")) {
-            console.log("UI 被移除，重新创建");
+            function createPanel() {
+
+                if (document.getElementById("coc-panel")) return;
+
+                const panel = document.createElement("div");
+                panel.id = "coc-panel";
+
+                panel.style.position = "fixed";
+                panel.style.bottom = "20px";
+                panel.style.left = "50%";
+                panel.style.transform = "translateX(-50%)";
+                panel.style.width = "320px";
+                panel.style.background = "#1e1e1e";
+                panel.style.color = "white";
+                panel.style.padding = "15px";
+                panel.style.borderRadius = "12px";
+                panel.style.zIndex = "9999999";
+                panel.style.boxShadow = "0 0 20px rgba(0,0,0,0.6)";
+                panel.style.fontSize = "14px";
+
+                panel.innerHTML = `
+                    <div style="font-weight:bold;margin-bottom:10px;">
+                        COC角色面板
+                    </div>
+
+                    <div>角色名</div>
+                    <input id="coc-name" style="width:100%;margin-bottom:8px;" />
+
+                    <div>STR</div>
+                    <input id="coc-str" type="number" style="width:100%;margin-bottom:8px;" />
+
+                    <div>DEX</div>
+                    <input id="coc-dex" type="number" style="width:100%;margin-bottom:8px;" />
+
+                    <div>CON</div>
+                    <input id="coc-con" type="number" style="width:100%;margin-bottom:12px;" />
+
+                    <button id="coc-save" style="width:100%;padding:8px;">
+                        保存
+                    </button>
+                `;
+
+                document.body.appendChild(panel);
+                bindEvents();
+            }
+
+            function bindEvents() {
+
+                const nameInput = document.getElementById("coc-name");
+                const strInput = document.getElementById("coc-str");
+                const dexInput = document.getElementById("coc-dex");
+                const conInput = document.getElementById("coc-con");
+
+                const defaultName = context.name2;
+                nameInput.value = defaultName;
+
+                loadCharacter(defaultName);
+
+                nameInput.addEventListener("change", () => {
+                    loadCharacter(nameInput.value.trim());
+                });
+
+                document.getElementById("coc-save").onclick = () => {
+
+                    const name = nameInput.value.trim();
+                    if (!name) {
+                        alert("角色名不能为空");
+                        return;
+                    }
+
+                    const stats = {
+                        STR: Number(strInput.value) || 0,
+                        DEX: Number(dexInput.value) || 0,
+                        CON: Number(conInput.value) || 0
+                    };
+
+                    setCharacter(name, stats);
+                    alert("已保存");
+                };
+
+                function loadCharacter(name) {
+                    const data = getCharacter(name);
+                    if (!data) {
+                        strInput.value = "";
+                        dexInput.value = "";
+                        conInput.value = "";
+                        return;
+                    }
+
+                    strInput.value = data.stats.STR || "";
+                    dexInput.value = data.stats.DEX || "";
+                    conInput.value = data.stats.CON || "";
+                }
+            }
+
+            // 创建面板
             createPanel();
-        }
-    });
 
-    observer.observe(document.body, { childList: true });
+            // 防止被重绘清掉
+            const observer = new MutationObserver(() => {
+                if (!document.getElementById("coc-panel")) {
+                    createPanel();
+                }
+            });
+
+            observer.observe(document.body, { childList: true });
+
+            console.log("COC 面板已启动");
+
+        } catch (e) {
+            alert("COC 初始化失败: " + e.message);
+        }
+
+    }, 2500);
 
 })();
