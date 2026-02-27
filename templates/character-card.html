@@ -1,0 +1,33 @@
+<div class="coc-panel" id="coc-panel">
+    <div class="coc-header">
+        <h2>🎲 COC7 角色卡</h2>
+        <button class="coc-close-btn" id="coc-close-panel">✖</button>
+    </div>
+    <div class="coc-content" id="coc-content">
+        <!-- 工具栏 -->
+        <div class="coc-toolbar">
+            <select class="coc-select" id="coc-role-select">
+                <option value="">选择角色</option>
+            </select>
+            <button class="coc-btn import" id="coc-import-btn">📥</button>
+            <button class="coc-btn export" id="coc-export-btn">📤</button>
+            <button class="coc-btn delete" id="coc-delete-btn">🗑️</button>
+        </div>
+
+        <!-- 角色卡片区 -->
+        <div id="coc-stats-display">
+            <div class="coc-empty">
+                👆 请选择角色
+            </div>
+        </div>
+
+        <!-- 编辑区（默认隐藏） -->
+        <div id="coc-edit-section" style="display: none;"></div>
+
+        <!-- 示例按钮 -->
+        <div class="coc-examples">
+            <button class="coc-example-btn" data-example="liang">李昂</button>
+            <button class="coc-example-btn" data-example="zhang">张薇</button>
+        </div>
+    </div>
+</div>
