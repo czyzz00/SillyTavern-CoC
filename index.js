@@ -1,34 +1,48 @@
-// 最简单的诊断代码
+// COC角色管理 - 基于成功模板的稳定版
 (function() {
-    // 第一步：弹窗确认JS已执行
-    alert('🔵 COC扩展JS已加载');
+    // 第一步：弹窗确认JS已加载
+    alert('🔵 COC扩展启动');
     
-    // 第二步：轮询body并添加红色方块
-    function checkBody() {
+    function waitForBody() {
         if (!document.body) {
-            alert('🟡 body不存在，等待中...');
-            setTimeout(checkBody, 500);
+            setTimeout(waitForBody, 100);
             return;
         }
         
-        alert('🟢 body已存在，准备添加元素');
-        
-        // 添加红色方块
-        const div = document.createElement('div');
-        div.style.position = 'fixed';
-        div.style.top = '10px';
-        div.style.left = '10px';
-        div.style.width = '100px';
-        div.style.height = '100px';
-        div.style.backgroundColor = 'red';
-        div.style.zIndex = '9999999';
-        div.style.color = 'white';
-        div.style.padding = '10px';
-        div.textContent = 'COC';
-        
-        document.body.appendChild(div);
-        alert('✅ 元素已添加到body');
+        // body存在，开始构建UI
+        buildUI();
     }
     
-    checkBody();
+    function buildUI() {
+        alert('🟢 开始构建UI');
+        
+        // 创建浮动按钮（右下角）
+        const btn = document.createElement('button');
+        btn.textContent = '🎲';
+        btn.style.cssText = `
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 999999;
+            cursor: pointer;
+        `;
+        
+        btn.onclick = () => {
+            alert('🎲 按钮被点击');
+            // 这里后续添加面板功能
+        };
+        
+        document.body.appendChild(btn);
+        alert('✅ 按钮已添加');
+    }
+    
+    waitForBody();
 })();
