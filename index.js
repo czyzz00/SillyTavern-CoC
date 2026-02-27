@@ -1,6 +1,6 @@
-// COC角色管理 - UI位置探测器
+// COC角色管理 - 安全区域版
 (function() {
-    alert('🔵 开始探测UI位置');
+    alert('🔵 开始构建安全UI');
     
     function waitForBody() {
         if (!document.body) {
@@ -8,87 +8,128 @@
             return;
         }
         
-        detectUI();
+        buildSafeUI();
     }
     
-    function detectUI() {
-        // 1. 获取各种尺寸
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        const screenWidth = screen.width;
-        const screenHeight = screen.height;
+    function buildSafeUI() {
+        // 获取安全区域
+        const winWidth = window.innerWidth;
+        const winHeight = window.innerHeight;
         
-        // 2. 获取可能遮挡的元素
-        const possibleObstructions = [];
+        // 找到顶部栏高度
+        const topBar = document.querySelector('[class*="header"]') || 
+                      document.querySelector('[class*="top"]');
+        const topBarHeight = topBar ? topBar.getBoundingClientRect().height : 0;
         
-        // 检查底部导航栏
-        const bottomNav = document.querySelector('[class*="bottom"]') || 
-                         document.querySelector('[class*="nav"]') ||
-                         document.querySelector('[class*="footer"]');
+        // 安全区域（避开顶部栏）
+        const safeTop = topBarHeight + 10;
+        const safeBottom = winHeight - 10;
+        const safeWidth = winWidth - 20;
         
-        // 检查顶部栏
-        const topBar = document.querySelector('[class*="header"]') ||
-                      document.querySelector('[class*="top"]') ||
-                      document.querySelector('[class*="navbar"]');
+        alert(`安全区域: 上=${safeTop}px, 下=${safeBottom}px, 宽=${safeWidth}px`);
         
-        // 3. 收集信息
-        let info = `📱 UI位置探测结果\n\n`;
-        info += `窗口尺寸: ${windowWidth} x ${windowHeight}\n`;
-        info += `屏幕尺寸: ${screenWidth} x ${screenHeight}\n`;
-        info += `设备像素比: ${window.devicePixelRatio}\n\n`;
+        // 创建面板 - 放在安全区域顶部
+        const panel = document.createElement('div');
+        panel.id = 'coc-panel';
+        panel.style.cssText = `
+            position: fixed;
+            top: ${safeTop}px;
+            left: 10px;
+            width: ${safeWidth}px;
+            height: 400px;
+            background: #4CAF50;
+            color: white;
+            border: 3px solid #333;
+            border-radius: 10px;
+            z-index: 9999999;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        `;
         
-        if (topBar) {
-            const rect = topBar.getBoundingClientRect();
-            info += `顶部栏: height=${rect.height}px\n`;
-        }
+        // 标题栏
+        const header = document.createElement('div');
+        header.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #333;
+            color: white;
+        `;
+        header.innerHTML = `
+            <span style="font-size: 18px;">🎲 COC角色管理</span>
+            <button id="coc-close-btn" style="
+                background: none;
+                border: none;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+                padding: 0 8px;
+            ">✖</button>
+        `;
         
-        if (bottomNav) {
-            const rect = bottomNav.getBoundingClientRect();
-            info += `底部栏: height=${rect.height}px, bottom=${rect.bottom}px\n`;
-        }
+        // 内容区（可滚动）
+        const content = document.createElement('div');
+        content.style.cssText = `
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: var(--bg-color, #1a1a1a);
+        `;
         
-        // 4. 测试位置
-        info += `\n测试位置:\n`;
-        info += `屏幕顶部(0): 可见\n`;
-        info += `屏幕底部(${windowHeight}): 可见\n`;
-        info += `中间(${windowHeight/2}): 可见\n`;
+        // 先放一些测试内容
+        content.innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <select style="width:100%; padding:8px;">
+                    <option>选择角色</option>
+                </select>
+            </div>
+            <div style="background:#333; padding:10px; border-radius:5px;">
+                <pre>{"测试":"数据"}</pre>
+            </div>
+            <button style="width:100%; padding:10px; margin-top:10px; background:#4CAF50;">保存</button>
+        `;
         
-        // 5. 分多次弹窗显示（避免一次太长）
-        alert(info);
+        panel.appendChild(header);
+        panel.appendChild(content);
+        document.body.appendChild(panel);
         
-        // 6. 测试不同位置的元素是否能显示
-        testPositions();
-    }
-    
-    function testPositions() {
-        const positions = [
-            { top: 10, left: 10, name: '左上角' },
-            { top: 10, right: 10, name: '右上角' },
-            { bottom: 10, left: 10, name: '左下角' },
-            { bottom: 10, right: 10, name: '右下角' },
-            { top: '50%', left: '50%', transform: 'translate(-50%, -50%)', name: '正中间' }
-        ];
+        // 关闭功能
+        document.getElementById('coc-close-btn').onclick = () => {
+            panel.remove();
+        };
         
-        positions.forEach((pos, index) => {
-            const div = document.createElement('div');
-            div.style.position = 'fixed';
-            div.style.background = ['red', 'blue', 'green', 'yellow', 'purple'][index];
-            div.style.color = 'white';
-            div.style.padding = '10px';
-            div.style.zIndex = '9999999';
-            div.style.fontSize = '16px';
-            div.textContent = pos.name;
-            
-            // 应用位置样式
-            Object.assign(div.style, pos);
-            
-            document.body.appendChild(div);
-            
-            // 弹窗确认
-            alert(`✅ 已添加${pos.name}的${['红色','蓝色','绿色','黄色','紫色'][index]}方块`);
-        });
+        // 再加一个浮动按钮（右下角安全区）
+        const floatBtn = document.createElement('button');
+        floatBtn.id = 'coc-float-btn';
+        floatBtn.textContent = '🎲';
+        floatBtn.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 9999999;
+            cursor: pointer;
+        `;
+        floatBtn.onclick = () => {
+            if (panel.style.display === 'none') {
+                panel.style.display = 'flex';
+            } else {
+                panel.style.display = 'none';
+            }
+        };
+        document.body.appendChild(floatBtn);
         
-        alert('🎯 所有测试元素已添加，请截图告诉我哪些能看到');
+        alert('✅ 面板已添加到安全区域');
     }
     
     waitForBody();
