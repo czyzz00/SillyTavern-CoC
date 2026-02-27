@@ -1,4 +1,4 @@
-// COC角色管理 - 完整功能版
+// COC角色管理 - 可视化版
 (function() {
     alert('🔵 COC扩展启动');
     
@@ -7,8 +7,6 @@
             setTimeout(waitForBody, 100);
             return;
         }
-        
-        // 等待SillyTavern上下文就绪
         waitForContext();
     }
     
@@ -30,27 +28,22 @@
     function initialize(context) {
         const MODULE_NAME = 'coc-character-manager';
         
-        // ==================== 初始化存储 ====================
         if (!context.extensionSettings[MODULE_NAME]) {
             context.extensionSettings[MODULE_NAME] = { characters: {} };
         }
         
-        // 保存设置
         function saveSettings() {
             context.saveSettingsDebounced();
         }
         
-        // 获取所有角色
         function getAllCharacters() {
             return context.extensionSettings[MODULE_NAME].characters || {};
         }
         
-        // 获取单个角色
         function getCharacter(name) {
             return getAllCharacters()[name] || null;
         }
         
-        // 保存角色
         function setCharacter(name, stats) {
             const settings = context.extensionSettings[MODULE_NAME];
             if (!settings.characters) settings.characters = {};
@@ -62,7 +55,6 @@
             return true;
         }
         
-        // 删除角色
         function deleteCharacter(name) {
             const settings = context.extensionSettings[MODULE_NAME];
             if (settings.characters?.[name]) {
@@ -73,7 +65,6 @@
             return false;
         }
         
-        // 发送系统消息（保留slash版功能）
         function sendSystemMessage(text) {
             try {
                 context.sendMessage(text, 'system');
@@ -82,7 +73,6 @@
             }
         }
         
-        // ==================== 构建UI ====================
         buildDraggableUI(context, {
             getAllCharacters,
             getCharacter,
@@ -96,7 +86,6 @@
         const winWidth = window.innerWidth;
         const winHeight = window.innerHeight;
         
-        // 找到顶部栏高度
         const topBar = document.querySelector('[class*="header"]') || 
                       document.querySelector('[class*="top"]');
         const topBarHeight = topBar ? topBar.getBoundingClientRect().height : 0;
@@ -130,7 +119,7 @@
         
         document.body.appendChild(floatingBall);
         
-        // ==================== 拖动功能 ====================
+        // 拖动功能（同上）
         let isDragging = false;
         let startX, startY, startLeft, startTop;
         
@@ -203,7 +192,7 @@
             top: ${safeTop}px;
             left: 10px;
             width: ${winWidth - 20}px;
-            height: 450px;
+            height: 500px;
             background: var(--bg-color, #1a1a1a);
             border: 1px solid var(--border-color, #444);
             border-radius: 12px;
@@ -236,7 +225,7 @@
             ">✖</button>
         `;
         
-        // 内容区
+        // 内容区（可滚动）
         const content = document.createElement('div');
         content.style.cssText = `
             flex: 1;
@@ -245,7 +234,6 @@
             background: var(--bg-color, #1a1a1a);
         `;
         
-        // 初始内容（后续会用函数更新）
         content.innerHTML = getPanelHTML(api.getAllCharacters());
         
         panel.appendChild(header);
@@ -262,14 +250,99 @@
             }
         }
         
-        // 刷新面板内容
         function refreshPanel() {
             const content = panel.querySelector('div:last-child');
             content.innerHTML = getPanelHTML(api.getAllCharacters());
             bindPanelEvents();
         }
         
-        // 绑定面板事件
+        // 格式化显示属性
+        function formatStats(stats) {
+            let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+            
+            // 显示基础属性
+            const baseAttrs = ['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'HP', 'SAN'];
+            html += '<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:4px;">';
+            baseAttrs.forEach(attr => {
+                const value = stats[attr] || '—';
+                html += `
+                    <div style="text-align:center;">
+                        <div style="font-size:10px; color:#888;">${attr}</div>
+                        <div style="font-size:16px; font-weight:bold; color:#4CAF50;">${value}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            // 显示技能
+            if (stats.skills) {
+                html += '<div style="margin-top:8px;"><div style="font-size:12px; color:#888; margin-bottom:4px;">技能</div>';
+                html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px;">';
+                
+                Object.entries(stats.skills).forEach(([skill, value]) => {
+                    html += `
+                        <div style="display:flex; justify-content:space-between; padding:4px 8px; background:#2a2a2a; border-radius:4px;">
+                            <span>${skill}</span>
+                            <span style="color:#4CAF50; font-weight:bold;">${value}</span>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
+        // 导入JSON文件
+        function importFromFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        
+                        // 支持两种格式：直接是stats对象，或者是带character字段的包装
+                        let name, stats;
+                        if (data.character && data.stats) {
+                            name = data.character;
+                            stats = data.stats;
+                        } else {
+                            // 如果没有character字段，就用文件名作为角色名
+                            name = file.name.replace('.json', '').replace(/-coc-stats$/, '');
+                            stats = data;
+                        }
+                        
+                        api.setCharacter(name, stats);
+                        refreshPanel();
+                        api.sendSystemMessage(`✅ 已导入角色: ${name}`);
+                        
+                        // 自动选中
+                        setTimeout(() => {
+                            const select = document.getElementById('coc-role-select');
+                            if (select) {
+                                select.value = name;
+                                select.dispatchEvent(new Event('change'));
+                            }
+                        }, 100);
+                        
+                    } catch (error) {
+                        api.sendSystemMessage(`❌ 导入失败: ${error.message}`);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+        
         function bindPanelEvents() {
             // 关闭按钮
             document.getElementById('coc-close-panel').onclick = () => {
@@ -282,106 +355,93 @@
                 select.addEventListener('change', (e) => {
                     const name = e.target.value;
                     if (!name) {
-                        document.getElementById('coc-stats-display').innerHTML = '<pre>未选择角色</pre>';
+                        document.getElementById('coc-stats-display').innerHTML = '<div style="color:#888; text-align:center; padding:20px;">👤 未选择角色</div>';
                         return;
                     }
                     
                     const char = api.getCharacter(name);
                     if (char) {
-                        document.getElementById('coc-stats-display').innerHTML = 
-                            `<pre style="margin:0; font-size:12px;">${JSON.stringify(char.stats, null, 2)}</pre>`;
+                        document.getElementById('coc-stats-display').innerHTML = formatStats(char.stats);
                     }
                 });
             }
             
+            // 导入按钮
+            document.getElementById('coc-import-btn').onclick = importFromFile;
+            
             // 保存新角色
-            const saveBtn = document.getElementById('coc-save-new');
-            if (saveBtn) {
-                saveBtn.onclick = () => {
-                    const name = document.getElementById('coc-new-name').value.trim();
-                    const data = document.getElementById('coc-new-data').value.trim();
+            document.getElementById('coc-save-new').onclick = () => {
+                const name = document.getElementById('coc-new-name').value.trim();
+                const data = document.getElementById('coc-new-data').value.trim();
+                
+                if (!name || !data) {
+                    api.sendSystemMessage('❌ 请填写完整');
+                    return;
+                }
+                
+                try {
+                    const stats = JSON.parse(data);
+                    api.setCharacter(name, stats);
                     
-                    if (!name || !data) {
-                        api.sendSystemMessage('❌ 请填写完整');
-                        return;
-                    }
+                    document.getElementById('coc-new-name').value = '';
+                    document.getElementById('coc-new-data').value = '';
                     
-                    try {
-                        const stats = JSON.parse(data);
-                        api.setCharacter(name, stats);
-                        
-                        // 清空输入
-                        document.getElementById('coc-new-name').value = '';
-                        document.getElementById('coc-new-data').value = '';
-                        
-                        // 刷新下拉框
-                        refreshRoleSelect();
-                        
-                        // 选中新角色
-                        const select = document.getElementById('coc-role-select');
-                        const option = Array.from(select.options).find(opt => opt.value === name);
-                        if (option) {
-                            select.value = name;
-                            select.dispatchEvent(new Event('change'));
-                        }
-                        
-                        api.sendSystemMessage(`✅ ${name} 已保存`);
-                    } catch (e) {
-                        api.sendSystemMessage(`❌ JSON格式错误: ${e.message}`);
-                    }
-                };
-            }
+                    refreshRoleSelect();
+                    
+                    const select = document.getElementById('coc-role-select');
+                    select.value = name;
+                    select.dispatchEvent(new Event('change'));
+                    
+                    api.sendSystemMessage(`✅ ${name} 已保存`);
+                } catch (e) {
+                    api.sendSystemMessage(`❌ JSON格式错误: ${e.message}`);
+                }
+            };
             
             // 删除按钮
-            const deleteBtn = document.getElementById('coc-delete-btn');
-            if (deleteBtn) {
-                deleteBtn.onclick = () => {
-                    const select = document.getElementById('coc-role-select');
-                    const name = select.value;
-                    
-                    if (!name) {
-                        api.sendSystemMessage('❌ 请先选择角色');
-                        return;
-                    }
-                    
-                    if (confirm(`确定删除角色 ${name} 吗？`)) {
-                        api.deleteCharacter(name);
-                        refreshRoleSelect();
-                        document.getElementById('coc-stats-display').innerHTML = '<pre>未选择角色</pre>';
-                        api.sendSystemMessage(`✅ ${name} 已删除`);
-                    }
-                };
-            }
+            document.getElementById('coc-delete-btn').onclick = () => {
+                const select = document.getElementById('coc-role-select');
+                const name = select.value;
+                
+                if (!name) {
+                    api.sendSystemMessage('❌ 请先选择角色');
+                    return;
+                }
+                
+                if (confirm(`确定删除角色 ${name} 吗？`)) {
+                    api.deleteCharacter(name);
+                    refreshRoleSelect();
+                    document.getElementById('coc-stats-display').innerHTML = '<div style="color:#888; text-align:center; padding:20px;">👤 未选择角色</div>';
+                    api.sendSystemMessage(`✅ ${name} 已删除`);
+                }
+            };
             
             // 导出按钮
-            const exportBtn = document.getElementById('coc-export-btn');
-            if (exportBtn) {
-                exportBtn.onclick = () => {
-                    const select = document.getElementById('coc-role-select');
-                    const name = select.value;
-                    
-                    if (!name) {
-                        api.sendSystemMessage('❌ 请先选择角色');
-                        return;
-                    }
-                    
-                    const char = api.getCharacter(name);
-                    const exportData = {
-                        character: name,
-                        stats: char.stats,
-                        exportDate: new Date().toISOString()
-                    };
-                    
-                    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${name}.json`;
-                    a.click();
-                    
-                    api.sendSystemMessage(`✅ ${name} 已导出`);
+            document.getElementById('coc-export-btn').onclick = () => {
+                const select = document.getElementById('coc-role-select');
+                const name = select.value;
+                
+                if (!name) {
+                    api.sendSystemMessage('❌ 请先选择角色');
+                    return;
+                }
+                
+                const char = api.getCharacter(name);
+                const exportData = {
+                    character: name,
+                    stats: char.stats,
+                    exportDate: new Date().toISOString()
                 };
-            }
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${name}-coc-stats.json`;
+                a.click();
+                
+                api.sendSystemMessage(`✅ ${name} 已导出`);
+            };
             
             // 示例按钮
             document.querySelectorAll('.coc-example').forEach(btn => {
@@ -392,7 +452,6 @@
             });
         }
         
-        // 刷新角色下拉框
         function refreshRoleSelect() {
             const select = document.getElementById('coc-role-select');
             if (!select) return;
@@ -409,7 +468,6 @@
             });
         }
         
-        // 生成面板HTML
         function getPanelHTML(characters) {
             const names = Object.keys(characters).sort();
             let optionsHtml = '<option value="">-- 选择角色 --</option>';
@@ -419,37 +477,37 @@
             
             return `
                 <div style="margin-bottom: 16px;">
-                    <label style="display:block; margin-bottom:4px;">选择角色</label>
-                    <div style="display:flex; gap:8px;">
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
                         <select id="coc-role-select" style="flex:1; padding:10px; border-radius:6px;">
                             ${optionsHtml}
                         </select>
-                        <button id="coc-delete-btn" style="padding:10px; background:#f44336; color:white; border:none; border-radius:6px;">🗑️</button>
-                        <button id="coc-export-btn" style="padding:10px; background:#2196F3; color:white; border:none; border-radius:6px;">📤</button>
+                        <button id="coc-import-btn" style="padding:10px; background:#9C27B0; color:white; border:none; border-radius:6px;">📥 导入</button>
+                    </div>
+                    <div style="display:flex; gap:4px;">
+                        <button id="coc-delete-btn" style="flex:1; padding:8px; background:#f44336; color:white; border:none; border-radius:6px;">🗑️ 删除</button>
+                        <button id="coc-export-btn" style="flex:1; padding:8px; background:#2196F3; color:white; border:none; border-radius:6px;">📤 导出</button>
                     </div>
                 </div>
                 
-                <div id="coc-stats-display" style="background:#2a2a2a; padding:12px; border-radius:6px; margin-bottom:16px;">
-                    <pre style="margin:0; font-size:12px;">未选择角色</pre>
+                <div id="coc-stats-display" style="background:#2a2a2a; padding:16px; border-radius:8px; margin-bottom:16px;">
+                    <div style="color:#888; text-align:center; padding:20px;">👤 未选择角色</div>
                 </div>
                 
                 <div style="margin-bottom:16px;">
-                    <label style="display:block; margin-bottom:4px;">新建角色</label>
+                    <label style="display:block; margin-bottom:4px;">➕ 新建角色</label>
                     <input type="text" id="coc-new-name" placeholder="角色名" style="width:100%; padding:10px; margin-bottom:8px; border-radius:6px;">
                     <textarea id="coc-new-data" placeholder='{"STR":70,"skills":{"侦查":80}}' rows="4" style="width:100%; padding:10px; border-radius:6px; font-family:monospace;"></textarea>
                     <button id="coc-save-new" style="width:100%; padding:12px; background:#4CAF50; color:white; border:none; border-radius:6px; margin-top:8px;">💾 保存新角色</button>
                 </div>
                 
                 <div style="display:flex; gap:8px;">
-                    <button class="coc-example" data-example='{"STR":70,"DEX":50,"skills":{"侦查":80,"聆听":70}}' style="flex:1; padding:8px; background:#2196F3; color:white; border:none; border-radius:6px;">李昂示例</button>
-                    <button class="coc-example" data-example='{"STR":60,"DEX":70,"skills":{"侦查":90,"潜行":60}}' style="flex:1; padding:8px; background:#9C27B0; color:white; border:none; border-radius:6px;">张薇示例</button>
+                    <button class="coc-example" data-example='{"STR":70,"DEX":50,"CON":60,"skills":{"侦查":80,"聆听":70,"图书馆使用":60}}' style="flex:1; padding:8px; background:#2196F3; color:white; border:none; border-radius:6px;">李昂示例</button>
+                    <button class="coc-example" data-example='{"STR":60,"DEX":70,"CON":50,"skills":{"侦查":90,"潜行":60,"说服":70}}' style="flex:1; padding:8px; background:#9C27B0; color:white; border:none; border-radius:6px;">张薇示例</button>
                 </div>
             `;
         }
         
-        // 初始绑定事件
         bindPanelEvents();
-        
         alert('✅ COC角色管理已加载');
     }
     
