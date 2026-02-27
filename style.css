@@ -1,4 +1,4 @@
-/* COC7 角色卡样式 */
+/* COC7 角色卡样式 - 最终版 */
 :root {
     --coc-bg: #2c241e;
     --coc-bg-light: #3f352c;
@@ -110,6 +110,19 @@
     cursor: pointer;
 }
 
+/* 新增角色选项 */
+.coc-add-role-option {
+    color: var(--coc-hp);
+    font-weight: bold;
+    border-top: 1px dashed var(--coc-gold);
+    margin-top: 4px;
+    padding-top: 4px;
+}
+
+.coc-add-role-option:hover {
+    background: var(--coc-bg-light);
+}
+
 /* 卡片基础 */
 .coc-card {
     background: var(--coc-bg);
@@ -138,15 +151,15 @@
 }
 
 .coc-avatar {
-    font-size: 52px;
-    background: var(--coc-bg-light);
-    border-radius: 50%;
     width: 68px;
     height: 68px;
+    border-radius: 50%;
+    background: var(--coc-bg-light);
+    border: 2px solid var(--coc-gold);
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--coc-gold);
 }
 
 .coc-name {
@@ -444,43 +457,50 @@
     cursor: pointer;
 }
 
-/* 示例按钮 */
-.coc-examples {
-    margin-top: 8px;
+/* 编辑模式头像上传样式（新增） */
+.coc-edit-avatar {
     display: flex;
-    gap: 4px;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 16px;
 }
 
-.coc-example-btn {
+.coc-edit-avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--coc-bg-light);
+    border: 2px solid var(--coc-gold);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.coc-edit-avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.coc-edit-avatar-placeholder {
+    font-size: 40px;
+    color: var(--coc-text-muted);
+}
+
+.coc-edit-avatar-btn {
     padding: 6px 12px;
     background: var(--coc-gold);
     color: var(--coc-text);
     border: none;
-    border-radius: 30px;
+    border-radius: 20px;
     font-size: 12px;
     cursor: pointer;
 }
 
-/* 浮动球 */
-.coc-floating-ball {
-    position: fixed;
-    width: 56px;
-    height: 56px;
-    border-radius: 28px;
-    background: var(--coc-hp);
-    color: white;
-    font-size: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    z-index: 9999998;
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: none;
-    border: 1px solid var(--coc-gold);
+.coc-edit-avatar-input {
+    display: none;
 }
 
 /* 选择列表样式 */
@@ -531,61 +551,23 @@
     justify-content: center;
 }
 
-/* 头像上传区域 */
-.coc-avatar-upload {
-    position: relative;
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    background: var(--coc-bg-light);
-    border: 2px solid var(--coc-gold);
-    overflow: hidden;
-    cursor: pointer;
-}
-
-.coc-avatar-upload:hover {
-    opacity: 0.9;
-}
-
-.coc-avatar-upload img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.coc-avatar-upload input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.coc-avatar-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    background: var(--coc-bg-light);
-    color: var(--coc-text-muted);
-}
-
-.coc-avatar-edit-btn {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 24px;
-    height: 24px;
-    background: var(--coc-gold);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
+/* 浮动球 */
+.coc-floating-ball {
+    position: fixed;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: var(--coc-hp);
     color: white;
-    border: 2px solid var(--coc-bg);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 9999998;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+    border: 1px solid var(--coc-gold);
 }
