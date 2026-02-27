@@ -1,4 +1,4 @@
-// COC角色管理 - 可视化版
+// COC角色管理 - 三块式布局
 (function() {
     alert('🔵 COC扩展启动');
     
@@ -119,7 +119,7 @@
         
         document.body.appendChild(floatingBall);
         
-        // 拖动功能（同上）
+        // 拖动功能
         let isDragging = false;
         let startX, startY, startLeft, startTop;
         
@@ -209,59 +209,179 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
+            padding: 8px 12px;
             background: var(--bg-secondary, #333);
             border-bottom: 1px solid var(--border-color, #444);
         `;
         header.innerHTML = `
-            <span style="font-size: 18px; font-weight: bold;">🎲 COC角色管理</span>
+            <span style="font-size: 16px; font-weight: bold;">🎲 COC角色</span>
             <button id="coc-close-panel" style="
                 background: none;
                 border: none;
                 color: var(--text-color);
-                font-size: 20px;
+                font-size: 18px;
                 cursor: pointer;
                 padding: 0 8px;
             ">✖</button>
         `;
         
-        // 内容区（可滚动）
+        // 内容区
         const content = document.createElement('div');
         content.style.cssText = `
             flex: 1;
-            padding: 16px;
+            padding: 12px;
             overflow-y: auto;
             background: var(--bg-color, #1a1a1a);
         `;
-        
-        content.innerHTML = getPanelHTML(api.getAllCharacters());
         
         panel.appendChild(header);
         panel.appendChild(content);
         document.body.appendChild(panel);
         
-        // ==================== 面板功能 ====================
+        // ==================== 核心功能 ====================
+        let isEditing = false;
+        let currentEditName = '';
+        let currentEditStats = null;
+        
         function togglePanel() {
             if (panel.style.display === 'none') {
                 panel.style.display = 'flex';
-                refreshPanel();
+                renderViewMode();
             } else {
                 panel.style.display = 'none';
             }
         }
         
-        function refreshPanel() {
-            const content = panel.querySelector('div:last-child');
-            content.innerHTML = getPanelHTML(api.getAllCharacters());
-            bindPanelEvents();
+        // 渲染查看模式
+        function renderViewMode() {
+            const characters = api.getAllCharacters();
+            const names = Object.keys(characters).sort();
+            
+            let optionsHtml = '<option value="">选择角色</option>';
+            names.forEach(name => {
+                optionsHtml += `<option value="${name}">${name}</option>`;
+            });
+            
+            content.innerHTML = `
+                <!-- 第一块：顶部工具栏 -->
+                <div style="display: flex; gap: 4px; margin-bottom: 12px;">
+                    <select id="coc-role-select" style="flex: 2; padding: 8px; border-radius: 6px; font-size: 14px;">
+                        ${optionsHtml}
+                    </select>
+                    <button id="coc-import-btn" style="flex: 1; padding: 8px; background: #9C27B0; color: white; border: none; border-radius: 6px; font-size: 13px;">📥导入</button>
+                    <button id="coc-export-btn" style="flex: 1; padding: 8px; background: #2196F3; color: white; border: none; border-radius: 6px; font-size: 13px;">📤导出</button>
+                    <button id="coc-delete-btn" style="flex: 1; padding: 8px; background: #f44336; color: white; border: none; border-radius: 6px; font-size: 13px;">🗑️删除</button>
+                </div>
+                
+                <!-- 第二块：角色信息面板（可视化） -->
+                <div id="coc-stats-display" style="background: #2a2a2a; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                    <div style="color: #888; text-align: center; padding: 30px;">👆 请选择角色</div>
+                </div>
+                
+                <!-- 第三块：编辑区域（默认隐藏） -->
+                <div id="coc-edit-section" style="display: none;">
+                    <div style="background: #2a2a2a; padding: 12px; border-radius: 8px;">
+                        <div id="coc-edit-table"></div>
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <button id="coc-save-edit" style="flex: 1; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 6px;">💾 保存</button>
+                            <button id="coc-cancel-edit" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 6px;">✖ 取消</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 示例按钮（小） -->
+                <div style="margin-top: 8px; display: flex; gap: 4px; justify-content: flex-end;">
+                    <button class="coc-example" data-example='{"STR":70,"DEX":50,"skills":{"侦查":80,"聆听":70}}' style="padding: 4px 8px; background: #2196F3; color: white; border: none; border-radius: 4px; font-size: 12px;">李昂</button>
+                    <button class="coc-example" data-example='{"STR":60,"DEX":70,"skills":{"侦查":90,"潜行":60}}' style="padding: 4px 8px; background: #9C27B0; color: white; border: none; border-radius: 4px; font-size: 12px;">张薇</button>
+                </div>
+            `;
+            
+            bindViewEvents();
         }
         
-        // 格式化显示属性
+        // 渲染编辑表格
+        function renderEditTable(stats) {
+            let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+            
+            // 基础属性编辑
+            html += '<div><div style="font-size: 12px; color: #888; margin-bottom: 4px;">基础属性</div>';
+            html += '<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">';
+            const baseAttrs = ['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'HP', 'SAN'];
+            baseAttrs.forEach(attr => {
+                const value = stats[attr] || 50;
+                html += `
+                    <div>
+                        <div style="font-size: 10px; color: #888;">${attr}</div>
+                        <input type="number" class="coc-edit-input" data-attr="${attr}" value="${value}" 
+                               style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid #444; background: #333; color: white;">
+                    </div>
+                `;
+            });
+            html += '</div></div>';
+            
+            // 技能编辑
+            if (stats.skills) {
+                html += '<div><div style="font-size: 12px; color: #888; margin-bottom: 4px;">技能</div>';
+                html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;">';
+                
+                Object.entries(stats.skills).forEach(([skill, value]) => {
+                    html += `
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" class="coc-edit-skill-name" data-original="${skill}" value="${skill}" 
+                                   style="flex: 2; padding: 4px; border-radius: 4px; border: 1px solid #444; background: #333; color: white;">
+                            <input type="number" class="coc-edit-skill-value" data-skill="${skill}" value="${value}" 
+                                   style="flex: 1; padding: 4px; border-radius: 4px; border: 1px solid #444; background: #333; color: white;">
+                        </div>
+                    `;
+                });
+                
+                // 添加新技能按钮
+                html += `
+                    <div style="grid-column: span 2;">
+                        <button id="coc-add-skill" style="width: 100%; padding: 6px; background: #4CAF50; color: white; border: none; border-radius: 4px;">+ 添加技能</button>
+                    </div>
+                `;
+                html += '</div></div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
+        // 从编辑表格收集数据
+        function collectEditData() {
+            const stats = {};
+            
+            // 收集基础属性
+            document.querySelectorAll('.coc-edit-input').forEach(input => {
+                const attr = input.dataset.attr;
+                stats[attr] = parseInt(input.value) || 50;
+            });
+            
+            // 收集技能
+            const skills = {};
+            document.querySelectorAll('.coc-edit-skill-name').forEach((input, index) => {
+                const skillName = input.value.trim();
+                const skillValue = document.querySelectorAll('.coc-edit-skill-value')[index]?.value;
+                if (skillName && skillValue) {
+                    skills[skillName] = parseInt(skillValue) || 50;
+                }
+            });
+            
+            if (Object.keys(skills).length > 0) {
+                stats.skills = skills;
+            }
+            
+            return stats;
+        }
+        
+        // 格式化显示（可视化）
         function formatStats(stats) {
             let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
             
-            // 显示基础属性
+            // 基础属性
             const baseAttrs = ['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'HP', 'SAN'];
+            html += '<div><div style="font-size:12px; color:#888; margin-bottom:4px;">基础属性</div>';
             html += '<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:4px;">';
             baseAttrs.forEach(attr => {
                 const value = stats[attr] || '—';
@@ -272,16 +392,16 @@
                     </div>
                 `;
             });
-            html += '</div>';
+            html += '</div></div>';
             
-            // 显示技能
+            // 技能
             if (stats.skills) {
-                html += '<div style="margin-top:8px;"><div style="font-size:12px; color:#888; margin-bottom:4px;">技能</div>';
+                html += '<div><div style="font-size:12px; color:#888; margin-bottom:4px;">技能</div>';
                 html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px;">';
                 
                 Object.entries(stats.skills).forEach(([skill, value]) => {
                     html += `
-                        <div style="display:flex; justify-content:space-between; padding:4px 8px; background:#2a2a2a; border-radius:4px;">
+                        <div style="display:flex; justify-content:space-between; padding:6px 8px; background:#333; border-radius:4px;">
                             <span>${skill}</span>
                             <span style="color:#4CAF50; font-weight:bold;">${value}</span>
                         </div>
@@ -290,11 +410,18 @@
                 html += '</div></div>';
             }
             
+            // 编辑按钮
+            html += `
+                <div style="margin-top:8px;">
+                    <button id="coc-edit-mode-btn" style="width:100%; padding:8px; background:#2196F3; color:white; border:none; border-radius:6px;">✏️ 编辑角色</button>
+                </div>
+            `;
+            
             html += '</div>';
             return html;
         }
         
-        // 导入JSON文件
+        // 导入文件
         function importFromFile() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -309,22 +436,19 @@
                     try {
                         const data = JSON.parse(event.target.result);
                         
-                        // 支持两种格式：直接是stats对象，或者是带character字段的包装
                         let name, stats;
                         if (data.character && data.stats) {
                             name = data.character;
                             stats = data.stats;
                         } else {
-                            // 如果没有character字段，就用文件名作为角色名
                             name = file.name.replace('.json', '').replace(/-coc-stats$/, '');
                             stats = data;
                         }
                         
                         api.setCharacter(name, stats);
-                        refreshPanel();
-                        api.sendSystemMessage(`✅ 已导入角色: ${name}`);
+                        renderViewMode();
+                        api.sendSystemMessage(`✅ 已导入: ${name}`);
                         
-                        // 自动选中
                         setTimeout(() => {
                             const select = document.getElementById('coc-role-select');
                             if (select) {
@@ -343,84 +467,33 @@
             input.click();
         }
         
-        function bindPanelEvents() {
-            // 关闭按钮
-            document.getElementById('coc-close-panel').onclick = () => {
-                panel.style.display = 'none';
-            };
-            
+        // 绑定查看模式事件
+        function bindViewEvents() {
             // 角色选择
             const select = document.getElementById('coc-role-select');
             if (select) {
                 select.addEventListener('change', (e) => {
                     const name = e.target.value;
                     if (!name) {
-                        document.getElementById('coc-stats-display').innerHTML = '<div style="color:#888; text-align:center; padding:20px;">👤 未选择角色</div>';
+                        document.getElementById('coc-stats-display').innerHTML = '<div style="color:#888; text-align:center; padding:30px;">👆 请选择角色</div>';
                         return;
                     }
                     
                     const char = api.getCharacter(name);
                     if (char) {
                         document.getElementById('coc-stats-display').innerHTML = formatStats(char.stats);
+                        bindStatsEvents(name, char.stats);
                     }
                 });
             }
             
-            // 导入按钮
+            // 导入
             document.getElementById('coc-import-btn').onclick = importFromFile;
             
-            // 保存新角色
-            document.getElementById('coc-save-new').onclick = () => {
-                const name = document.getElementById('coc-new-name').value.trim();
-                const data = document.getElementById('coc-new-data').value.trim();
-                
-                if (!name || !data) {
-                    api.sendSystemMessage('❌ 请填写完整');
-                    return;
-                }
-                
-                try {
-                    const stats = JSON.parse(data);
-                    api.setCharacter(name, stats);
-                    
-                    document.getElementById('coc-new-name').value = '';
-                    document.getElementById('coc-new-data').value = '';
-                    
-                    refreshRoleSelect();
-                    
-                    const select = document.getElementById('coc-role-select');
-                    select.value = name;
-                    select.dispatchEvent(new Event('change'));
-                    
-                    api.sendSystemMessage(`✅ ${name} 已保存`);
-                } catch (e) {
-                    api.sendSystemMessage(`❌ JSON格式错误: ${e.message}`);
-                }
-            };
-            
-            // 删除按钮
-            document.getElementById('coc-delete-btn').onclick = () => {
-                const select = document.getElementById('coc-role-select');
-                const name = select.value;
-                
-                if (!name) {
-                    api.sendSystemMessage('❌ 请先选择角色');
-                    return;
-                }
-                
-                if (confirm(`确定删除角色 ${name} 吗？`)) {
-                    api.deleteCharacter(name);
-                    refreshRoleSelect();
-                    document.getElementById('coc-stats-display').innerHTML = '<div style="color:#888; text-align:center; padding:20px;">👤 未选择角色</div>';
-                    api.sendSystemMessage(`✅ ${name} 已删除`);
-                }
-            };
-            
-            // 导出按钮
+            // 导出
             document.getElementById('coc-export-btn').onclick = () => {
                 const select = document.getElementById('coc-role-select');
                 const name = select.value;
-                
                 if (!name) {
                     api.sendSystemMessage('❌ 请先选择角色');
                     return;
@@ -443,71 +516,96 @@
                 api.sendSystemMessage(`✅ ${name} 已导出`);
             };
             
+            // 删除
+            document.getElementById('coc-delete-btn').onclick = () => {
+                const select = document.getElementById('coc-role-select');
+                const name = select.value;
+                
+                if (!name) {
+                    api.sendSystemMessage('❌ 请先选择角色');
+                    return;
+                }
+                
+                if (confirm(`确定删除 ${name} 吗？`)) {
+                    api.deleteCharacter(name);
+                    renderViewMode();
+                    api.sendSystemMessage(`✅ ${name} 已删除`);
+                }
+            };
+            
             // 示例按钮
             document.querySelectorAll('.coc-example').forEach(btn => {
                 btn.onclick = () => {
-                    document.getElementById('coc-new-data').value = 
-                        JSON.stringify(JSON.parse(btn.dataset.example), null, 2);
+                    const name = btn.textContent.trim();
+                    const stats = JSON.parse(btn.dataset.example);
+                    api.setCharacter(name, stats);
+                    renderViewMode();
+                    api.sendSystemMessage(`✅ 已添加示例: ${name}`);
+                    
+                    setTimeout(() => {
+                        const select = document.getElementById('coc-role-select');
+                        select.value = name;
+                        select.dispatchEvent(new Event('change'));
+                    }, 100);
                 };
             });
         }
         
-        function refreshRoleSelect() {
-            const select = document.getElementById('coc-role-select');
-            if (!select) return;
-            
-            const characters = api.getAllCharacters();
-            const names = Object.keys(characters).sort();
-            
-            select.innerHTML = '<option value="">-- 选择角色 --</option>';
-            names.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                select.appendChild(option);
-            });
+        // 绑定角色信息面板的事件（编辑按钮）
+        function bindStatsEvents(name, stats) {
+            const editBtn = document.getElementById('coc-edit-mode-btn');
+            if (editBtn) {
+                editBtn.onclick = () => {
+                    isEditing = true;
+                    currentEditName = name;
+                    currentEditStats = JSON.parse(JSON.stringify(stats)); // 深拷贝
+                    
+                    document.getElementById('coc-stats-display').style.display = 'none';
+                    const editSection = document.getElementById('coc-edit-section');
+                    editSection.style.display = 'block';
+                    
+                    document.getElementById('coc-edit-table').innerHTML = renderEditTable(currentEditStats);
+                    
+                    // 添加技能按钮
+                    document.getElementById('coc-add-skill')?.addEventListener('click', () => {
+                        const table = document.getElementById('coc-edit-table');
+                        const newRow = document.createElement('div');
+                        newRow.style.cssText = 'display: flex; gap: 4px; margin-top: 4px;';
+                        newRow.innerHTML = `
+                            <input type="text" class="coc-edit-skill-name" placeholder="技能名" style="flex:2; padding:4px; border-radius:4px;">
+                            <input type="number" class="coc-edit-skill-value" value="50" style="flex:1; padding:4px; border-radius:4px;">
+                        `;
+                        document.querySelector('.coc-edit-skill-name')?.parentElement?.parentElement?.appendChild(newRow);
+                    });
+                    
+                    // 保存编辑
+                    document.getElementById('coc-save-edit').onclick = () => {
+                        const newStats = collectEditData();
+                        api.setCharacter(name, newStats);
+                        
+                        isEditing = false;
+                        document.getElementById('coc-stats-display').style.display = 'block';
+                        document.getElementById('coc-edit-section').style.display = 'none';
+                        
+                        // 刷新显示
+                        document.getElementById('coc-stats-display').innerHTML = formatStats(newStats);
+                        bindStatsEvents(name, newStats);
+                        
+                        api.sendSystemMessage(`✅ ${name} 已更新`);
+                    };
+                    
+                    // 取消编辑
+                    document.getElementById('coc-cancel-edit').onclick = () => {
+                        isEditing = false;
+                        document.getElementById('coc-stats-display').style.display = 'block';
+                        document.getElementById('coc-edit-section').style.display = 'none';
+                    };
+                };
+            }
         }
         
-        function getPanelHTML(characters) {
-            const names = Object.keys(characters).sort();
-            let optionsHtml = '<option value="">-- 选择角色 --</option>';
-            names.forEach(name => {
-                optionsHtml += `<option value="${name}">${name}</option>`;
-            });
-            
-            return `
-                <div style="margin-bottom: 16px;">
-                    <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <select id="coc-role-select" style="flex:1; padding:10px; border-radius:6px;">
-                            ${optionsHtml}
-                        </select>
-                        <button id="coc-import-btn" style="padding:10px; background:#9C27B0; color:white; border:none; border-radius:6px;">📥 导入</button>
-                    </div>
-                    <div style="display:flex; gap:4px;">
-                        <button id="coc-delete-btn" style="flex:1; padding:8px; background:#f44336; color:white; border:none; border-radius:6px;">🗑️ 删除</button>
-                        <button id="coc-export-btn" style="flex:1; padding:8px; background:#2196F3; color:white; border:none; border-radius:6px;">📤 导出</button>
-                    </div>
-                </div>
-                
-                <div id="coc-stats-display" style="background:#2a2a2a; padding:16px; border-radius:8px; margin-bottom:16px;">
-                    <div style="color:#888; text-align:center; padding:20px;">👤 未选择角色</div>
-                </div>
-                
-                <div style="margin-bottom:16px;">
-                    <label style="display:block; margin-bottom:4px;">➕ 新建角色</label>
-                    <input type="text" id="coc-new-name" placeholder="角色名" style="width:100%; padding:10px; margin-bottom:8px; border-radius:6px;">
-                    <textarea id="coc-new-data" placeholder='{"STR":70,"skills":{"侦查":80}}' rows="4" style="width:100%; padding:10px; border-radius:6px; font-family:monospace;"></textarea>
-                    <button id="coc-save-new" style="width:100%; padding:12px; background:#4CAF50; color:white; border:none; border-radius:6px; margin-top:8px;">💾 保存新角色</button>
-                </div>
-                
-                <div style="display:flex; gap:8px;">
-                    <button class="coc-example" data-example='{"STR":70,"DEX":50,"CON":60,"skills":{"侦查":80,"聆听":70,"图书馆使用":60}}' style="flex:1; padding:8px; background:#2196F3; color:white; border:none; border-radius:6px;">李昂示例</button>
-                    <button class="coc-example" data-example='{"STR":60,"DEX":70,"CON":50,"skills":{"侦查":90,"潜行":60,"说服":70}}' style="flex:1; padding:8px; background:#9C27B0; color:white; border:none; border-radius:6px;">张薇示例</button>
-                </div>
-            `;
-        }
-        
-        bindPanelEvents();
+        // 初始渲染
+        renderViewMode();
         alert('✅ COC角色管理已加载');
     }
     
