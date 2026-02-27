@@ -1,4 +1,4 @@
-// COC7 角色卡 - 带可选择列表版
+// COC7 角色卡 - 最终版（头像上传 + 移除示例）
 (function() {
     'use strict';
 
@@ -279,6 +279,24 @@
         return '+1d6';
     }
 
+    // 头像上传处理
+    function handleAvatarUpload(file, callback) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            callback(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 渲染头像
+    function renderAvatar(avatarData, name) {
+        if (avatarData) {
+            return `<img src="${avatarData}" alt="${name}">`;
+        }
+        return `<div class="coc-avatar-placeholder">🦌</div>`;
+    }
+
+    // 渲染角色卡片（带头像上传）
     function renderCharacterCard(name, stats) {
         stats = stats || {};
         
@@ -311,7 +329,11 @@
             <div class="coc-card">
                 <div>
                     <div class="coc-profile">
-                        <div class="coc-avatar">🦌</div>
+                        <div class="coc-avatar-upload" id="coc-avatar-upload">
+                            ${renderAvatar(stats.avatar, name)}
+                            <input type="file" id="coc-avatar-input" accept="image/png,image/jpeg,image/gif,image/webp">
+                            <div class="coc-avatar-edit-btn">✎</div>
+                        </div>
                         <div>
                             <div class="coc-name">${name}</div>
                             <div class="coc-subtitle">${occupation} · ${age}岁</div>
@@ -478,6 +500,24 @@
                 const char = api.getCharacter(name);
                 if (char) {
                     document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(name, char.stats);
+                    
+                    // 绑定头像上传事件
+                    const avatarInput = document.getElementById('coc-avatar-input');
+                    if (avatarInput) {
+                        avatarInput.onchange = (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                                handleAvatarUpload(file, (avatarData) => {
+                                    const stats = api.getCharacter(name).stats;
+                                    stats.avatar = avatarData;
+                                    api.setCharacter(name, stats);
+                                    document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(name, stats);
+                                    bindAvatarEvents(name); // 重新绑定
+                                });
+                            }
+                        };
+                    }
+                    
                     document.getElementById('coc-edit-mode-btn').onclick = () => {
                         enterEditMode(name, char.stats);
                     };
@@ -488,64 +528,25 @@
         document.getElementById('coc-import-btn').onclick = () => importFromFile();
         document.getElementById('coc-export-btn').onclick = () => exportCharacter();
         document.getElementById('coc-delete-btn').onclick = () => deleteCharacter();
+    }
 
-        document.querySelectorAll('.coc-example-btn').forEach(btn => {
-            btn.onclick = () => {
-                const example = btn.dataset.example === 'liang' ? {
-                    occupation: '记者',
-                    age: 28,
-                    birthplace: '伦敦',
-                    residence: '伦敦',
-                    STR: 70,
-                    DEX: 50,
-                    CON: 60,
-                    SIZ: 60,
-                    INT: 70,
-                    APP: 50,
-                    POW: 60,
-                    EDU: 60,
-                    LUCK: 50,
-                    occupationalSkills: { '侦查': 80, '聆听': 70, '图书馆使用': 60, '说服': 50, '潜行': 40 },
-                    interestSkills: { '摄影': 70, '历史': 60, '外语': 50 },
-                    fightingSkills: { '格斗(斗殴)': 60, '射击': 50 },
-                    backstory: '曾是战地记者，见过太多超自然事件',
-                    possessions: [{ name: '相机', quantity: 1 }, { name: '笔记本', quantity: 1 }],
-                    assets: { spendingLevel: '$50', cash: '$500', assets: '$5000' },
-                    relationships: [{ name: '张薇', relationship: '搭档' }]
-                } : {
-                    occupation: '图书管理员',
-                    age: 32,
-                    birthplace: '波士顿',
-                    residence: '阿卡姆',
-                    STR: 50,
-                    DEX: 60,
-                    CON: 50,
-                    SIZ: 50,
-                    INT: 80,
-                    APP: 60,
-                    POW: 70,
-                    EDU: 80,
-                    LUCK: 60,
-                    occupationalSkills: { '图书馆使用': 90, '外语': 80, '历史': 70, '心理学': 60 },
-                    interestSkills: { '侦查': 70, '潜行': 50, '说服': 60 },
-                    fightingSkills: { '格斗(斗殴)': 40 },
-                    backstory: '在米斯卡塔尼克大学图书馆工作，研究禁书',
-                    possessions: [{ name: '古籍', quantity: 3 }, { name: '手电筒', quantity: 1 }],
-                    assets: { spendingLevel: '$30', cash: '$200', assets: '$2000' },
-                    relationships: [{ name: '李昂', relationship: '调查员同行' }]
-                };
-                
-                api.setCharacter(btn.textContent.trim(), example);
-                renderViewMode();
-                api.sendMessage(`✅ 已添加示例: ${btn.textContent.trim()}`);
-                
-                setTimeout(() => {
-                    const select = document.getElementById('coc-role-select');
-                    select.value = btn.textContent.trim();
-                    select.dispatchEvent(new Event('change'));
-                }, 100);
+    // 重新绑定头像事件（编辑后）
+    function bindAvatarEvents(name) {
+        const avatarInput = document.getElementById('coc-avatar-input');
+        if (avatarInput) {
+            avatarInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    handleAvatarUpload(file, (avatarData) => {
+                        const stats = api.getCharacter(name).stats;
+                        stats.avatar = avatarData;
+                        api.setCharacter(name, stats);
+                        document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(name, stats);
+                        bindAvatarEvents(name);
+                    });
+                }
             };
-        });
+        }
     }
 
     function enterEditMode(name, stats) {
@@ -561,7 +562,6 @@
         bindEditEvents();
     }
 
-    // 生成技能选择下拉框HTML
     function renderSkillOptions(selectedSkill, type) {
         const list = SKILLS_LIST[type] || [];
         return list.map(skill => 
@@ -569,14 +569,12 @@
         ).join('');
     }
 
-    // 生成武器选择下拉框HTML
     function renderWeaponOptions(selectedWeapon) {
         return WEAPONS_LIST.map(weapon => 
-            `<option value="${weapon.name}" ${weapon.name === selectedWeapon ? 'selected' : ''}>${weapon.name} (${weapon.damage})</option>`
+            `<option value="${weapon.name}" ${weapon.name === selectedWeapon ? 'selected' : ''} data-skill="${weapon.skill}" data-damage="${weapon.damage}">${weapon.name} (${weapon.damage})</option>`
         ).join('');
     }
 
-    // 渲染编辑表单（带选择列表）
     function renderEditForm(name, stats) {
         return `
             <div class="coc-edit-section">
@@ -611,7 +609,6 @@
                     `).join('')}
                 </div>
 
-                <!-- 职业技能（可选择） -->
                 <div class="coc-edit-label">职业技能</div>
                 <div id="coc-edit-occupational-skills" class="coc-select-list">
                     ${Object.entries(stats.occupationalSkills || {}).map(([skill, value]) => `
@@ -627,7 +624,6 @@
                 </div>
                 <button class="coc-add-btn" id="coc-add-occ-skill">+ 添加职业技能</button>
 
-                <!-- 兴趣技能（可选择） -->
                 <div class="coc-edit-label">兴趣技能</div>
                 <div id="coc-edit-interest-skills" class="coc-select-list">
                     ${Object.entries(stats.interestSkills || {}).map(([skill, value]) => `
@@ -643,7 +639,6 @@
                 </div>
                 <button class="coc-add-btn" id="coc-add-int-skill">+ 添加兴趣技能</button>
 
-                <!-- 格斗技能（可选择） -->
                 <div class="coc-edit-label">格斗技能</div>
                 <div id="coc-edit-fighting-skills" class="coc-select-list">
                     ${Object.entries(stats.fightingSkills || {}).map(([skill, value]) => `
@@ -659,16 +654,13 @@
                 </div>
                 <button class="coc-add-btn" id="coc-add-fight-skill">+ 添加格斗技能</button>
 
-                <!-- 武器（可选择） -->
                 <div class="coc-edit-label">武器</div>
                 <div id="coc-edit-weapons" class="coc-select-list">
                     ${(stats.weapons || []).map(weapon => `
                         <div class="coc-select-row">
                             <select class="coc-edit-weapon-select" style="flex:1;">
                                 <option value="">选择武器</option>
-                                ${WEAPONS_LIST.map(w => 
-                                    `<option value="${w.name}" ${w.name === weapon.name ? 'selected' : ''} data-skill="${w.skill}" data-damage="${w.damage}">${w.name} (${w.damage})</option>`
-                                ).join('')}
+                                ${renderWeaponOptions(weapon.name)}
                             </select>
                             <input type="text" class="coc-edit-weapon-skill" value="${weapon.skill}" placeholder="技能%" style="flex:0.5;">
                             <input type="text" class="coc-edit-weapon-damage" value="${weapon.damage}" placeholder="伤害" style="flex:0.5;">
@@ -843,6 +835,13 @@
         // 保存编辑
         document.getElementById('coc-save-edit').onclick = () => {
             const newStats = collectEditData();
+            
+            // 保留原有头像
+            const currentStats = api.getCharacter(currentEditName)?.stats;
+            if (currentStats?.avatar) {
+                newStats.avatar = currentStats.avatar;
+            }
+            
             api.setCharacter(currentEditName, newStats);
             
             isEditing = false;
@@ -850,6 +849,10 @@
             document.getElementById('coc-edit-section').style.display = 'none';
             
             document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(currentEditName, newStats);
+            
+            // 重新绑定头像上传事件
+            bindAvatarEvents(currentEditName);
+            
             document.getElementById('coc-edit-mode-btn').onclick = () => {
                 enterEditMode(currentEditName, newStats);
             };
