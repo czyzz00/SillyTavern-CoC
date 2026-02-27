@@ -1,6 +1,5 @@
-// COC角色管理 - 基于成功模板的稳定版
+// COC角色管理 - 超大居中测试版
 (function() {
-    // 第一步：弹窗确认JS已加载
     alert('🔵 COC扩展启动');
     
     function waitForBody() {
@@ -9,39 +8,62 @@
             return;
         }
         
-        // body存在，开始构建UI
         buildUI();
     }
     
     function buildUI() {
         alert('🟢 开始构建UI');
         
-        // 创建浮动按钮（右下角）
-        const btn = document.createElement('button');
-        btn.textContent = '🎲';
-        btn.style.cssText = `
+        // 创建一个大的浮动面板（不是小按钮）
+        const panel = document.createElement('div');
+        panel.id = 'coc-test-panel';
+        panel.style.cssText = `
             position: fixed;
-            bottom: 80px;
-            right: 16px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 200px;
             background: #4CAF50;
             color: white;
-            border: none;
+            border: 5px solid red;
+            border-radius: 10px;
+            z-index: 9999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             font-size: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 999999;
-            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         `;
         
-        btn.onclick = () => {
-            alert('🎲 按钮被点击');
-            // 这里后续添加面板功能
+        // 标题
+        const title = document.createElement('div');
+        title.textContent = '🎲 COC测试面板';
+        title.style.marginBottom = '20px';
+        
+        // 关闭按钮
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '关闭';
+        closeBtn.style.cssText = `
+            padding: 10px 20px;
+            background: white;
+            color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        `;
+        closeBtn.onclick = () => {
+            panel.style.display = 'none';
         };
         
-        document.body.appendChild(btn);
-        alert('✅ 按钮已添加');
+        panel.appendChild(title);
+        panel.appendChild(closeBtn);
+        
+        document.body.appendChild(panel);
+        alert('✅ 面板已添加到页面中央');
     }
     
     waitForBody();
