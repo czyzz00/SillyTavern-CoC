@@ -1,16 +1,62 @@
-// COC角色管理 - 精准拖动版
+// COC角色管理 - 完整版
 (function() {
+    'use strict';
+
     alert('🔵 COC扩展启动');
+    
+    const MODULE_NAME = 'coc-character-manager';
+    let panel = null;
+    let floatingBall = null;
     
     function waitForBody() {
         if (!document.body) {
             setTimeout(waitForBody, 100);
             return;
         }
-        buildDraggableUI();
+        initialize();
     }
     
-    function buildDraggableUI() {
+    function initialize() {
+        try {
+            const context = SillyTavern.getContext();
+            
+            // 初始化存储
+            if (!context.extensionSettings[MODULE_NAME]) {
+                context.extensionSettings[MODULE_NAME] = { characters: {} };
+            }
+            
+            // 数据操作函数
+            window.cocData = {
+                getAll: () => context.extensionSettings[MODULE_NAME].characters || {},
+                get: (name) => (context.extensionSettings[MODULE_NAME].characters || {})[name]?.stats || null,
+                set: (name, stats) => {
+                    if (!context.extensionSettings[MODULE_NAME].characters) {
+                        context.extensionSettings[MODULE_NAME].characters = {};
+                    }
+                    context.extensionSettings[MODULE_NAME].characters[name] = { stats };
+                    context.saveSettingsDebounced();
+                    return true;
+                },
+                delete: (name) => {
+                    if (context.extensionSettings[MODULE_NAME].characters?.[name]) {
+                        delete context.extensionSettings[MODULE_NAME].characters[name];
+                        context.saveSettingsDebounced();
+                        return true;
+                    }
+                    return false;
+                }
+            };
+            
+            // 构建UI
+            buildUI();
+            
+        } catch (error) {
+            console.error('[COC] 初始化失败:', error);
+            alert('❌ 初始化失败: ' + error.message);
+        }
+    }
+    
+    function buildUI() {
         const winWidth = window.innerWidth;
         const winHeight = window.innerHeight;
         
@@ -18,232 +64,233 @@
         const topBar = document.querySelector('[class*="header"]') || 
                       document.querySelector('[class*="top"]');
         const topBarHeight = topBar ? topBar.getBoundingClientRect().height : 0;
-        const safeTop = topBarHeight + 5;
-        const safeBottom = winHeight - 60;
+        const safeTop = topBarHeight + 10;
+        const safeBottom = winHeight - 70;
         
-        // ==================== 创建可拖动悬浮球 ====================
-        const floatingBall = document.createElement('div');
-        floatingBall.id = 'coc-floating-ball';
+        // 创建浮动球
+        floatingBall = document.createElement('div');
+        floatingBall.className = 'coc-floating-ball';
         floatingBall.textContent = '🎲';
-        floatingBall.style.cssText = `
-            position: fixed;
-            top: ${safeTop + 20}px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 28px;
-            background: #4CAF50;
-            color: white;
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 9999998;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: none;
-        `;
-        
+        floatingBall.style.top = safeTop + 20 + 'px';
+        floatingBall.style.right = '20px';
         document.body.appendChild(floatingBall);
         
-        // ==================== 拖动功能（修正版）====================
-        let isDragging = false;
-        let startX, startY;
-        let startLeft, startTop;
-        let currentLeft = safeTop + 20;
-        let currentRight = 20;
+        // 创建主面板
+        panel = document.createElement('div');
+        panel.className = 'coc-panel';
+        panel.style.top = safeTop + 'px';
         
-        // 获取元素当前位置（使用getBoundingClientRect，最准确）
-        function getCurrentPosition() {
-            const rect = floatingBall.getBoundingClientRect();
-            return {
-                left: rect.left,
-                top: rect.top,
-                right: rect.right,
-                bottom: rect.bottom
-            };
-        }
-        
-        function onTouchStart(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            
-            // 记录手指起始位置
-            startX = touch.clientX;
-            startY = touch.clientY;
-            
-            // 记录元素当前位置
-            const pos = getCurrentPosition();
-            startLeft = pos.left;
-            startTop = pos.top;
-            
-            // 重置transform，因为我们要用top/left定位
-            floatingBall.style.transform = 'none';
-            floatingBall.style.top = startTop + 'px';
-            floatingBall.style.left = startLeft + 'px';
-            floatingBall.style.right = 'auto'; // 取消right定位
-            
-            isDragging = false;
-        }
-        
-        function onTouchMove(e) {
-            e.preventDefault();
-            if (startX === undefined || startY === undefined) return;
-            
-            const touch = e.touches[0];
-            
-            // 计算手指移动距离
-            const deltaX = touch.clientX - startX;
-            const deltaY = touch.clientY - startY;
-            
-            // 如果移动距离超过5px，认为是拖动
-            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                isDragging = true;
-            }
-            
-            // 计算新位置
-            let newLeft = startLeft + deltaX;
-            let newTop = startTop + deltaY;
-            
-            // 边界限制
-            newLeft = Math.max(0, Math.min(winWidth - 56, newLeft));
-            newTop = Math.max(safeTop, Math.min(safeBottom, newTop));
-            
-            // 直接设置top/left定位
-            floatingBall.style.top = newTop + 'px';
-            floatingBall.style.left = newLeft + 'px';
-        }
-        
-        function onTouchEnd(e) {
-            e.preventDefault();
-            
-            if (!isDragging) {
-                // 这是点击事件，打开面板
-                togglePanel();
-            }
-            
-            // 保存当前位置到变量
-            const pos = getCurrentPosition();
-            currentLeft = pos.left;
-            currentTop = pos.top;
-            
-            // 重置
-            startX = startY = undefined;
-            isDragging = false;
-        }
-        
-        // 绑定触摸事件
-        floatingBall.addEventListener('touchstart', onTouchStart, { passive: false });
-        floatingBall.addEventListener('touchmove', onTouchMove, { passive: false });
-        floatingBall.addEventListener('touchend', onTouchEnd);
-        floatingBall.addEventListener('touchcancel', onTouchEnd);
-        
-        // ==================== 创建主面板 ====================
-        const panel = document.createElement('div');
-        panel.id = 'coc-panel';
-        panel.style.cssText = `
-            position: fixed;
-            top: ${safeTop}px;
-            left: 10px;
-            width: ${winWidth - 20}px;
-            height: 400px;
-            background: var(--bg-color, #1a1a1a);
-            border: 1px solid var(--border-color, #444);
-            border-radius: 12px;
-            z-index: 9999999;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        `;
-        
-        // 标题栏
+        // 面板头部
         const header = document.createElement('div');
-        header.style.cssText = `
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--bg-secondary, #333);
-            border-bottom: 1px solid var(--border-color, #444);
-        `;
+        header.className = 'coc-panel-header';
         header.innerHTML = `
-            <span style="font-size: 18px; font-weight: bold;">🎲 COC角色管理</span>
-            <button id="coc-close-panel" style="
-                background: none;
-                border: none;
-                color: var(--text-color);
-                font-size: 20px;
-                cursor: pointer;
-                padding: 0 8px;
-            ">✖</button>
+            <span class="coc-panel-title">🎲 COC角色管理</span>
+            <button class="coc-close-btn">✖</button>
         `;
         
-        // 内容区（可滚动）
+        // 面板内容
         const content = document.createElement('div');
-        content.style.cssText = `
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-            background: var(--bg-color, #1a1a1a);
-        `;
-        
-        // 填充内容
-        content.innerHTML = `
-            <div style="margin-bottom: 16px;">
-                <label style="display:block; margin-bottom:4px;">选择角色</label>
-                <select id="coc-role-select" style="width:100%; padding:10px; border-radius:6px;">
-                    <option value="">-- 请选择 --</option>
-                </select>
-            </div>
-            
-            <div id="coc-stats-display" style="background:#2a2a2a; padding:12px; border-radius:6px; margin-bottom:16px;">
-                <pre style="margin:0; font-size:12px;">未选择角色</pre>
-            </div>
-            
-            <div style="margin-bottom:16px;">
-                <label style="display:block; margin-bottom:4px;">新建角色</label>
-                <input type="text" id="coc-new-name" placeholder="角色名" style="width:100%; padding:10px; margin-bottom:8px; border-radius:6px;">
-                <textarea id="coc-new-data" placeholder='{"STR":70,"skills":{"侦查":80}}' rows="4" style="width:100%; padding:10px; border-radius:6px; font-family:monospace;"></textarea>
-                <button id="coc-save-new" style="width:100%; padding:12px; background:#4CAF50; color:white; border:none; border-radius:6px; margin-top:8px;">保存新角色</button>
-            </div>
-            
-            <div style="display:flex; gap:8px;">
-                <button class="coc-example" data-example='{"STR":70,"skills":{"侦查":80}}' style="flex:1; padding:8px; background:#2196F3;">李昂示例</button>
-                <button class="coc-example" data-example='{"STR":60,"skills":{"侦查":90}}' style="flex:1; padding:8px; background:#9C27B0;">张薇示例</button>
-            </div>
-        `;
+        content.className = 'coc-panel-content';
+        content.id = 'coc-panel-content';
         
         panel.appendChild(header);
         panel.appendChild(content);
         document.body.appendChild(panel);
         
-        // ==================== 面板功能 ====================
-        function togglePanel() {
-            if (panel.style.display === 'none') {
-                panel.style.display = 'flex';
-                // 刷新下拉列表（后续实现）
-            } else {
-                panel.style.display = 'none';
-            }
-        }
+        // 刷新面板内容
+        refreshPanelContent();
         
-        // 关闭按钮
-        document.getElementById('coc-close-panel').onclick = () => {
+        // 绑定事件
+        floatingBall.addEventListener('touchstart', startDrag);
+        floatingBall.addEventListener('touchmove', onDrag);
+        floatingBall.addEventListener('touchend', endDrag);
+        
+        header.querySelector('.coc-close-btn').onclick = () => {
             panel.style.display = 'none';
         };
         
-        // 示例按钮
-        document.querySelectorAll('.coc-example').forEach(btn => {
-            btn.onclick = () => {
-                document.getElementById('coc-new-data').value = 
-                    JSON.stringify(JSON.parse(btn.dataset.example), null, 2);
-            };
+        floatingBall.addEventListener('click', () => {
+            if (panel.style.display === 'none') {
+                panel.style.display = 'flex';
+                refreshPanelContent();
+            } else {
+                panel.style.display = 'none';
+            }
         });
         
-        alert('✅ 精准拖动悬浮球已创建');
+        alert('✅ COC角色管理已启动');
+    }
+    
+    function refreshPanelContent() {
+        const content = document.getElementById('coc-panel-content');
+        if (!content) return;
+        
+        const characters = window.cocData.getAll();
+        const names = Object.keys(characters);
+        
+        let optionsHtml = '<option value="">-- 选择角色 --</option>';
+        names.sort().forEach(name => {
+            optionsHtml += `<option value="${name}">${name}</option>`;
+        });
+        
+        content.innerHTML = `
+            <div>
+                <label class="coc-label">选择角色</label>
+                <select id="coc-select" class="coc-select">
+                    ${optionsHtml}
+                </select>
+            </div>
+            
+            <div id="coc-data-container" style="display: none;">
+                <div class="coc-data-display">
+                    <pre id="coc-data-content" class="coc-data-content"></pre>
+                </div>
+                
+                <div class="coc-button-group">
+                    <button id="coc-edit-btn" class="coc-btn coc-btn-secondary coc-btn-small">✏️ 编辑</button>
+                    <button id="coc-delete-btn" class="coc-btn coc-btn-danger coc-btn-small">🗑️ 删除</button>
+                </div>
+            </div>
+            
+            <div class="coc-divider"></div>
+            
+            <div>
+                <label class="coc-label">新建角色</label>
+                <input type="text" id="coc-new-name" class="coc-input" placeholder="角色名">
+                <textarea id="coc-new-data" class="coc-textarea" placeholder='{"STR":70,"skills":{"侦查":80}}'></textarea>
+                <button id="coc-save-new" class="coc-btn coc-btn-primary">💾 保存新角色</button>
+            </div>
+            
+            <div class="coc-button-group" style="margin-top: 12px;">
+                <button class="coc-btn coc-btn-secondary coc-btn-small example-btn" data-example='{"STR":70,"skills":{"侦查":80}}'>李昂示例</button>
+                <button class="coc-btn coc-btn-secondary coc-btn-small example-btn" data-example='{"STR":60,"skills":{"侦查":90}}'>张薇示例</button>
+            </div>
+        `;
+        
+        // 绑定事件
+        const select = document.getElementById('coc-select');
+        select.addEventListener('change', (e) => {
+            const name = e.target.value;
+            if (!name) {
+                document.getElementById('coc-data-container').style.display = 'none';
+                return;
+            }
+            
+            const stats = window.cocData.get(name);
+            if (stats) {
+                document.getElementById('coc-data-content').textContent = JSON.stringify(stats, null, 2);
+                document.getElementById('coc-data-container').style.display = 'block';
+            }
+        });
+        
+        document.getElementById('coc-delete-btn')?.addEventListener('click', () => {
+            const name = select.value;
+            if (!name || !confirm(`删除 ${name}？`)) return;
+            
+            window.cocData.delete(name);
+            select.querySelector(`option[value="${name}"]`)?.remove();
+            document.getElementById('coc-data-container').style.display = 'none';
+            showToast(`✅ ${name} 已删除`);
+        });
+        
+        document.getElementById('coc-save-new')?.addEventListener('click', () => {
+            const name = document.getElementById('coc-new-name').value.trim();
+            const data = document.getElementById('coc-new-data').value.trim();
+            
+            if (!name || !data) {
+                showToast('❌ 请填写完整');
+                return;
+            }
+            
+            try {
+                const stats = JSON.parse(data);
+                window.cocData.set(name, stats);
+                
+                // 刷新下拉框
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+                
+                // 清空输入
+                document.getElementById('coc-new-name').value = '';
+                document.getElementById('coc-new-data').value = '';
+                
+                // 选中新角色
+                select.value = name;
+                select.dispatchEvent(new Event('change'));
+                
+                showToast(`✅ ${name} 已保存`);
+            } catch (e) {
+                showToast('❌ JSON格式错误');
+            }
+        });
+        
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('coc-new-data').value = 
+                    JSON.stringify(JSON.parse(btn.dataset.example), null, 2);
+            });
+        });
+    }
+    
+    // 拖动功能
+    let startX, startY, startLeft, startTop, isDragging = false;
+    
+    function startDrag(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        
+        const rect = floatingBall.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+        
+        floatingBall.style.right = 'auto';
+        floatingBall.style.left = startLeft + 'px';
+        floatingBall.style.top = startTop + 'px';
+        
+        isDragging = false;
+    }
+    
+    function onDrag(e) {
+        e.preventDefault();
+        if (startX === undefined) return;
+        
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
+        
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+            isDragging = true;
+        }
+        
+        let newLeft = startLeft + deltaX;
+        let newTop = startTop + deltaY;
+        
+        // 边界限制
+        const winWidth = window.innerWidth;
+        const winHeight = window.innerHeight;
+        newLeft = Math.max(0, Math.min(winWidth - 56, newLeft));
+        newTop = Math.max(10, Math.min(winHeight - 70, newTop));
+        
+        floatingBall.style.left = newLeft + 'px';
+        floatingBall.style.top = newTop + 'px';
+    }
+    
+    function endDrag(e) {
+        e.preventDefault();
+        startX = startY = undefined;
+        isDragging = false;
+    }
+    
+    function showToast(text) {
+        const toast = document.createElement('div');
+        toast.className = 'coc-toast';
+        toast.textContent = text;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
     }
     
     waitForBody();
