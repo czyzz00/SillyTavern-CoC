@@ -1,4 +1,4 @@
-/* COC7 角色卡样式 - 最终版 */
+/* COC7 角色卡样式 - 最终紧凑版 */
 :root {
     --coc-bg: #2c241e;
     --coc-bg-light: #3f352c;
@@ -362,112 +362,141 @@
     border: 1px solid var(--coc-border);
 }
 
-/* 编辑模式样式 */
+/* 编辑模式样式 - 紧凑版 */
 .coc-edit-section {
     background: var(--coc-bg-dark);
     border-radius: 16px;
-    padding: 16px;
+    padding: 12px;
     border: 1px solid var(--coc-border);
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 .coc-edit-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: #e6d5b8;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .coc-edit-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 4px;
+    margin-bottom: 12px;
 }
 
 .coc-edit-label {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--coc-text-dark);
     margin-bottom: 2px;
 }
 
 .coc-edit-input {
     width: 100%;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--coc-border);
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
+    font-size: 12px;
+}
+
+.coc-edit-textarea {
+    width: 100%;
     padding: 6px;
     border-radius: 8px;
     border: 1px solid var(--coc-border);
     background: var(--coc-bg-light);
     color: var(--coc-text);
+    margin-bottom: 8px;
+    min-height: 50px;
+    font-size: 12px;
 }
 
-.coc-edit-textarea {
-    width: 100%;
-    padding: 8px;
+/* 选择列表样式 - 紧凑版 */
+.coc-select-list {
+    background: var(--coc-bg-dark);
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 6px;
+    border: 1px solid var(--coc-border);
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.coc-select-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+    align-items: center;
+}
+
+.coc-select-row select {
+    flex: 1.5;
+    padding: 4px;
     border-radius: 8px;
     border: 1px solid var(--coc-border);
     background: var(--coc-bg-light);
     color: var(--coc-text);
-    margin-bottom: 16px;
+    font-size: 11px;
 }
 
-.coc-edit-skill-row, .coc-edit-possession-row, .coc-edit-relationship-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
+.coc-select-row input {
+    flex: 0.8;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--coc-border);
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
+    font-size: 11px;
 }
 
-.coc-edit-skill-row input, .coc-edit-possession-row input, .coc-edit-relationship-row input {
+/* 武器区域特殊处理 */
+#coc-edit-weapons .coc-select-row select {
     flex: 1;
 }
 
-.coc-edit-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
+#coc-edit-weapons .coc-select-row input {
+    flex: 0.6;
 }
 
-.coc-edit-save {
-    flex: 1;
-    padding: 12px;
-    background: var(--coc-hp);
+.coc-remove-btn {
+    background: var(--coc-fighting);
     color: white;
     border: none;
-    border-radius: 30px;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
     cursor: pointer;
-}
-
-.coc-edit-cancel {
-    flex: 1;
-    padding: 12px;
-    background: var(--coc-border);
-    color: var(--coc-text-muted);
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .coc-add-btn {
     width: 100%;
-    margin: 8px 0 16px;
-    padding: 8px;
+    margin: 4px 0 8px;
+    padding: 6px;
     background: var(--coc-gold);
     color: var(--coc-text);
     border: none;
     border-radius: 30px;
+    font-size: 12px;
     cursor: pointer;
 }
 
-/* 编辑模式头像上传样式（新增） */
+/* 编辑模式头像上传样式 */
 .coc-edit-avatar {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .coc-edit-avatar-preview {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: var(--coc-bg-light);
     border: 2px solid var(--coc-gold);
@@ -475,7 +504,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .coc-edit-avatar-preview img {
@@ -485,17 +514,17 @@
 }
 
 .coc-edit-avatar-placeholder {
-    font-size: 40px;
+    font-size: 30px;
     color: var(--coc-text-muted);
 }
 
 .coc-edit-avatar-btn {
-    padding: 6px 12px;
+    padding: 4px 8px;
     background: var(--coc-gold);
     color: var(--coc-text);
     border: none;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
 }
 
@@ -503,52 +532,32 @@
     display: none;
 }
 
-/* 选择列表样式 */
-.coc-select-list {
-    background: var(--coc-bg-dark);
-    border-radius: 12px;
-    padding: 8px;
-    margin-bottom: 8px;
-    border: 1px solid var(--coc-border);
-}
-
-.coc-select-row {
+.coc-edit-actions {
     display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
 }
 
-.coc-select-row select {
-    flex: 2;
-    padding: 6px;
-    border-radius: 8px;
-    border: 1px solid var(--coc-border);
-    background: var(--coc-bg-light);
-    color: var(--coc-text);
-}
-
-.coc-select-row input {
+.coc-edit-save {
     flex: 1;
-    padding: 6px;
-    border-radius: 8px;
-    border: 1px solid var(--coc-border);
-    background: var(--coc-bg-light);
-    color: var(--coc-text);
-}
-
-.coc-remove-btn {
-    background: var(--coc-fighting);
+    padding: 8px;
+    background: var(--coc-hp);
     color: white;
     border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
+    border-radius: 30px;
+    font-size: 13px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+}
+
+.coc-edit-cancel {
+    flex: 1;
+    padding: 8px;
+    background: var(--coc-border);
+    color: var(--coc-text-muted);
+    border: none;
+    border-radius: 30px;
+    font-size: 13px;
+    cursor: pointer;
 }
 
 /* 浮动球 */
