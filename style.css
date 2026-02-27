@@ -482,3 +482,51 @@
     touch-action: none;
     border: 1px solid var(--coc-gold);
 }
+
+/* 选择列表样式 */
+.coc-select-list {
+    background: var(--coc-bg-dark);
+    border-radius: 12px;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid var(--coc-border);
+}
+
+.coc-select-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.coc-select-row select {
+    flex: 2;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid var(--coc-border);
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
+}
+
+.coc-select-row input {
+    flex: 1;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid var(--coc-border);
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
+}
+
+.coc-remove-btn {
+    background: var(--coc-fighting);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
