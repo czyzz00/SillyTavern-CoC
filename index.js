@@ -1,4 +1,4 @@
-// COC7 角色卡 - 最终完美版（编辑模式上传头像 + 新增角色选项）
+// COC7 角色卡 - 最终紧凑版
 (function() {
     'use strict';
 
@@ -190,11 +190,11 @@
                 document.body.insertAdjacentHTML('beforeend', html);
                 panelElement = document.getElementById('coc-panel');
                 
-                // 设置面板位置
+                // 设置面板位置 - 高度500px更紧凑
                 const panelTop = safeTop;
                 const panelLeft = 10;
                 const panelWidth = winWidth - 20;
-                const panelHeight = 560;
+                const panelHeight = 500;
                 
                 panelElement.style.top = panelTop + 'px';
                 panelElement.style.left = panelLeft + 'px';
@@ -582,7 +582,7 @@
 
     function renderWeaponOptions(selectedWeapon) {
         return WEAPONS_LIST.map(weapon => 
-            `<option value="${weapon.name}" ${weapon.name === selectedWeapon ? 'selected' : ''} data-skill="${weapon.skill}" data-damage="${weapon.damage}">${weapon.name} (${weapon.damage})</option>`
+            `<option value="${weapon.name}" ${weapon.name === selectedWeapon ? 'selected' : ''} data-skill="${weapon.skill}" data-damage="${weapon.damage}">${weapon.name}</option>`
         ).join('');
     }
 
@@ -680,28 +680,28 @@
                 <div class="coc-edit-label">武器</div>
                 <div id="coc-edit-weapons" class="coc-select-list">
                     ${(stats.weapons || []).map(weapon => `
-                        <div class="coc-select-row">
-                            <select class="coc-edit-weapon-select" style="flex:1;">
-                                <option value="">选择武器</option>
+                        <div class="coc-select-row" style="display: flex; gap: 4px; align-items: center;">
+                            <select class="coc-edit-weapon-select" style="flex: 1; padding: 4px; font-size: 11px;">
+                                <option value="">选择</option>
                                 ${renderWeaponOptions(weapon.name)}
                             </select>
-                            <input type="text" class="coc-edit-weapon-skill" value="${weapon.skill}" placeholder="技能%" style="flex:0.5;">
-                            <input type="text" class="coc-edit-weapon-damage" value="${weapon.damage}" placeholder="伤害" style="flex:0.5;">
-                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                            <input type="text" class="coc-edit-weapon-skill" value="${weapon.skill}" placeholder="技能%" style="flex: 0.6; padding: 4px; font-size: 11px;">
+                            <input type="text" class="coc-edit-weapon-damage" value="${weapon.damage}" placeholder="伤害" style="flex: 0.6; padding: 4px; font-size: 11px;">
+                            <button class="coc-remove-btn" style="width: 20px; height: 20px; font-size: 10px;" onclick="this.parentElement.remove()">✖</button>
                         </div>
                     `).join('')}
                 </div>
                 <button class="coc-add-btn" id="coc-add-weapon">+ 添加武器</button>
 
                 <div class="coc-edit-label">背景故事</div>
-                <textarea class="coc-edit-textarea" id="coc-edit-backstory" rows="3">${stats.backstory || ''}</textarea>
+                <textarea class="coc-edit-textarea" id="coc-edit-backstory" rows="2">${stats.backstory || ''}</textarea>
 
                 <div class="coc-edit-label">装备物品</div>
                 <div id="coc-edit-possessions" class="coc-select-list">
                     ${(stats.possessions || []).map(item => `
                         <div class="coc-edit-possession-row">
-                            <input type="text" class="coc-edit-input coc-edit-possession-name" value="${item.name}" placeholder="物品名">
-                            <input type="number" class="coc-edit-input coc-edit-possession-qty" value="${item.quantity || 1}" placeholder="数量">
+                            <input type="text" class="coc-edit-input coc-edit-possession-name" value="${item.name}" placeholder="物品名" style="flex:1; padding:4px; font-size:11px;">
+                            <input type="number" class="coc-edit-input coc-edit-possession-qty" value="${item.quantity || 1}" placeholder="数量" style="width:60px; padding:4px; font-size:11px;">
                             <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                         </div>
                     `).join('')}
@@ -728,8 +728,8 @@
                 <div id="coc-edit-relationships" class="coc-select-list">
                     ${(stats.relationships || []).map(rel => `
                         <div class="coc-edit-relationship-row">
-                            <input type="text" class="coc-edit-input coc-edit-rel-name" value="${rel.name}" placeholder="姓名">
-                            <input type="text" class="coc-edit-input coc-edit-rel-desc" value="${rel.relationship}" placeholder="关系">
+                            <input type="text" class="coc-edit-input coc-edit-rel-name" value="${rel.name}" placeholder="姓名" style="flex:1; padding:4px; font-size:11px;">
+                            <input type="text" class="coc-edit-input coc-edit-rel-desc" value="${rel.relationship}" placeholder="关系" style="flex:1; padding:4px; font-size:11px;">
                             <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                         </div>
                     `).join('')}
@@ -817,22 +817,29 @@
             const container = document.getElementById('coc-edit-weapons');
             const newRow = document.createElement('div');
             newRow.className = 'coc-select-row';
+            newRow.style.cssText = 'display: flex; gap: 4px; align-items: center; margin-bottom: 4px;';
             newRow.innerHTML = `
-                <select class="coc-edit-weapon-select" style="flex:1;" onchange="this.parentElement.querySelector('.coc-edit-weapon-skill').value = this.options[this.selectedIndex].dataset.skill; this.parentElement.querySelector('.coc-edit-weapon-damage').value = this.options[this.selectedIndex].dataset.damage">
+                <select class="coc-edit-weapon-select" style="flex:1; padding:4px; font-size:11px;">
                     <option value="">选择武器</option>
-                    ${WEAPONS_LIST.map(w => `<option value="${w.name}" data-skill="${w.skill}" data-damage="${w.damage}">${w.name} (${w.damage})</option>`).join('')}
+                    ${WEAPONS_LIST.map(w => `<option value="${w.name}" data-skill="${w.skill}" data-damage="${w.damage}">${w.name}</option>`).join('')}
                 </select>
-                <input type="text" class="coc-edit-weapon-skill" placeholder="技能%" style="flex:0.5;">
-                <input type="text" class="coc-edit-weapon-damage" placeholder="伤害" style="flex:0.5;">
-                <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                <input type="text" class="coc-edit-weapon-skill" placeholder="技能%" style="flex:0.6; padding:4px; font-size:11px;">
+                <input type="text" class="coc-edit-weapon-damage" placeholder="伤害" style="flex:0.6; padding:4px; font-size:11px;">
+                <button class="coc-remove-btn" style="width:20px; height:20px; font-size:10px;" onclick="this.parentElement.remove()">✖</button>
             `;
             container.appendChild(newRow);
 
             // 添加武器选择自动填充事件
             newRow.querySelector('.coc-edit-weapon-select').addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                newRow.querySelector('.coc-edit-weapon-skill').value = selectedOption.dataset.skill || '';
-                newRow.querySelector('.coc-edit-weapon-damage').value = selectedOption.dataset.damage || '';
+                const skillInput = newRow.querySelector('.coc-edit-weapon-skill');
+                const damageInput = newRow.querySelector('.coc-edit-weapon-damage');
+                if (selectedOption.dataset.skill) {
+                    skillInput.value = selectedOption.dataset.skill;
+                }
+                if (selectedOption.dataset.damage) {
+                    damageInput.value = selectedOption.dataset.damage;
+                }
             });
         };
 
@@ -841,9 +848,10 @@
             const container = document.getElementById('coc-edit-possessions');
             const newRow = document.createElement('div');
             newRow.className = 'coc-edit-possession-row';
+            newRow.style.cssText = 'display: flex; gap: 4px; margin-bottom: 4px; align-items: center;';
             newRow.innerHTML = `
-                <input type="text" class="coc-edit-input coc-edit-possession-name" placeholder="物品名">
-                <input type="number" class="coc-edit-input coc-edit-possession-qty" value="1" placeholder="数量">
+                <input type="text" class="coc-edit-input coc-edit-possession-name" placeholder="物品名" style="flex:1; padding:4px; font-size:11px;">
+                <input type="number" class="coc-edit-input coc-edit-possession-qty" value="1" placeholder="数量" style="width:60px; padding:4px; font-size:11px;">
                 <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
             `;
             container.appendChild(newRow);
@@ -854,9 +862,10 @@
             const container = document.getElementById('coc-edit-relationships');
             const newRow = document.createElement('div');
             newRow.className = 'coc-edit-relationship-row';
+            newRow.style.cssText = 'display: flex; gap: 4px; margin-bottom: 4px; align-items: center;';
             newRow.innerHTML = `
-                <input type="text" class="coc-edit-input coc-edit-rel-name" placeholder="姓名">
-                <input type="text" class="coc-edit-input coc-edit-rel-desc" placeholder="关系">
+                <input type="text" class="coc-edit-input coc-edit-rel-name" placeholder="姓名" style="flex:1; padding:4px; font-size:11px;">
+                <input type="text" class="coc-edit-input coc-edit-rel-desc" placeholder="关系" style="flex:1; padding:4px; font-size:11px;">
                 <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
             `;
             container.appendChild(newRow);
@@ -868,8 +877,14 @@
                 const row = this.closest('.coc-select-row');
                 const selectedOption = this.options[this.selectedIndex];
                 if (row) {
-                    row.querySelector('.coc-edit-weapon-skill').value = selectedOption.dataset.skill || '';
-                    row.querySelector('.coc-edit-weapon-damage').value = selectedOption.dataset.damage || '';
+                    const skillInput = row.querySelector('.coc-edit-weapon-skill');
+                    const damageInput = row.querySelector('.coc-edit-weapon-damage');
+                    if (selectedOption.dataset.skill) {
+                        skillInput.value = selectedOption.dataset.skill;
+                    }
+                    if (selectedOption.dataset.damage) {
+                        damageInput.value = selectedOption.dataset.damage;
+                    }
                 }
             });
         });
