@@ -1,23 +1,15 @@
-/* COC7 角色卡样式 */
-.coc-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 400px;
-    height: 560px;
+/* COC7 角色卡样式 - 只保留视觉样式，不写定位 */
+
+/* 卡片基础样式 */
+.coc-card {
     background: #2c241e;
-    border: 1px solid #6d5b4a;
     border-radius: 28px;
-    z-index: 9999999;
-    display: none;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.7);
+    padding: 20px;
+    border: 1px solid #6d5b4a;
     color: #f0e6d8;
 }
 
+/* 标题栏 */
 .coc-header {
     display: flex;
     justify-content: space-between;
@@ -42,11 +34,9 @@
     font-size: 24px;
     cursor: pointer;
     padding: 8px 12px;
-    margin: -8px -12px;
-    z-index: 10000000;
-    pointer-events: auto;
 }
 
+/* 内容区 */
 .coc-content {
     flex: 1;
     padding: 16px;
@@ -94,31 +84,9 @@
     background: #7e6b55; 
     border-radius: 30px; 
     margin-top: 8px; 
-}
-
-/* 角色卡片样式 */
-.coc-card {
-    background: #2c241e;
-    border-radius: 28px;
-    padding: 20px;
-    border: 1px solid #6d5b4a;
-}
-
-.coc-section {
-    margin-bottom: 20px;
-}
-
-.coc-section-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #e6d5b8;
-    margin-bottom: 8px;
-}
-
-.coc-divider {
-    height: 2px;
-    background: #7e6b55;
-    margin: 16px 0;
+    color: #f0e6d8;
+    border: none;
+    cursor: pointer;
 }
 
 /* 基本信息 */
@@ -163,12 +131,50 @@
     color: #b8a68f;
 }
 
+/* 状态条 */
+.coc-bar-container {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.coc-bar-item {
+    flex: 1;
+    background: #3f352c;
+    padding: 12px;
+    border-radius: 16px;
+}
+
+.coc-bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #d4c3aa;
+}
+
+.coc-bar-bg {
+    background: #4a3e33;
+    height: 10px;
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+.coc-bar-fill {
+    height: 100%;
+    border-radius: 30px;
+    transition: width 0.3s ease;
+}
+
+.coc-bar-fill.hp { background: #c88a5a; }
+.coc-bar-fill.san { background: #7ba6b8; }
+
 /* 属性网格 */
 .coc-stats-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 8px;
-    margin-bottom: 8px;
+    margin: 16px 0;
 }
 
 .coc-stat-item {
@@ -193,7 +199,7 @@
 .coc-stat-row {
     display: flex;
     gap: 8px;
-    margin-top: 8px;
+    margin: 8px 0 16px;
 }
 
 .coc-stat-row-item {
@@ -204,43 +210,6 @@
     text-align: center;
 }
 
-/* 血条和SAN条 */
-.coc-bar-container {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.coc-bar-item {
-    flex: 1;
-    background: #3f352c;
-    padding: 12px;
-    border-radius: 16px;
-}
-
-.coc-bar-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    margin-bottom: 6px;
-}
-
-.coc-bar-bg {
-    background: #4a3e33;
-    height: 10px;
-    border-radius: 30px;
-    overflow: hidden;
-}
-
-.coc-bar-fill {
-    height: 100%;
-    border-radius: 30px;
-    transition: width 0.3s ease;
-}
-
-.coc-bar-fill.hp { background: #c88a5a; }
-.coc-bar-fill.san { background: #7ba6b8; }
-
 /* 技能网格 */
 .coc-skills-grid {
     display: grid;
@@ -249,6 +218,7 @@
     max-height: 120px;
     overflow-y: auto;
     padding-right: 4px;
+    margin-bottom: 16px;
 }
 
 .coc-skill-item {
@@ -273,31 +243,24 @@
 .coc-skill-value.interest { color: #7ba6b8; }
 .coc-skill-value.fighting { color: #b85a5a; }
 
-/* 武器列表 */
+/* 武器/物品列表 */
 .coc-weapons-list {
     background: #332b23;
     border-radius: 12px;
     padding: 12px;
     border: 1px solid #4e4236;
+    margin-bottom: 16px;
 }
 
-.coc-weapon-row {
+.coc-weapon-row, .coc-possession-row, .coc-relationship-row {
     display: flex;
     justify-content: space-between;
     padding: 6px 0;
     border-bottom: 1px dashed #4e4236;
 }
 
-.coc-weapon-row:last-child {
+.coc-weapon-row:last-child, .coc-possession-row:last-child, .coc-relationship-row:last-child {
     border-bottom: none;
-}
-
-.coc-weapon-name {
-    color: #b8a68f;
-}
-
-.coc-weapon-damage {
-    color: #f0e6d8;
 }
 
 /* 背景故事 */
@@ -308,14 +271,7 @@
     border: 1px solid #4e4236;
     font-size: 13px;
     color: #d4c3aa;
-}
-
-/* 物品列表 */
-.coc-possession-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px dashed #4e4236;
+    margin-bottom: 16px;
 }
 
 /* 资产网格 */
@@ -323,6 +279,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
+    margin-bottom: 16px;
 }
 
 .coc-asset-item {
@@ -342,14 +299,6 @@
     font-weight: 600;
 }
 
-/* 关系列表 */
-.coc-relationship-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px dashed #4e4236;
-}
-
 /* 空状态 */
 .coc-empty {
     color: #8e7c68;
@@ -366,6 +315,7 @@
     border-radius: 16px;
     padding: 16px;
     border: 1px solid #4e4236;
+    margin-bottom: 16px;
 }
 
 .coc-edit-title {
@@ -380,15 +330,6 @@
     grid-template-columns: repeat(5, 1fr);
     gap: 8px;
     margin-bottom: 16px;
-}
-
-.coc-edit-input-group {
-    margin-bottom: 8px;
-}
-
-.coc-edit-label {
-    font-size: 10px;
-    color: #8e7c68;
 }
 
 .coc-edit-input {
@@ -407,6 +348,17 @@
     border: 1px solid #4e4236;
     background: #3f352c;
     color: #f0e6d8;
+    margin-bottom: 16px;
+}
+
+.coc-edit-skill-row, .coc-edit-possession-row, .coc-edit-relationship-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.coc-edit-skill-row input, .coc-edit-possession-row input, .coc-edit-relationship-row input {
+    flex: 1;
 }
 
 .coc-edit-actions {
@@ -437,7 +389,7 @@
 
 .coc-add-btn {
     width: 100%;
-    margin-top: 8px;
+    margin: 8px 0 16px;
     padding: 8px;
     background: #7e6b55;
     color: #f0e6d8;
@@ -464,7 +416,7 @@
     cursor: pointer;
 }
 
-/* 浮动球 */
+/* 浮动球 - 定位在JS里动态设置 */
 .coc-floating-ball {
     position: fixed;
     width: 56px;
