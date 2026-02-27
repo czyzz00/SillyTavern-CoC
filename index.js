@@ -1,6 +1,5 @@
-// COC角色管理 - 超大居中测试版
 (function() {
-    alert('🔵 COC扩展启动');
+    alert('🔵 开始检测屏幕边界');
     
     function waitForBody() {
         if (!document.body) {
@@ -8,62 +7,51 @@
             return;
         }
         
-        buildUI();
-    }
-    
-    function buildUI() {
-        alert('🟢 开始构建UI');
+        // 获取各种尺寸
+        const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth;
+        const screenHeight = screen.height;
+        const screenWidth = screen.width;
         
-        // 创建一个大的浮动面板（不是小按钮）
-        const panel = document.createElement('div');
-        panel.id = 'coc-test-panel';
-        panel.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 300px;
-            height: 200px;
-            background: #4CAF50;
-            color: white;
-            border: 5px solid red;
-            border-radius: 10px;
-            z-index: 9999999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        `;
+        // 检查是否有底部导航栏占用空间
+        const bodyHeight = document.body.clientHeight;
+        const htmlHeight = document.documentElement.clientHeight;
         
-        // 标题
-        const title = document.createElement('div');
-        title.textContent = '🎲 COC测试面板';
-        title.style.marginBottom = '20px';
+        // 获取SillyTavern主要元素的位置
+        const chatArea = document.getElementById('chat');
+        const chatRect = chatArea?.getBoundingClientRect();
         
-        // 关闭按钮
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = '关闭';
-        closeBtn.style.cssText = `
-            padding: 10px 20px;
-            background: white;
-            color: #4CAF50;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        `;
-        closeBtn.onclick = () => {
-            panel.style.display = 'none';
+        // 组装信息
+        const info = {
+            window: `${windowWidth}x${windowHeight}`,
+            screen: `${screenWidth}x${screenHeight}`,
+            body: `${document.body.clientWidth}x${bodyHeight}`,
+            html: `${document.documentElement.clientWidth}x${htmlHeight}`,
+            chat: chatRect ? 
+                `top:${Math.round(chatRect.top)} bottom:${Math.round(chatRect.bottom)} height:${Math.round(chatRect.height)}` : 
+                '未找到'
         };
         
-        panel.appendChild(title);
-        panel.appendChild(closeBtn);
+        // 显示信息
+        const div = document.createElement('div');
+        div.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 9999999;
+            font-size: 14px;
+            white-space: pre-wrap;
+        `;
+        div.textContent = JSON.stringify(info, null, 2);
         
-        document.body.appendChild(panel);
-        alert('✅ 面板已添加到页面中央');
+        document.body.appendChild(div);
+        
+        setTimeout(() => div.remove(), 5000);
     }
     
     waitForBody();
