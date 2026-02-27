@@ -1,4 +1,468 @@
-/* COC角色管理样式 */
+/* COC7 角色卡样式 */
+.coc-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    height: 560px;
+    background: #2c241e;
+    border: 1px solid #6d5b4a;
+    border-radius: 28px;
+    z-index: 9999999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.7);
+    color: #f0e6d8;
+}
+
+.coc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #2c241e;
+    border-bottom: 2px solid #7e6b55;
+    flex-shrink: 0;
+}
+
+.coc-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #e6d5b8;
+    margin: 0;
+}
+
+.coc-close-btn {
+    background: none;
+    border: none;
+    color: #b8a68f;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px 12px;
+    margin: -8px -12px;
+    z-index: 10000000;
+    pointer-events: auto;
+}
+
+.coc-content {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    background: #2c241e;
+}
+
+/* 工具栏 */
+.coc-toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    background: #332b23;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid #4e4236;
+}
+
+.coc-select {
+    flex: 2;
+    padding: 10px;
+    border-radius: 30px;
+    font-size: 14px;
+    background: #3f352c;
+    color: #f0e6d8;
+    border: 1px solid #4e4236;
+}
+
+.coc-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 30px;
+    font-size: 14px;
+    cursor: pointer;
+    color: white;
+}
+
+.coc-btn.import { background: #7ba6b8; }
+.coc-btn.export { background: #7e6b55; }
+.coc-btn.delete { background: #b85a5a; }
+.coc-btn.edit { 
+    width: 100%; 
+    padding: 12px; 
+    background: #7e6b55; 
+    border-radius: 30px; 
+    margin-top: 8px; 
+}
+
+/* 角色卡片样式 */
+.coc-card {
+    background: #2c241e;
+    border-radius: 28px;
+    padding: 20px;
+    border: 1px solid #6d5b4a;
+}
+
+.coc-section {
+    margin-bottom: 20px;
+}
+
+.coc-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6d5b8;
+    margin-bottom: 8px;
+}
+
+.coc-divider {
+    height: 2px;
+    background: #7e6b55;
+    margin: 16px 0;
+}
+
+/* 基本信息 */
+.coc-profile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.coc-avatar {
+    font-size: 52px;
+    background: #3f352c;
+    border-radius: 50%;
+    width: 68px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #7e6b55;
+}
+
+.coc-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #e6d5b8;
+}
+
+.coc-subtitle {
+    font-size: 14px;
+    color: #b8a68f;
+}
+
+.coc-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.coc-info-label {
+    color: #b8a68f;
+}
+
+/* 属性网格 */
+.coc-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.coc-stat-item {
+    background: #3f352c;
+    border-radius: 12px;
+    padding: 8px 4px;
+    text-align: center;
+    border: 1px solid #4e4236;
+}
+
+.coc-stat-label {
+    font-size: 10px;
+    color: #b8a68f;
+}
+
+.coc-stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f0e6d8;
+}
+
+.coc-stat-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.coc-stat-row-item {
+    flex: 1;
+    background: #3f352c;
+    border-radius: 12px;
+    padding: 8px;
+    text-align: center;
+}
+
+/* 血条和SAN条 */
+.coc-bar-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.coc-bar-item {
+    flex: 1;
+    background: #3f352c;
+    padding: 12px;
+    border-radius: 16px;
+}
+
+.coc-bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.coc-bar-bg {
+    background: #4a3e33;
+    height: 10px;
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+.coc-bar-fill {
+    height: 100%;
+    border-radius: 30px;
+    transition: width 0.3s ease;
+}
+
+.coc-bar-fill.hp { background: #c88a5a; }
+.coc-bar-fill.san { background: #7ba6b8; }
+
+/* 技能网格 */
+.coc-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    max-height: 120px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.coc-skill-item {
+    background: #3f352c;
+    padding: 6px 8px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.coc-skill-name {
+    font-size: 12px;
+    color: #d4c3aa;
+}
+
+.coc-skill-value {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.coc-skill-value.occupational { color: #c88a5a; }
+.coc-skill-value.interest { color: #7ba6b8; }
+.coc-skill-value.fighting { color: #b85a5a; }
+
+/* 武器列表 */
+.coc-weapons-list {
+    background: #332b23;
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #4e4236;
+}
+
+.coc-weapon-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed #4e4236;
+}
+
+.coc-weapon-row:last-child {
+    border-bottom: none;
+}
+
+.coc-weapon-name {
+    color: #b8a68f;
+}
+
+.coc-weapon-damage {
+    color: #f0e6d8;
+}
+
+/* 背景故事 */
+.coc-backstory {
+    background: #332b23;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #4e4236;
+    font-size: 13px;
+    color: #d4c3aa;
+}
+
+/* 物品列表 */
+.coc-possession-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed #4e4236;
+}
+
+/* 资产网格 */
+.coc-assets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.coc-asset-item {
+    background: #332b23;
+    padding: 8px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.coc-asset-label {
+    font-size: 11px;
+    color: #b8a68f;
+}
+
+.coc-asset-value {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* 关系列表 */
+.coc-relationship-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed #4e4236;
+}
+
+/* 空状态 */
+.coc-empty {
+    color: #8e7c68;
+    text-align: center;
+    padding: 30px;
+    background: #332b23;
+    border-radius: 28px;
+    border: 1px solid #4e4236;
+}
+
+/* 编辑模式样式 */
+.coc-edit-section {
+    background: #332b23;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #4e4236;
+}
+
+.coc-edit-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #e6d5b8;
+    margin-bottom: 16px;
+}
+
+.coc-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.coc-edit-input-group {
+    margin-bottom: 8px;
+}
+
+.coc-edit-label {
+    font-size: 10px;
+    color: #8e7c68;
+}
+
+.coc-edit-input {
+    width: 100%;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid #4e4236;
+    background: #3f352c;
+    color: #f0e6d8;
+}
+
+.coc-edit-textarea {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #4e4236;
+    background: #3f352c;
+    color: #f0e6d8;
+}
+
+.coc-edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.coc-edit-save {
+    flex: 1;
+    padding: 12px;
+    background: #c88a5a;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+.coc-edit-cancel {
+    flex: 1;
+    padding: 12px;
+    background: #4e4236;
+    color: #b8a68f;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+.coc-add-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    background: #7e6b55;
+    color: #f0e6d8;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+}
+
+/* 示例按钮 */
+.coc-examples {
+    margin-top: 8px;
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.coc-example-btn {
+    padding: 6px 12px;
+    background: #7e6b55;
+    color: #f0e6d8;
+    border: none;
+    border-radius: 30px;
+    font-size: 12px;
+    cursor: pointer;
+}
 
 /* 浮动球 */
 .coc-floating-ball {
@@ -6,7 +470,7 @@
     width: 56px;
     height: 56px;
     border-radius: 28px;
-    background: #4CAF50;
+    background: #c88a5a;
     color: white;
     font-size: 28px;
     display: flex;
@@ -18,173 +482,5 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     touch-action: none;
-    transition: transform 0.2s;
-}
-
-.coc-floating-ball:active {
-    transform: scale(0.95);
-}
-
-/* 主面板 */
-.coc-panel {
-    position: fixed;
-    left: 10px;
-    width: calc(100% - 20px);
-    height: 450px;
-    background: var(--bg-color, #1a1a1a);
-    border: 1px solid var(--border-color, #444);
-    border-radius: 16px;
-    z-index: 9999999;
-    display: none;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-}
-
-/* 面板头部 */
-.coc-panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    background: var(--bg-secondary, #333);
-    border-bottom: 1px solid var(--border-color, #444);
-}
-
-.coc-panel-title {
-    font-size: 18px;
-    font-weight: bold;
-    color: var(--text-color, white);
-}
-
-.coc-close-btn {
-    background: none;
-    border: none;
-    color: var(--text-color, white);
-    font-size: 20px;
-    cursor: pointer;
-    padding: 0 8px;
-}
-
-/* 面板内容 */
-.coc-panel-content {
-    flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-    background: var(--bg-color, #1a1a1a);
-}
-
-/* 表单元素 */
-.coc-select, .coc-input, .coc-textarea {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-color, #444);
-    border-radius: 8px;
-    background: var(--input-bg, #2a2a2a);
-    color: var(--text-color, white);
-    font-size: 14px;
-}
-
-.coc-textarea {
-    min-height: 100px;
-    font-family: monospace;
-    resize: vertical;
-}
-
-.coc-label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 14px;
-    color: var(--text-secondary, #aaa);
-}
-
-/* 按钮 */
-.coc-btn {
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.coc-btn:active {
-    opacity: 0.7;
-}
-
-.coc-btn-primary {
-    background: #4CAF50;
-    color: white;
-}
-
-.coc-btn-secondary {
-    background: #2196F3;
-    color: white;
-}
-
-.coc-btn-danger {
-    background: #f44336;
-    color: white;
-}
-
-.coc-btn-small {
-    padding: 6px 12px;
-    font-size: 12px;
-}
-
-/* 数据显示区 */
-.coc-data-display {
-    background: var(--input-bg, #2a2a2a);
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 16px;
-}
-
-.coc-data-content {
-    font-family: monospace;
-    font-size: 12px;
-    white-space: pre-wrap;
-    margin: 0;
-}
-
-/* 按钮组 */
-.coc-button-group {
-    display: flex;
-    gap: 8px;
-    margin: 8px 0;
-}
-
-.coc-button-group .coc-btn {
-    flex: 1;
-}
-
-/* 分隔线 */
-.coc-divider {
-    height: 1px;
-    background: var(--border-color, #444);
-    margin: 16px 0;
-}
-
-/* 提示信息 */
-.coc-toast {
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    z-index: 10000000;
-    font-size: 14px;
-    animation: fadeInOut 2s;
-}
-
-@keyframes fadeInOut {
-    0% { opacity: 0; }
-    20% { opacity: 1; }
-    80% { opacity: 1; }
-    100% { opacity: 0; }
+    border: 1px solid #7e6b55;
 }
