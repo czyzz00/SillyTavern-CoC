@@ -1,4 +1,4 @@
-// COC角色管理 - 三块式布局
+// COC角色管理 - 修复版
 (function() {
     alert('🔵 COC扩展启动');
     
@@ -192,7 +192,7 @@
             top: ${safeTop}px;
             left: 10px;
             width: ${winWidth - 20}px;
-            height: 500px;
+            height: 520px;
             background: var(--bg-color, #1a1a1a);
             border: 1px solid var(--border-color, #444);
             border-radius: 12px;
@@ -203,29 +203,33 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         `;
         
-        // 标题栏
+        // 标题栏 - 确保关闭按钮可点
         const header = document.createElement('div');
         header.style.cssText = `
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
+            padding: 12px 16px;
             background: var(--bg-secondary, #333);
             border-bottom: 1px solid var(--border-color, #444);
+            flex-shrink: 0;
         `;
         header.innerHTML = `
-            <span style="font-size: 16px; font-weight: bold;">🎲 COC角色</span>
+            <span style="font-size: 16px; font-weight: bold;">🎲 COC角色管理</span>
             <button id="coc-close-panel" style="
                 background: none;
                 border: none;
-                color: var(--text-color);
-                font-size: 18px;
+                color: white;
+                font-size: 20px;
                 cursor: pointer;
-                padding: 0 8px;
+                padding: 8px 12px;
+                margin: -8px -12px;
+                z-index: 10000000;
+                pointer-events: auto;
             ">✖</button>
         `;
         
-        // 内容区
+        // 内容区 - 可滚动
         const content = document.createElement('div');
         content.style.cssText = `
             flex: 1;
@@ -237,6 +241,12 @@
         panel.appendChild(header);
         panel.appendChild(content);
         document.body.appendChild(panel);
+        
+        // 单独绑定关闭事件
+        document.getElementById('coc-close-panel').onclick = (e) => {
+            e.stopPropagation();
+            panel.style.display = 'none';
+        };
         
         // ==================== 核心功能 ====================
         let isEditing = false;
@@ -264,25 +274,25 @@
             
             content.innerHTML = `
                 <!-- 第一块：顶部工具栏 -->
-                <div style="display: flex; gap: 4px; margin-bottom: 12px;">
-                    <select id="coc-role-select" style="flex: 2; padding: 8px; border-radius: 6px; font-size: 14px;">
+                <div style="display: flex; gap: 4px; margin-bottom: 12px; flex-shrink: 0;">
+                    <select id="coc-role-select" style="flex: 2; padding: 8px; border-radius: 6px; font-size: 14px; background: var(--input-bg, #2a2a2a); color: var(--text-color); border: 1px solid var(--border-color);">
                         ${optionsHtml}
                     </select>
-                    <button id="coc-import-btn" style="flex: 1; padding: 8px; background: #9C27B0; color: white; border: none; border-radius: 6px; font-size: 13px;">📥导入</button>
-                    <button id="coc-export-btn" style="flex: 1; padding: 8px; background: #2196F3; color: white; border: none; border-radius: 6px; font-size: 13px;">📤导出</button>
-                    <button id="coc-delete-btn" style="flex: 1; padding: 8px; background: #f44336; color: white; border: none; border-radius: 6px; font-size: 13px;">🗑️删除</button>
+                    <button id="coc-import-btn" style="flex: 1; padding: 8px; background: #9C27B0; color: white; border: none; border-radius: 6px; font-size: 13px;">📥</button>
+                    <button id="coc-export-btn" style="flex: 1; padding: 8px; background: #2196F3; color: white; border: none; border-radius: 6px; font-size: 13px;">📤</button>
+                    <button id="coc-delete-btn" style="flex: 1; padding: 8px; background: #f44336; color: white; border: none; border-radius: 6px; font-size: 13px;">🗑️</button>
                 </div>
                 
-                <!-- 第二块：角色信息面板（可视化） -->
-                <div id="coc-stats-display" style="background: #2a2a2a; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                <!-- 第二块：角色信息面板（固定高度，可滚动） -->
+                <div id="coc-stats-display" style="background: #2a2a2a; padding: 12px; border-radius: 8px; margin-bottom: 12px; max-height: 200px; overflow-y: auto;">
                     <div style="color: #888; text-align: center; padding: 30px;">👆 请选择角色</div>
                 </div>
                 
                 <!-- 第三块：编辑区域（默认隐藏） -->
-                <div id="coc-edit-section" style="display: none;">
+                <div id="coc-edit-section" style="display: none; max-height: 280px; overflow-y: auto;">
                     <div style="background: #2a2a2a; padding: 12px; border-radius: 8px;">
                         <div id="coc-edit-table"></div>
-                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <div style="display: flex; gap: 8px; margin-top: 12px; position: sticky; bottom: 0; background: #2a2a2a; padding: 8px 0;">
                             <button id="coc-save-edit" style="flex: 1; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 6px;">💾 保存</button>
                             <button id="coc-cancel-edit" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 6px;">✖ 取消</button>
                         </div>
@@ -290,7 +300,7 @@
                 </div>
                 
                 <!-- 示例按钮（小） -->
-                <div style="margin-top: 8px; display: flex; gap: 4px; justify-content: flex-end;">
+                <div style="margin-top: 8px; display: flex; gap: 4px; justify-content: flex-end; flex-shrink: 0;">
                     <button class="coc-example" data-example='{"STR":70,"DEX":50,"skills":{"侦查":80,"聆听":70}}' style="padding: 4px 8px; background: #2196F3; color: white; border: none; border-radius: 4px; font-size: 12px;">李昂</button>
                     <button class="coc-example" data-example='{"STR":60,"DEX":70,"skills":{"侦查":90,"潜行":60}}' style="padding: 4px 8px; background: #9C27B0; color: white; border: none; border-radius: 4px; font-size: 12px;">张薇</button>
                 </div>
@@ -319,10 +329,10 @@
             });
             html += '</div></div>';
             
-            // 技能编辑
+            // 技能编辑 - 用网格布局控制高度
             if (stats.skills) {
                 html += '<div><div style="font-size: 12px; color: #888; margin-bottom: 4px;">技能</div>';
-                html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;">';
+                html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; max-height: 120px; overflow-y: auto; padding-right: 4px;">';
                 
                 Object.entries(stats.skills).forEach(([skill, value]) => {
                     html += `
@@ -334,14 +344,15 @@
                         </div>
                     `;
                 });
+                html += '</div>';
                 
                 // 添加新技能按钮
                 html += `
-                    <div style="grid-column: span 2;">
-                        <button id="coc-add-skill" style="width: 100%; padding: 6px; background: #4CAF50; color: white; border: none; border-radius: 4px;">+ 添加技能</button>
+                    <div style="margin-top: 8px;">
+                        <button id="coc-add-skill" style="width: 100%; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px;">+ 添加技能</button>
                     </div>
                 `;
-                html += '</div></div>';
+                html += '</div>';
             }
             
             html += '</div>';
@@ -397,7 +408,7 @@
             // 技能
             if (stats.skills) {
                 html += '<div><div style="font-size:12px; color:#888; margin-bottom:4px;">技能</div>';
-                html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px;">';
+                html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; max-height: 100px; overflow-y: auto;">';
                 
                 Object.entries(stats.skills).forEach(([skill, value]) => {
                     html += `
@@ -558,7 +569,7 @@
                 editBtn.onclick = () => {
                     isEditing = true;
                     currentEditName = name;
-                    currentEditStats = JSON.parse(JSON.stringify(stats)); // 深拷贝
+                    currentEditStats = JSON.parse(JSON.stringify(stats));
                     
                     document.getElementById('coc-stats-display').style.display = 'none';
                     const editSection = document.getElementById('coc-edit-section');
@@ -568,14 +579,16 @@
                     
                     // 添加技能按钮
                     document.getElementById('coc-add-skill')?.addEventListener('click', () => {
-                        const table = document.getElementById('coc-edit-table');
-                        const newRow = document.createElement('div');
-                        newRow.style.cssText = 'display: flex; gap: 4px; margin-top: 4px;';
-                        newRow.innerHTML = `
-                            <input type="text" class="coc-edit-skill-name" placeholder="技能名" style="flex:2; padding:4px; border-radius:4px;">
-                            <input type="number" class="coc-edit-skill-value" value="50" style="flex:1; padding:4px; border-radius:4px;">
-                        `;
-                        document.querySelector('.coc-edit-skill-name')?.parentElement?.parentElement?.appendChild(newRow);
+                        const skillsContainer = document.querySelector('#coc-edit-table > div > div:nth-child(2) > div');
+                        if (skillsContainer) {
+                            const newSkillRow = document.createElement('div');
+                            newSkillRow.style.cssText = 'display: flex; gap: 4px; margin-top: 4px;';
+                            newSkillRow.innerHTML = `
+                                <input type="text" class="coc-edit-skill-name" placeholder="新技能" style="flex:2; padding:4px; border-radius:4px; border:1px solid #444; background:#333; color:white;">
+                                <input type="number" class="coc-edit-skill-value" value="50" style="flex:1; padding:4px; border-radius:4px; border:1px solid #444; background:#333; color:white;">
+                            `;
+                            skillsContainer.appendChild(newSkillRow);
+                        }
                     });
                     
                     // 保存编辑
@@ -587,7 +600,6 @@
                         document.getElementById('coc-stats-display').style.display = 'block';
                         document.getElementById('coc-edit-section').style.display = 'none';
                         
-                        // 刷新显示
                         document.getElementById('coc-stats-display').innerHTML = formatStats(newStats);
                         bindStatsEvents(name, newStats);
                         
