@@ -1,4 +1,4 @@
-// COC角色管理 - 精美风格版（修复血条）
+// COC角色管理 - 完整修复版
 (function() {
     alert('🔵 COC扩展启动');
     
@@ -264,7 +264,7 @@
             }
         }
         
-        // 计算HP最大值（COC规则： (CON+SIZ)/10 向下取整）
+        // 计算HP最大值
         function calculateMaxHP(stats) {
             if (stats.CON && stats.SIZ) {
                 return Math.floor((stats.CON + stats.SIZ) / 10);
@@ -272,34 +272,30 @@
             return stats.HP || 10;
         }
         
-        // 计算SAN最大值（等于POW）
+        // 计算SAN最大值
         function calculateMaxSAN(stats) {
             return stats.POW || 60;
         }
         
         // 精美风格的角色卡片
         function renderCharacterCard(name, stats) {
-            // 确保stats对象存在
             stats = stats || {};
             
-            // 计算HP
             const maxHP = calculateMaxHP(stats);
             const currentHP = stats.HP || maxHP;
             const hpPercent = Math.min(100, Math.max(0, (currentHP / maxHP) * 100));
             
-            // 计算SAN
             const maxSAN = calculateMaxSAN(stats);
             const currentSAN = stats.SAN || maxSAN;
             const sanPercent = Math.min(100, Math.max(0, (currentSAN / maxSAN) * 100));
             
-            // 技能列表
             const skills = stats.skills || {};
             const skillEntries = Object.entries(skills).slice(0, 6);
             while (skillEntries.length < 6) {
                 skillEntries.push(['——', '—']);
             }
             
-            // 武器列表
+            // 武器列表 - 从stats中读取，如果没有则用默认空数据
             const weapons = stats.weapons || [
                 { name: '——', skill: '—', damage: '—' },
                 { name: '——', skill: '—', damage: '—' }
@@ -368,7 +364,7 @@
                                 <span style="color: #b8a68f;">${w.name}</span>
                                 <span style="color: #f0e6d8;">${w.skill}% · ${w.damage}</span>
                             </div>
-                        `).join('').replace(/,/g, '')}
+                        `).join('')}
                     </div>
                     
                     <!-- 编辑按钮 -->
@@ -413,6 +409,24 @@
                         <button id="coc-add-skill" style="width:100%; margin-top:8px; padding:8px; background:#7e6b55; color:#f0e6d8; border:none; border-radius:30px; cursor:pointer;">+ 添加技能</button>
                     </div>
                     
+                    <!-- 武器编辑区（新增） -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 14px; color: #b8a68f; margin-bottom: 8px;">武器</div>
+                        <div id="coc-weapons-edit" style="display: flex; flex-direction: column; gap: 8px;">
+                            ${(stats.weapons || [{ name: '——', skill: '—', damage: '—' }, { name: '——', skill: '—', damage: '—' }]).map((weapon, index) => `
+                                <div style="display: flex; gap: 4px;">
+                                    <input type="text" class="coc-edit-weapon-name" value="${weapon.name}" placeholder="武器名"
+                                           style="flex:2; padding:6px; border-radius:8px; border:1px solid #4e4236; background:#3f352c; color:#f0e6d8;">
+                                    <input type="text" class="coc-edit-weapon-skill" value="${weapon.skill}" placeholder="技能%"
+                                           style="flex:1; padding:6px; border-radius:8px; border:1px solid #4e4236; background:#3f352c; color:#f0e6d8;">
+                                    <input type="text" class="coc-edit-weapon-damage" value="${weapon.damage}" placeholder="伤害"
+                                           style="flex:1; padding:6px; border-radius:8px; border:1px solid #4e4236; background:#3f352c; color:#f0e6d8;">
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button id="coc-add-weapon" style="width:100%; margin-top:8px; padding:8px; background:#7e6b55; color:#f0e6d8; border:none; border-radius:30px; cursor:pointer;">+ 添加武器</button>
+                    </div>
+                    
                     <div style="display: flex; gap: 8px;">
                         <button id="coc-save-edit" style="flex:1; padding:12px; background:#c88a5a; color:white; border:none; border-radius:30px; cursor:pointer;">💾 保存</button>
                         <button id="coc-cancel-edit" style="flex:1; padding:12px; background:#4e4236; color:#b8a68f; border:none; border-radius:30px; cursor:pointer;">✖ 取消</button>
@@ -452,25 +466,27 @@
                 <!-- 编辑区（默认隐藏） -->
                 <div id="coc-edit-section" style="display: none;"></div>
                 
-                <!-- 示例按钮 -->
+                <!-- 示例按钮（带武器数据） -->
                 <div style="margin-top: 8px; display: flex; gap: 4px; justify-content: flex-end;">
-                    <button class="coc-example" data-example='{"STR":70,"DEX":50,"CON":60,"SIZ":60,"INT":70,"APP":50,"POW":60,"EDU":60,"HP":12,"SAN":60,"skills":{"侦查":80,"聆听":70,"图书馆使用":60,"说服":50,"潜行":40}}' style="padding: 6px 12px; background: #7e6b55; color: #f0e6d8; border: none; border-radius: 30px; font-size: 12px; cursor:pointer;">李昂</button>
-                    <button class="coc-example" data-example='{"STR":60,"DEX":70,"CON":50,"SIZ":50,"INT":80,"APP":70,"POW":70,"EDU":70,"HP":10,"SAN":70,"skills":{"侦查":90,"潜行":60,"说服":70,"聆听":80,"图书馆使用":80}}' style="padding: 6px 12px; background: #7e6b55; color: #f0e6d8; border: none; border-radius: 30px; font-size: 12px; cursor:pointer;">张薇</button>
+                    <button class="coc-example" data-example='{"STR":70,"DEX":50,"CON":60,"SIZ":60,"INT":70,"APP":50,"POW":60,"EDU":60,"HP":12,"SAN":60,"skills":{"侦查":80,"聆听":70,"图书馆使用":60,"说服":50,"潜行":40},"weapons":[{"name":"格斗","skill":"60","damage":"1d8+2"},{"name":"手枪","skill":"50","damage":"1d10"}]}' style="padding: 6px 12px; background: #7e6b55; color: #f0e6d8; border: none; border-radius: 30px; font-size: 12px; cursor:pointer;">李昂</button>
+                    <button class="coc-example" data-example='{"STR":60,"DEX":70,"CON":50,"SIZ":50,"INT":80,"APP":70,"POW":70,"EDU":70,"HP":10,"SAN":70,"skills":{"侦查":90,"潜行":60,"说服":70,"聆听":80,"图书馆使用":80},"weapons":[{"name":"匕首","skill":"70","damage":"1d4"},{"name":"步枪","skill":"40","damage":"2d8"}]}' style="padding: 6px 12px; background: #7e6b55; color: #f0e6d8; border: none; border-radius: 30px; font-size: 12px; cursor:pointer;">张薇</button>
                 </div>
             `;
             
             bindViewEvents();
         }
         
-        // 从编辑表格收集数据
+        // 从编辑表格收集数据（包含武器）
         function collectEditData() {
             const stats = {};
             
+            // 基础属性
             document.querySelectorAll('.coc-edit-input').forEach(input => {
                 const attr = input.dataset.attr;
                 stats[attr] = parseInt(input.value) || 50;
             });
             
+            // 技能
             const skills = {};
             document.querySelectorAll('.coc-edit-skill-name').forEach((input, index) => {
                 const skillName = input.value.trim();
@@ -479,9 +495,26 @@
                     skills[skillName] = parseInt(skillValue) || 50;
                 }
             });
-            
             if (Object.keys(skills).length > 0) {
                 stats.skills = skills;
+            }
+            
+            // 武器
+            const weapons = [];
+            document.querySelectorAll('.coc-edit-weapon-name').forEach((input, index) => {
+                const name = input.value.trim();
+                const skill = document.querySelectorAll('.coc-edit-weapon-skill')[index]?.value.trim();
+                const damage = document.querySelectorAll('.coc-edit-weapon-damage')[index]?.value.trim();
+                if (name || skill || damage) {
+                    weapons.push({
+                        name: name || '——',
+                        skill: skill || '—',
+                        damage: damage || '—'
+                    });
+                }
+            });
+            if (weapons.length > 0) {
+                stats.weapons = weapons;
             }
             
             return stats;
@@ -636,6 +669,19 @@
                             <input type="number" class="coc-edit-skill-value" value="50" style="flex:1; padding:6px; border-radius:8px; border:1px solid #4e4236; background:#3f352c; color:#f0e6d8;">
                         `;
                         skillsDiv.appendChild(newRow);
+                    };
+                    
+                    // 添加武器按钮
+                    document.getElementById('coc-add-weapon').onclick = () => {
+                        const weaponsDiv = document.getElementById('coc-weapons-edit');
+                        const newRow = document.createElement('div');
+                        newRow.style.cssText = 'display: flex; gap: 4px; margin-top: 4px;';
+                        newRow.innerHTML = `
+                            <input type="text" class="coc-edit-weapon-name" placeholder="武器名" style="flex:2; padding:6px; border-radius:8px; border:1px solid #4e4236; background:#3f352c; color:#f0e6d8;">
+                            <input type="text" class="coc-edit-weapon-skill" placeholder="技能%" style="flex:1; padding:6px; border-radius:8px; border:1px solid #4e4236; background:#3f352c; color:#f0e6d8;">
+                            <input type="text" class="coc-edit-weapon-damage" placeholder="伤害" style="flex:1; padding:6px; border-radius:8px; border:1px solid #4e4236; background:#3f352c; color:#f0e6d8;">
+                        `;
+                        weaponsDiv.appendChild(newRow);
                     };
                     
                     // 保存编辑
