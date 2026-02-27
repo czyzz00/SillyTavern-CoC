@@ -1,6 +1,4 @@
-/* COC7 角色卡样式 - 只保留视觉样式，不写定位 */
-
-/* 基础变量 */
+/* COC7 角色卡样式 */
 :root {
     --coc-bg: #2c241e;
     --coc-bg-light: #3f352c;
@@ -464,7 +462,7 @@
     cursor: pointer;
 }
 
-/* 浮动球 - 定位在JS里动态设置 */
+/* 浮动球 */
 .coc-floating-ball {
     position: fixed;
     width: 56px;
