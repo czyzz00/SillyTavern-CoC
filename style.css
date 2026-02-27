@@ -1,12 +1,35 @@
 /* COC7 角色卡样式 - 只保留视觉样式，不写定位 */
 
-/* 卡片基础样式 */
-.coc-card {
-    background: #2c241e;
+/* 基础变量 */
+:root {
+    --coc-bg: #2c241e;
+    --coc-bg-light: #3f352c;
+    --coc-bg-dark: #332b23;
+    --coc-border: #4e4236;
+    --coc-border-light: #6d5b4a;
+    --coc-gold: #7e6b55;
+    --coc-text: #f0e6d8;
+    --coc-text-muted: #b8a68f;
+    --coc-text-dark: #8e7c68;
+    --coc-hp: #c88a5a;
+    --coc-san: #7ba6b8;
+    --coc-occupational: #c88a5a;
+    --coc-interest: #7ba6b8;
+    --coc-fighting: #b85a5a;
+}
+
+/* 面板定位在JS中动态设置 */
+.coc-panel {
+    position: fixed;
+    background: var(--coc-bg);
+    border: 1px solid var(--coc-border-light);
     border-radius: 28px;
-    padding: 20px;
-    border: 1px solid #6d5b4a;
-    color: #f0e6d8;
+    z-index: 9999999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.7);
+    color: var(--coc-text);
 }
 
 /* 标题栏 */
@@ -15,8 +38,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    background: #2c241e;
-    border-bottom: 2px solid #7e6b55;
+    background: var(--coc-bg);
+    border-bottom: 2px solid var(--coc-gold);
     flex-shrink: 0;
 }
 
@@ -30,7 +53,7 @@
 .coc-close-btn {
     background: none;
     border: none;
-    color: #b8a68f;
+    color: var(--coc-text-muted);
     font-size: 24px;
     cursor: pointer;
     padding: 8px 12px;
@@ -41,7 +64,7 @@
     flex: 1;
     padding: 16px;
     overflow-y: auto;
-    background: #2c241e;
+    background: var(--coc-bg);
 }
 
 /* 工具栏 */
@@ -49,10 +72,10 @@
     display: flex;
     gap: 6px;
     margin-bottom: 16px;
-    background: #332b23;
+    background: var(--coc-bg-dark);
     padding: 12px;
     border-radius: 16px;
-    border: 1px solid #4e4236;
+    border: 1px solid var(--coc-border);
 }
 
 .coc-select {
@@ -60,9 +83,9 @@
     padding: 10px;
     border-radius: 30px;
     font-size: 14px;
-    background: #3f352c;
-    color: #f0e6d8;
-    border: 1px solid #4e4236;
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
+    border: 1px solid var(--coc-border);
 }
 
 .coc-btn {
@@ -75,18 +98,37 @@
     color: white;
 }
 
-.coc-btn.import { background: #7ba6b8; }
-.coc-btn.export { background: #7e6b55; }
-.coc-btn.delete { background: #b85a5a; }
+.coc-btn.import { background: var(--coc-san); }
+.coc-btn.export { background: var(--coc-gold); }
+.coc-btn.delete { background: var(--coc-fighting); }
 .coc-btn.edit { 
     width: 100%; 
     padding: 12px; 
-    background: #7e6b55; 
+    background: var(--coc-gold); 
     border-radius: 30px; 
     margin-top: 8px; 
-    color: #f0e6d8;
+    color: var(--coc-text);
     border: none;
     cursor: pointer;
+}
+
+/* 卡片基础 */
+.coc-card {
+    background: var(--coc-bg);
+    border-radius: 28px;
+    padding: 20px;
+    border: 1px solid var(--coc-border-light);
+}
+
+.coc-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6d5b8;
+    margin: 16px 0 8px 0;
+}
+
+.coc-section-title:first-of-type {
+    margin-top: 0;
 }
 
 /* 基本信息 */
@@ -99,14 +141,14 @@
 
 .coc-avatar {
     font-size: 52px;
-    background: #3f352c;
+    background: var(--coc-bg-light);
     border-radius: 50%;
     width: 68px;
     height: 68px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #7e6b55;
+    border: 2px solid var(--coc-gold);
 }
 
 .coc-name {
@@ -117,7 +159,7 @@
 
 .coc-subtitle {
     font-size: 14px;
-    color: #b8a68f;
+    color: var(--coc-text-muted);
 }
 
 .coc-info-grid {
@@ -128,7 +170,7 @@
 }
 
 .coc-info-label {
-    color: #b8a68f;
+    color: var(--coc-text-muted);
 }
 
 /* 状态条 */
@@ -140,7 +182,7 @@
 
 .coc-bar-item {
     flex: 1;
-    background: #3f352c;
+    background: var(--coc-bg-light);
     padding: 12px;
     border-radius: 16px;
 }
@@ -166,8 +208,8 @@
     transition: width 0.3s ease;
 }
 
-.coc-bar-fill.hp { background: #c88a5a; }
-.coc-bar-fill.san { background: #7ba6b8; }
+.coc-bar-fill.hp { background: var(--coc-hp); }
+.coc-bar-fill.san { background: var(--coc-san); }
 
 /* 属性网格 */
 .coc-stats-grid {
@@ -178,22 +220,22 @@
 }
 
 .coc-stat-item {
-    background: #3f352c;
+    background: var(--coc-bg-light);
     border-radius: 12px;
     padding: 8px 4px;
     text-align: center;
-    border: 1px solid #4e4236;
+    border: 1px solid var(--coc-border);
 }
 
 .coc-stat-label {
     font-size: 10px;
-    color: #b8a68f;
+    color: var(--coc-text-muted);
 }
 
 .coc-stat-value {
     font-size: 16px;
     font-weight: 700;
-    color: #f0e6d8;
+    color: var(--coc-text);
 }
 
 .coc-stat-row {
@@ -204,7 +246,7 @@
 
 .coc-stat-row-item {
     flex: 1;
-    background: #3f352c;
+    background: var(--coc-bg-light);
     border-radius: 12px;
     padding: 8px;
     text-align: center;
@@ -222,7 +264,7 @@
 }
 
 .coc-skill-item {
-    background: #3f352c;
+    background: var(--coc-bg-light);
     padding: 6px 8px;
     border-radius: 8px;
     display: flex;
@@ -239,16 +281,16 @@
     font-weight: 600;
 }
 
-.coc-skill-value.occupational { color: #c88a5a; }
-.coc-skill-value.interest { color: #7ba6b8; }
-.coc-skill-value.fighting { color: #b85a5a; }
+.coc-skill-value.occupational { color: var(--coc-occupational); }
+.coc-skill-value.interest { color: var(--coc-interest); }
+.coc-skill-value.fighting { color: var(--coc-fighting); }
 
 /* 武器/物品列表 */
 .coc-weapons-list {
-    background: #332b23;
+    background: var(--coc-bg-dark);
     border-radius: 12px;
     padding: 12px;
-    border: 1px solid #4e4236;
+    border: 1px solid var(--coc-border);
     margin-bottom: 16px;
 }
 
@@ -256,7 +298,7 @@
     display: flex;
     justify-content: space-between;
     padding: 6px 0;
-    border-bottom: 1px dashed #4e4236;
+    border-bottom: 1px dashed var(--coc-border);
 }
 
 .coc-weapon-row:last-child, .coc-possession-row:last-child, .coc-relationship-row:last-child {
@@ -265,10 +307,10 @@
 
 /* 背景故事 */
 .coc-backstory {
-    background: #332b23;
+    background: var(--coc-bg-dark);
     padding: 12px;
     border-radius: 12px;
-    border: 1px solid #4e4236;
+    border: 1px solid var(--coc-border);
     font-size: 13px;
     color: #d4c3aa;
     margin-bottom: 16px;
@@ -283,7 +325,7 @@
 }
 
 .coc-asset-item {
-    background: #332b23;
+    background: var(--coc-bg-dark);
     padding: 8px;
     border-radius: 12px;
     text-align: center;
@@ -291,7 +333,7 @@
 
 .coc-asset-label {
     font-size: 11px;
-    color: #b8a68f;
+    color: var(--coc-text-muted);
 }
 
 .coc-asset-value {
@@ -301,20 +343,20 @@
 
 /* 空状态 */
 .coc-empty {
-    color: #8e7c68;
+    color: var(--coc-text-dark);
     text-align: center;
     padding: 30px;
-    background: #332b23;
+    background: var(--coc-bg-dark);
     border-radius: 28px;
-    border: 1px solid #4e4236;
+    border: 1px solid var(--coc-border);
 }
 
 /* 编辑模式样式 */
 .coc-edit-section {
-    background: #332b23;
+    background: var(--coc-bg-dark);
     border-radius: 16px;
     padding: 16px;
-    border: 1px solid #4e4236;
+    border: 1px solid var(--coc-border);
     margin-bottom: 16px;
 }
 
@@ -332,22 +374,28 @@
     margin-bottom: 16px;
 }
 
+.coc-edit-label {
+    font-size: 10px;
+    color: var(--coc-text-dark);
+    margin-bottom: 2px;
+}
+
 .coc-edit-input {
     width: 100%;
     padding: 6px;
     border-radius: 8px;
-    border: 1px solid #4e4236;
-    background: #3f352c;
-    color: #f0e6d8;
+    border: 1px solid var(--coc-border);
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
 }
 
 .coc-edit-textarea {
     width: 100%;
     padding: 8px;
     border-radius: 8px;
-    border: 1px solid #4e4236;
-    background: #3f352c;
-    color: #f0e6d8;
+    border: 1px solid var(--coc-border);
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
     margin-bottom: 16px;
 }
 
@@ -370,7 +418,7 @@
 .coc-edit-save {
     flex: 1;
     padding: 12px;
-    background: #c88a5a;
+    background: var(--coc-hp);
     color: white;
     border: none;
     border-radius: 30px;
@@ -380,8 +428,8 @@
 .coc-edit-cancel {
     flex: 1;
     padding: 12px;
-    background: #4e4236;
-    color: #b8a68f;
+    background: var(--coc-border);
+    color: var(--coc-text-muted);
     border: none;
     border-radius: 30px;
     cursor: pointer;
@@ -391,8 +439,8 @@
     width: 100%;
     margin: 8px 0 16px;
     padding: 8px;
-    background: #7e6b55;
-    color: #f0e6d8;
+    background: var(--coc-gold);
+    color: var(--coc-text);
     border: none;
     border-radius: 30px;
     cursor: pointer;
@@ -408,8 +456,8 @@
 
 .coc-example-btn {
     padding: 6px 12px;
-    background: #7e6b55;
-    color: #f0e6d8;
+    background: var(--coc-gold);
+    color: var(--coc-text);
     border: none;
     border-radius: 30px;
     font-size: 12px;
@@ -422,7 +470,7 @@
     width: 56px;
     height: 56px;
     border-radius: 28px;
-    background: #c88a5a;
+    background: var(--coc-hp);
     color: white;
     font-size: 28px;
     display: flex;
@@ -434,5 +482,5 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     touch-action: none;
-    border: 1px solid #7e6b55;
+    border: 1px solid var(--coc-gold);
 }
