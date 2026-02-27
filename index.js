@@ -1,4 +1,4 @@
-// COC7 角色卡 - 最终版（头像上传 + 移除示例）
+// COC7 角色卡 - 最终完美版（编辑模式上传头像 + 新增角色选项）
 (function() {
     'use strict';
 
@@ -288,15 +288,15 @@
         reader.readAsDataURL(file);
     }
 
-    // 渲染头像
+    // 渲染头像（只显示，不可点击）
     function renderAvatar(avatarData, name) {
         if (avatarData) {
-            return `<img src="${avatarData}" alt="${name}">`;
+            return `<img src="${avatarData}" alt="${name}" style="width:100%; height:100%; object-fit:cover;">`;
         }
-        return `<div class="coc-avatar-placeholder">🦌</div>`;
+        return `<div style="font-size: 40px; color: var(--coc-text-muted);">🦌</div>`;
     }
 
-    // 渲染角色卡片（带头像上传）
+    // 渲染角色卡片（头像不可点击）
     function renderCharacterCard(name, stats) {
         stats = stats || {};
         
@@ -329,10 +329,8 @@
             <div class="coc-card">
                 <div>
                     <div class="coc-profile">
-                        <div class="coc-avatar-upload" id="coc-avatar-upload">
+                        <div class="coc-avatar" style="overflow:hidden;">
                             ${renderAvatar(stats.avatar, name)}
-                            <input type="file" id="coc-avatar-input" accept="image/png,image/jpeg,image/gif,image/webp">
-                            <div class="coc-avatar-edit-btn">✎</div>
                         </div>
                         <div>
                             <div class="coc-name">${name}</div>
@@ -473,14 +471,17 @@
         `;
     }
 
+    // 渲染查看模式（带新增角色选项）
     function renderViewMode() {
         const characters = api.getAllCharacters();
         const names = Object.keys(characters).sort();
         const select = document.getElementById('coc-role-select');
         
         if (select) {
-            select.innerHTML = '<option value="">选择角色</option>' + 
-                names.map(name => `<option value="${name}">${name}</option>`).join('');
+            let options = '<option value="">选择角色</option>';
+            options += names.map(name => `<option value="${name}">${name}</option>`).join('');
+            options += `<option value="__NEW__" class="coc-add-role-option">➕ 新增角色...</option>`;
+            select.innerHTML = options;
         }
         
         const display = document.getElementById('coc-stats-display');
@@ -491,35 +492,64 @@
         const select = document.getElementById('coc-role-select');
         if (select) {
             select.addEventListener('change', (e) => {
-                const name = e.target.value;
-                if (!name) {
+                const value = e.target.value;
+                
+                if (value === '__NEW__') {
+                    // 新增角色
+                    const newName = prompt('请输入新角色名:');
+                    if (newName && newName.trim()) {
+                        const name = newName.trim();
+                        if (api.getCharacter(name)) {
+                            alert('❌ 角色已存在');
+                        } else {
+                            // 创建默认角色数据
+                            const defaultStats = {
+                                occupation: '调查员',
+                                age: 30,
+                                birthplace: '',
+                                residence: '',
+                                STR: 50,
+                                DEX: 50,
+                                CON: 50,
+                                SIZ: 50,
+                                INT: 50,
+                                APP: 50,
+                                POW: 50,
+                                EDU: 50,
+                                LUCK: 50,
+                                occupationalSkills: {},
+                                interestSkills: {},
+                                fightingSkills: {},
+                                possessions: [],
+                                assets: { spendingLevel: '', cash: '', assets: '' },
+                                relationships: []
+                            };
+                            api.setCharacter(name, defaultStats);
+                            renderViewMode();
+                            api.sendMessage(`✅ 已创建新角色: ${name}`);
+                            
+                            setTimeout(() => {
+                                select.value = name;
+                                select.dispatchEvent(new Event('change'));
+                            }, 100);
+                        }
+                    } else {
+                        // 取消新增，重置选择
+                        select.value = '';
+                    }
+                    return;
+                }
+                
+                if (!value) {
                     document.getElementById('coc-stats-display').innerHTML = '<div class="coc-empty">👆 请选择角色</div>';
                     return;
                 }
                 
-                const char = api.getCharacter(name);
+                const char = api.getCharacter(value);
                 if (char) {
-                    document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(name, char.stats);
-                    
-                    // 绑定头像上传事件
-                    const avatarInput = document.getElementById('coc-avatar-input');
-                    if (avatarInput) {
-                        avatarInput.onchange = (e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                                handleAvatarUpload(file, (avatarData) => {
-                                    const stats = api.getCharacter(name).stats;
-                                    stats.avatar = avatarData;
-                                    api.setCharacter(name, stats);
-                                    document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(name, stats);
-                                    bindAvatarEvents(name); // 重新绑定
-                                });
-                            }
-                        };
-                    }
-                    
+                    document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(value, char.stats);
                     document.getElementById('coc-edit-mode-btn').onclick = () => {
-                        enterEditMode(name, char.stats);
+                        enterEditMode(value, char.stats);
                     };
                 }
             });
@@ -528,25 +558,6 @@
         document.getElementById('coc-import-btn').onclick = () => importFromFile();
         document.getElementById('coc-export-btn').onclick = () => exportCharacter();
         document.getElementById('coc-delete-btn').onclick = () => deleteCharacter();
-    }
-
-    // 重新绑定头像事件（编辑后）
-    function bindAvatarEvents(name) {
-        const avatarInput = document.getElementById('coc-avatar-input');
-        if (avatarInput) {
-            avatarInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    handleAvatarUpload(file, (avatarData) => {
-                        const stats = api.getCharacter(name).stats;
-                        stats.avatar = avatarData;
-                        api.setCharacter(name, stats);
-                        document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(name, stats);
-                        bindAvatarEvents(name);
-                    });
-                }
-            };
-        }
     }
 
     function enterEditMode(name, stats) {
@@ -575,10 +586,22 @@
         ).join('');
     }
 
+    // 渲染编辑表单（带头像上传）
     function renderEditForm(name, stats) {
         return `
             <div class="coc-edit-section">
                 <div class="coc-edit-title">✏️ 编辑 ${name}</div>
+                
+                <!-- 头像上传区（只在编辑模式显示） -->
+                <div class="coc-edit-avatar">
+                    <div class="coc-edit-avatar-preview" id="coc-avatar-preview">
+                        ${stats.avatar 
+                            ? `<img src="${stats.avatar}" alt="avatar">` 
+                            : '<div class="coc-edit-avatar-placeholder">🦌</div>'}
+                    </div>
+                    <button class="coc-edit-avatar-btn" id="coc-avatar-upload-btn">📷 上传头像</button>
+                    <input type="file" id="coc-avatar-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
+                </div>
                 
                 <div>
                     <div class="coc-edit-label">职业</div>
@@ -722,6 +745,25 @@
     }
 
     function bindEditEvents() {
+        // 头像上传
+        const uploadBtn = document.getElementById('coc-avatar-upload-btn');
+        const avatarInput = document.getElementById('coc-avatar-input');
+        const avatarPreview = document.getElementById('coc-avatar-preview');
+        
+        if (uploadBtn && avatarInput) {
+            uploadBtn.onclick = () => avatarInput.click();
+            
+            avatarInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    handleAvatarUpload(file, (avatarData) => {
+                        currentEditStats.avatar = avatarData;
+                        avatarPreview.innerHTML = `<img src="${avatarData}" alt="avatar">`;
+                    });
+                }
+            };
+        }
+
         // 添加职业技能
         document.getElementById('coc-add-occ-skill').onclick = () => {
             const container = document.getElementById('coc-edit-occupational-skills');
@@ -836,10 +878,9 @@
         document.getElementById('coc-save-edit').onclick = () => {
             const newStats = collectEditData();
             
-            // 保留原有头像
-            const currentStats = api.getCharacter(currentEditName)?.stats;
-            if (currentStats?.avatar) {
-                newStats.avatar = currentStats.avatar;
+            // 保留头像（从currentEditStats获取）
+            if (currentEditStats.avatar) {
+                newStats.avatar = currentEditStats.avatar;
             }
             
             api.setCharacter(currentEditName, newStats);
@@ -849,9 +890,6 @@
             document.getElementById('coc-edit-section').style.display = 'none';
             
             document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(currentEditName, newStats);
-            
-            // 重新绑定头像上传事件
-            bindAvatarEvents(currentEditName);
             
             document.getElementById('coc-edit-mode-btn').onclick = () => {
                 enterEditMode(currentEditName, newStats);
