@@ -1,4 +1,4 @@
-// COC角色管理 - 可拖动悬浮球版
+// COC角色管理 - 精准拖动版
 (function() {
     alert('🔵 COC扩展启动');
     
@@ -19,7 +19,7 @@
                       document.querySelector('[class*="top"]');
         const topBarHeight = topBar ? topBar.getBoundingClientRect().height : 0;
         const safeTop = topBarHeight + 5;
-        const safeBottom = winHeight - 60; // 给底部留空间
+        const safeBottom = winHeight - 60;
         
         // ==================== 创建可拖动悬浮球 ====================
         const floatingBall = document.createElement('div');
@@ -43,91 +43,94 @@
             cursor: pointer;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            transition: transform 0.1s;
-            touch-action: none; /* 防止拖动时页面滚动 */
+            touch-action: none;
         `;
         
         document.body.appendChild(floatingBall);
         
-        // ==================== 拖动功能 ====================
+        // ==================== 拖动功能（修正版）====================
         let isDragging = false;
-        let startX, startY, startLeft, startTop;
+        let startX, startY;
+        let startLeft, startTop;
+        let currentLeft = safeTop + 20;
+        let currentRight = 20;
         
-        // 获取当前transform矩阵中的位移（如果有）
+        // 获取元素当前位置（使用getBoundingClientRect，最准确）
         function getCurrentPosition() {
-            const style = window.getComputedStyle(floatingBall);
-            const matrix = style.transform;
-            if (matrix === 'none') {
-                const rect = floatingBall.getBoundingClientRect();
-                return { 
-                    left: rect.left, 
-                    top: rect.top,
-                    right: rect.right,
-                    bottom: rect.bottom
-                };
-            }
-            
-            // 解析matrix
-            const values = matrix.match(/matrix.*\((.+)\)/)?.[1].split(', ');
-            if (values) {
-                return {
-                    left: parseFloat(values[4]) || 0,
-                    top: parseFloat(values[5]) || 0
-                };
-            }
-            return { left: 0, top: 0 };
+            const rect = floatingBall.getBoundingClientRect();
+            return {
+                left: rect.left,
+                top: rect.top,
+                right: rect.right,
+                bottom: rect.bottom
+            };
         }
         
         function onTouchStart(e) {
-            e.preventDefault(); // 防止页面滚动
+            e.preventDefault();
             const touch = e.touches[0];
+            
+            // 记录手指起始位置
             startX = touch.clientX;
             startY = touch.clientY;
             
+            // 记录元素当前位置
             const pos = getCurrentPosition();
             startLeft = pos.left;
             startTop = pos.top;
             
-            isDragging = false; // 先标记为false，移动超过阈值才设为true
-            floatingBall.style.transition = 'none';
+            // 重置transform，因为我们要用top/left定位
+            floatingBall.style.transform = 'none';
+            floatingBall.style.top = startTop + 'px';
+            floatingBall.style.left = startLeft + 'px';
+            floatingBall.style.right = 'auto'; // 取消right定位
+            
+            isDragging = false;
         }
         
         function onTouchMove(e) {
             e.preventDefault();
-            if (!startX || !startY) return;
+            if (startX === undefined || startY === undefined) return;
             
             const touch = e.touches[0];
-            const dx = touch.clientX - startX;
-            const dy = touch.clientY - startY;
             
-            // 如果移动距离超过5px，认为是拖动而不是点击
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            // 计算手指移动距离
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+            
+            // 如果移动距离超过5px，认为是拖动
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
                 isDragging = true;
             }
             
             // 计算新位置
-            let newLeft = startLeft + dx;
-            let newTop = startTop + dy;
+            let newLeft = startLeft + deltaX;
+            let newTop = startTop + deltaY;
             
-            // 边界限制（不超出屏幕）
+            // 边界限制
             newLeft = Math.max(0, Math.min(winWidth - 56, newLeft));
             newTop = Math.max(safeTop, Math.min(safeBottom, newTop));
             
-            // 应用新位置
-            floatingBall.style.transform = `translate(${newLeft - startLeft}px, ${newTop - startTop}px)`;
+            // 直接设置top/left定位
+            floatingBall.style.top = newTop + 'px';
+            floatingBall.style.left = newLeft + 'px';
         }
         
         function onTouchEnd(e) {
             e.preventDefault();
-            floatingBall.style.transition = 'transform 0.1s';
             
             if (!isDragging) {
                 // 这是点击事件，打开面板
                 togglePanel();
             }
             
+            // 保存当前位置到变量
+            const pos = getCurrentPosition();
+            currentLeft = pos.left;
+            currentTop = pos.top;
+            
             // 重置
-            startX = startY = null;
+            startX = startY = undefined;
             isDragging = false;
         }
         
@@ -187,14 +190,12 @@
             background: var(--bg-color, #1a1a1a);
         `;
         
-        // 填充内容（先用测试数据）
+        // 填充内容
         content.innerHTML = `
             <div style="margin-bottom: 16px;">
                 <label style="display:block; margin-bottom:4px;">选择角色</label>
                 <select id="coc-role-select" style="width:100%; padding:10px; border-radius:6px;">
                     <option value="">-- 请选择 --</option>
-                    <option value="李昂">李昂</option>
-                    <option value="张薇">张薇</option>
                 </select>
             </div>
             
@@ -223,6 +224,7 @@
         function togglePanel() {
             if (panel.style.display === 'none') {
                 panel.style.display = 'flex';
+                // 刷新下拉列表（后续实现）
             } else {
                 panel.style.display = 'none';
             }
@@ -241,7 +243,7 @@
             };
         });
         
-        alert('✅ 可拖动悬浮球已创建');
+        alert('✅ 精准拖动悬浮球已创建');
     }
     
     waitForBody();
