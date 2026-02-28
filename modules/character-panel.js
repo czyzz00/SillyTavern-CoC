@@ -674,6 +674,12 @@ function registerCharacterPanel(context, data, core) {
         return intelligence * 2;
     }
 
+    // ✅ 修复：计算技能的实际加点值（减去基础值）
+    function getSkillPointsSpent(skillName, skillValue) {
+        const baseValue = getSkillBaseValue(skillName);
+        return Math.max(0, skillValue - baseValue);
+    }
+
     function getSkillBaseValue(skillName) {
         if (skillName.includes('艺术/工艺')) return 5;
         if (skillName.includes('科学(')) return 1;
@@ -1179,18 +1185,20 @@ function registerCharacterPanel(context, data, core) {
         const occPoints = calculateOccupationPoints(currentOccupation, attributes);
         const intPoints = calculateInterestPoints(attributes.INT);
         
-        // 计算已使用点数（基于基础值）
+        // ✅ 修复：计算已使用点数（只算超出基础值的部分）
         let usedOccPoints = 0;
-        Object.entries(stats.occupationalSkills || {}).forEach(([skill, value]) => {
-            const baseValue = getSkillBaseValue(skill);
-            usedOccPoints += Math.max(0, value - baseValue);
-        });
+        if (stats.occupationalSkills) {
+            Object.entries(stats.occupationalSkills).forEach(([skill, value]) => {
+                usedOccPoints += getSkillPointsSpent(skill, value);
+            });
+        }
         
         let usedIntPoints = 0;
-        Object.entries(stats.interestSkills || {}).forEach(([skill, value]) => {
-            const baseValue = getSkillBaseValue(skill);
-            usedIntPoints += Math.max(0, value - baseValue);
-        });
+        if (stats.interestSkills) {
+            Object.entries(stats.interestSkills).forEach(([skill, value]) => {
+                usedIntPoints += getSkillPointsSpent(skill, value);
+            });
+        }
         
         return `
             <div class="coc-edit-section">
@@ -1277,37 +1285,31 @@ function registerCharacterPanel(context, data, core) {
 
                 <div class="coc-edit-label">职业技能</div>
                 <div id="coc-edit-occupational-skills" class="coc-select-list">
-                    ${Object.entries(stats.occupationalSkills || {}).map(([skill, value]) => {
-                        const baseValue = getSkillBaseValue(skill);
-                        return `
-                            <div class="coc-select-row" data-skill="${skill}" data-base="${baseValue}">
-                                <select class="coc-edit-occ-skill-name">
-                                    <option value="">选择技能</option>
-                                    ${renderSkillOptions(skill, 'occupational', currentOccupation)}
-                                </select>
-                                <input type="number" class="coc-edit-occ-skill-value" value="${value}" min="0" max="99" placeholder="数值" onchange="if(this.value>99) this.value=99; if(this.value<0) this.value=0; updatePointsDisplay()">
-                                <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsDisplay()">✖</button>
-                            </div>
-                        `;
-                    }).join('')}
+                    ${Object.entries(stats.occupationalSkills || {}).map(([skill, value]) => `
+                        <div class="coc-select-row">
+                            <select class="coc-edit-occ-skill-name">
+                                <option value="">选择技能</option>
+                                ${renderSkillOptions(skill, 'occupational', currentOccupation)}
+                            </select>
+                            <input type="number" class="coc-edit-occ-skill-value" value="${value}" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
+                        </div>
+                    `).join('')}
                 </div>
                 <button class="coc-add-btn" id="coc-add-occ-skill">+ 添加职业技能</button>
 
                 <div class="coc-edit-label">兴趣技能</div>
                 <div id="coc-edit-interest-skills" class="coc-select-list">
-                    ${Object.entries(stats.interestSkills || {}).map(([skill, value]) => {
-                        const baseValue = getSkillBaseValue(skill);
-                        return `
-                            <div class="coc-select-row" data-skill="${skill}" data-base="${baseValue}">
-                                <select class="coc-edit-int-skill-name">
-                                    <option value="">选择技能</option>
-                                    ${renderSkillOptions(skill, 'interest', currentOccupation)}
-                                </select>
-                                <input type="number" class="coc-edit-int-skill-value" value="${value}" min="0" max="99" placeholder="数值" onchange="if(this.value>99) this.value=99; if(this.value<0) this.value=0; updatePointsDisplay()">
-                                <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsDisplay()">✖</button>
-                            </div>
-                        `;
-                    }).join('')}
+                    ${Object.entries(stats.interestSkills || {}).map(([skill, value]) => `
+                        <div class="coc-select-row">
+                            <select class="coc-edit-int-skill-name">
+                                <option value="">选择技能</option>
+                                ${renderSkillOptions(skill, 'interest', currentOccupation)}
+                            </select>
+                            <input type="number" class="coc-edit-int-skill-value" value="${value}" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
+                        </div>
+                    `).join('')}
                 </div>
                 <button class="coc-add-btn" id="coc-add-int-skill">+ 添加兴趣技能</button>
 
@@ -1319,7 +1321,7 @@ function registerCharacterPanel(context, data, core) {
                                 <option value="">选择技能</option>
                                 ${renderSkillOptions(skill, 'fighting', currentOccupation)}
                             </select>
-                            <input type="number" class="coc-edit-fight-skill-value" value="${value}" min="0" max="99" placeholder="数值" onchange="if(this.value>99) this.value=99; if(this.value<0) this.value=0">
+                            <input type="number" class="coc-edit-fight-skill-value" value="${value}" placeholder="数值">
                             <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                         </div>
                     `).join('')}
@@ -1393,7 +1395,7 @@ function registerCharacterPanel(context, data, core) {
         `;
     }
     
-    // ✅ 修复版：更新点数显示（减去基础值）
+    // ✅ 修复：更新点数显示（考虑基础值）
     function updatePointsDisplay() {
         const occTotal = parseInt(document.getElementById('occ-points-total')?.textContent) || 0;
         const intTotal = parseInt(document.getElementById('int-points-total')?.textContent) || 0;
@@ -1405,9 +1407,7 @@ function registerCharacterPanel(context, data, core) {
             if (select && valueInput && select.value) {
                 const skillName = select.value;
                 const skillValue = parseInt(valueInput.value) || 0;
-                const baseValue = getSkillBaseValue(skillName);
-                // 投入的职业点 = 技能值 - 基础值
-                occUsed += Math.max(0, skillValue - baseValue);
+                occUsed += getSkillPointsSpent(skillName, skillValue);
             }
         });
         
@@ -1418,9 +1418,7 @@ function registerCharacterPanel(context, data, core) {
             if (select && valueInput && select.value) {
                 const skillName = select.value;
                 const skillValue = parseInt(valueInput.value) || 0;
-                const baseValue = getSkillBaseValue(skillName);
-                // 投入的兴趣点 = 技能值 - 基础值
-                intUsed += Math.max(0, skillValue - baseValue);
+                intUsed += getSkillPointsSpent(skillName, skillValue);
             }
         });
         
@@ -1510,13 +1508,14 @@ function registerCharacterPanel(context, data, core) {
                             <option value="">选择技能</option>
                             ${renderSkillOptions('', 'occupational', currentOccupation)}
                         </select>
-                        <input type="number" class="coc-edit-occ-skill-value" value="50" min="0" max="99" placeholder="数值" onchange="if(this.value>99) this.value=99; if(this.value<0) this.value=0; updatePointsDisplay()">
-                        <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsDisplay()">✖</button>
+                        <input type="number" class="coc-edit-occ-skill-value" value="50" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
+                        <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
                     `;
                     container.appendChild(newRow);
                     
                     // 绑定输入事件
                     newRow.querySelector('.coc-edit-occ-skill-value').addEventListener('input', updatePointsDisplay);
+                    newRow.querySelector('.coc-edit-occ-skill-value').addEventListener('change', updatePointsDisplay);
                 }
             };
         }
@@ -1534,12 +1533,13 @@ function registerCharacterPanel(context, data, core) {
                             <option value="">选择技能</option>
                             ${SKILLS_LIST.interest.map(skill => `<option value="${skill}">${skill}</option>`).join('')}
                         </select>
-                        <input type="number" class="coc-edit-int-skill-value" value="50" min="0" max="99" placeholder="数值" onchange="if(this.value>99) this.value=99; if(this.value<0) this.value=0; updatePointsDisplay()">
-                        <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsDisplay()">✖</button>
+                        <input type="number" class="coc-edit-int-skill-value" value="50" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
+                        <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
                     `;
                     container.appendChild(newRow);
                     
                     newRow.querySelector('.coc-edit-int-skill-value').addEventListener('input', updatePointsDisplay);
+                    newRow.querySelector('.coc-edit-int-skill-value').addEventListener('change', updatePointsDisplay);
                 }
             };
         }
@@ -1547,6 +1547,7 @@ function registerCharacterPanel(context, data, core) {
         // 为所有现有技能输入绑定事件
         document.querySelectorAll('.coc-edit-occ-skill-value, .coc-edit-int-skill-value').forEach(input => {
             input.addEventListener('input', updatePointsDisplay);
+            input.addEventListener('change', updatePointsDisplay);
         });
 
         // 添加格斗技能
@@ -1562,7 +1563,7 @@ function registerCharacterPanel(context, data, core) {
                             <option value="">选择技能</option>
                             ${SKILLS_LIST.fighting.map(skill => `<option value="${skill}">${skill}</option>`).join('')}
                         </select>
-                        <input type="number" class="coc-edit-fight-skill-value" value="50" min="0" max="99" placeholder="数值" onchange="if(this.value>99) this.value=99; if(this.value<0) this.value=0">
+                        <input type="number" class="coc-edit-fight-skill-value" value="50" placeholder="数值">
                         <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                     `;
                     container.appendChild(newRow);
@@ -1709,7 +1710,7 @@ function registerCharacterPanel(context, data, core) {
         }
 
         // 初始化点数显示
-        updatePointsDisplay();
+        setTimeout(updatePointsDisplay, 100);
     }
     
     // 收集编辑数据
@@ -1730,7 +1731,7 @@ function registerCharacterPanel(context, data, core) {
             if (parent) {
                 const label = parent.querySelector('.coc-edit-label');
                 if (label) {
-                    const attr = label.textContent;
+                    const attr = label.textContent.trim();
                     stats[attr] = parseInt(input.value) || 50;
                 }
             }
@@ -1742,9 +1743,7 @@ function registerCharacterPanel(context, data, core) {
             const select = row.querySelector('.coc-edit-occ-skill-name');
             const valueInput = row.querySelector('.coc-edit-occ-skill-value');
             if (select && valueInput && select.value) {
-                const skillName = select.value;
-                const skillValue = parseInt(valueInput.value) || 50;
-                occupationalSkills[skillName] = skillValue;
+                occupationalSkills[select.value] = parseInt(valueInput.value) || 50;
             }
         });
         if (Object.keys(occupationalSkills).length > 0) {
@@ -1757,9 +1756,7 @@ function registerCharacterPanel(context, data, core) {
             const select = row.querySelector('.coc-edit-int-skill-name');
             const valueInput = row.querySelector('.coc-edit-int-skill-value');
             if (select && valueInput && select.value) {
-                const skillName = select.value;
-                const skillValue = parseInt(valueInput.value) || 50;
-                interestSkills[skillName] = skillValue;
+                interestSkills[select.value] = parseInt(valueInput.value) || 50;
             }
         });
         if (Object.keys(interestSkills).length > 0) {
@@ -1772,9 +1769,7 @@ function registerCharacterPanel(context, data, core) {
             const select = row.querySelector('.coc-edit-fight-skill-name');
             const valueInput = row.querySelector('.coc-edit-fight-skill-value');
             if (select && valueInput && select.value) {
-                const skillName = select.value;
-                const skillValue = parseInt(valueInput.value) || 50;
-                fightingSkills[skillName] = skillValue;
+                fightingSkills[select.value] = parseInt(valueInput.value) || 50;
             }
         });
         if (Object.keys(fightingSkills).length > 0) {
