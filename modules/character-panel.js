@@ -8,7 +8,7 @@ function registerCharacterPanel(context, data, core) {
     let currentEditName = '';
     let currentEditStats = null;
     
-    // 预定义技能列表（从原角色卡复制）
+    // 预定义技能列表
     const SKILLS_LIST = {
         occupational: [
             '会计', '人类学', '估价', '考古学', '艺术', '手艺', '信用评级', '克苏鲁神话',
@@ -89,10 +89,151 @@ function registerCharacterPanel(context, data, core) {
         const possessions = stats.possessions || [];
         const assets = stats.assets || { spendingLevel: '—', cash: '—', assets: '—' };
         const relationships = stats.relationships || [];
-        
-        // 此处省略 HTML 模板，直接从原角色卡复制 renderCharacterCard 函数的返回值部分
-        // 由于 HTML 太长，这里不重复粘贴，实际使用时从原文件复制
-        // ...
+
+        return `
+            <div class="coc-card">
+                <div>
+                    <div class="coc-profile">
+                        <div class="coc-avatar" style="overflow:hidden;">
+                            ${renderAvatar(stats.avatar, name)}
+                        </div>
+                        <div>
+                            <div class="coc-name">${name}</div>
+                            <div class="coc-subtitle">${occupation} · ${age}岁</div>
+                        </div>
+                    </div>
+                    <div class="coc-info-grid">
+                        <div><span class="coc-info-label">出生地：</span> ${birthplace}</div>
+                        <div><span class="coc-info-label">居住地：</span> ${residence}</div>
+                    </div>
+                </div>
+
+                <div class="coc-bar-container">
+                    <div class="coc-bar-item">
+                        <div class="coc-bar-header">
+                            <span>❤️ HP</span>
+                            <span>${currentHP}/${maxHP}</span>
+                        </div>
+                        <div class="coc-bar-bg">
+                            <div class="coc-bar-fill hp" style="width: ${hpPercent}%;"></div>
+                        </div>
+                    </div>
+                    <div class="coc-bar-item">
+                        <div class="coc-bar-header">
+                            <span>🧠 SAN</span>
+                            <span>${currentSAN}/${maxSAN}</span>
+                        </div>
+                        <div class="coc-bar-bg">
+                            <div class="coc-bar-fill san" style="width: ${sanPercent}%;"></div>
+                        </div>
+                    </div>
+                    <div class="coc-bar-item" style="text-align: center;">
+                        <div class="coc-bar-header" style="justify-content: center;">MOV</div>
+                        <div style="font-size: 16px; font-weight: 700;">${move}</div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">📊 属性</div>
+                    <div class="coc-stats-grid">
+                        ${['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU', 'LUCK'].map(attr => `
+                            <div class="coc-stat-item">
+                                <div class="coc-stat-label">${attr}</div>
+                                <div class="coc-stat-value">${stats[attr] || '—'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="coc-stat-row">
+                        <div class="coc-stat-row-item">体格 ${build} · 伤害加值 ${db} · 护甲 ${armor}</div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">🔍 职业技能</div>
+                    <div class="coc-skills-grid">
+                        ${Object.entries(occupationalSkills).map(([skill, value]) => `
+                            <div class="coc-skill-item">
+                                <span class="coc-skill-name">${skill}</span>
+                                <span class="coc-skill-value occupational">${value}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">✨ 兴趣技能</div>
+                    <div class="coc-skills-grid">
+                        ${Object.entries(interestSkills).map(([skill, value]) => `
+                            <div class="coc-skill-item">
+                                <span class="coc-skill-name">${skill}</span>
+                                <span class="coc-skill-value interest">${value}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">⚔️ 格斗技能</div>
+                    <div class="coc-skills-grid">
+                        ${Object.entries(fightingSkills).map(([skill, value]) => `
+                            <div class="coc-skill-item">
+                                <span class="coc-skill-name">${skill}</span>
+                                <span class="coc-skill-value fighting">${value}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">📜 背景故事</div>
+                    <div class="coc-backstory">${stats.backstory || '——'}</div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">🎒 装备物品</div>
+                    <div class="coc-weapons-list">
+                        ${possessions.length > 0 ? possessions.map(item => `
+                            <div class="coc-possession-row">
+                                <span>${item.name}</span>
+                                <span>${item.quantity || 1}x</span>
+                            </div>
+                        `).join('') : '<div style="color: #8e7c68; text-align: center;">无</div>'}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">💰 资产</div>
+                    <div class="coc-assets-grid">
+                        <div class="coc-asset-item">
+                            <div class="coc-asset-label">消费水平</div>
+                            <div class="coc-asset-value">${assets.spendingLevel}</div>
+                        </div>
+                        <div class="coc-asset-item">
+                            <div class="coc-asset-label">现金</div>
+                            <div class="coc-asset-value">${assets.cash}</div>
+                        </div>
+                        <div class="coc-asset-item">
+                            <div class="coc-asset-label">资产</div>
+                            <div class="coc-asset-value">${assets.assets}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="coc-section-title">🤝 同伴关系</div>
+                    <div class="coc-weapons-list">
+                        ${relationships.length > 0 ? relationships.map(rel => `
+                            <div class="coc-relationship-row">
+                                <span>${rel.name}</span>
+                                <span>${rel.relationship}</span>
+                            </div>
+                        `).join('') : '<div style="color: #8e7c68; text-align: center;">无</div>'}
+                    </div>
+                </div>
+
+                <button class="coc-btn edit" id="coc-edit-mode-btn">✏️ 编辑角色</button>
+            </div>
+        `;
     }
     
     // 渲染查看模式
@@ -210,10 +351,162 @@ function registerCharacterPanel(context, data, core) {
         ).join('');
     }
     
-    // 渲染编辑表单（省略 HTML，从原文件复制）
+    // 渲染编辑表单
     function renderEditForm(name, stats) {
-        // 此处省略 HTML 模板，直接从原角色卡复制 renderEditForm 函数的返回值部分
-        // ...
+        return `
+            <div class="coc-edit-section">
+                <div class="coc-edit-title">✏️ 编辑 ${name}</div>
+                
+                <!-- 头像上传区 -->
+                <div class="coc-edit-avatar">
+                    <div class="coc-edit-avatar-preview" id="coc-avatar-preview">
+                        ${stats.avatar 
+                            ? `<img src="${stats.avatar}" alt="avatar">` 
+                            : '<div class="coc-edit-avatar-placeholder">🦌</div>'}
+                    </div>
+                    <button class="coc-edit-avatar-btn" id="coc-avatar-upload-btn">📷 上传头像</button>
+                    <input type="file" id="coc-avatar-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
+                </div>
+                
+                <div>
+                    <div class="coc-edit-label">职业</div>
+                    <input type="text" class="coc-edit-input coc-edit-occupation" value="${stats.occupation || '调查员'}">
+                </div>
+                <div class="coc-edit-grid">
+                    <div>
+                        <div class="coc-edit-label">年龄</div>
+                        <input type="number" class="coc-edit-input coc-edit-age" value="${stats.age || 30}">
+                    </div>
+                    <div>
+                        <div class="coc-edit-label">出生地</div>
+                        <input type="text" class="coc-edit-input coc-edit-birthplace" value="${stats.birthplace || ''}">
+                    </div>
+                    <div>
+                        <div class="coc-edit-label">居住地</div>
+                        <input type="text" class="coc-edit-input coc-edit-residence" value="${stats.residence || ''}">
+                    </div>
+                </div>
+
+                <div class="coc-edit-label">属性</div>
+                <div class="coc-edit-grid">
+                    ${['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'LUCK'].map(attr => `
+                        <div>
+                            <div class="coc-edit-label">${attr}</div>
+                            <input type="number" class="coc-edit-input coc-edit-input-attr" data-attr="${attr}" value="${stats[attr] || 50}">
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="coc-edit-label">职业技能</div>
+                <div id="coc-edit-occupational-skills" class="coc-select-list">
+                    ${Object.entries(stats.occupationalSkills || {}).map(([skill, value]) => `
+                        <div class="coc-select-row">
+                            <select class="coc-edit-occ-skill-name">
+                                <option value="">选择技能</option>
+                                ${renderSkillOptions(skill, 'occupational')}
+                            </select>
+                            <input type="number" class="coc-edit-occ-skill-value" value="${value}" placeholder="数值">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="coc-add-occ-skill">+ 添加职业技能</button>
+
+                <div class="coc-edit-label">兴趣技能</div>
+                <div id="coc-edit-interest-skills" class="coc-select-list">
+                    ${Object.entries(stats.interestSkills || {}).map(([skill, value]) => `
+                        <div class="coc-select-row">
+                            <select class="coc-edit-int-skill-name">
+                                <option value="">选择技能</option>
+                                ${renderSkillOptions(skill, 'interest')}
+                            </select>
+                            <input type="number" class="coc-edit-int-skill-value" value="${value}" placeholder="数值">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="coc-add-int-skill">+ 添加兴趣技能</button>
+
+                <div class="coc-edit-label">格斗技能</div>
+                <div id="coc-edit-fighting-skills" class="coc-select-list">
+                    ${Object.entries(stats.fightingSkills || {}).map(([skill, value]) => `
+                        <div class="coc-select-row">
+                            <select class="coc-edit-fight-skill-name">
+                                <option value="">选择技能</option>
+                                ${renderSkillOptions(skill, 'fighting')}
+                            </select>
+                            <input type="number" class="coc-edit-fight-skill-value" value="${value}" placeholder="数值">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="coc-add-fight-skill">+ 添加格斗技能</button>
+
+                <div class="coc-edit-label">武器</div>
+                <div id="coc-edit-weapons" class="coc-select-list">
+                    ${(stats.weapons || []).map(weapon => `
+                        <div class="coc-select-row" style="display: flex; gap: 4px; align-items: center;">
+                            <select class="coc-edit-weapon-select" style="flex: 1; padding: 4px; font-size: 11px;">
+                                <option value="">选择</option>
+                                ${renderWeaponOptions(weapon.name)}
+                            </select>
+                            <input type="text" class="coc-edit-weapon-skill" value="${weapon.skill}" placeholder="技能%" style="flex: 0.6; padding: 4px; font-size: 11px;">
+                            <input type="text" class="coc-edit-weapon-damage" value="${weapon.damage}" placeholder="伤害" style="flex: 0.6; padding: 4px; font-size: 11px;">
+                            <button class="coc-remove-btn" style="width: 20px; height: 20px; font-size: 10px;" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="coc-add-weapon">+ 添加武器</button>
+
+                <div class="coc-edit-label">背景故事</div>
+                <textarea class="coc-edit-textarea" id="coc-edit-backstory" rows="2">${stats.backstory || ''}</textarea>
+
+                <div class="coc-edit-label">装备物品</div>
+                <div id="coc-edit-possessions" class="coc-select-list">
+                    ${(stats.possessions || []).map(item => `
+                        <div class="coc-edit-possession-row">
+                            <input type="text" class="coc-edit-input coc-edit-possession-name" value="${item.name}" placeholder="物品名" style="flex:1; padding:4px; font-size:11px;">
+                            <input type="number" class="coc-edit-input coc-edit-possession-qty" value="${item.quantity || 1}" placeholder="数量" style="width:60px; padding:4px; font-size:11px;">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="coc-add-possession">+ 添加物品</button>
+
+                <div class="coc-edit-label">资产</div>
+                <div class="coc-edit-grid">
+                    <div>
+                        <div class="coc-edit-label">消费水平</div>
+                        <input type="text" class="coc-edit-input coc-edit-spending" value="${stats.assets?.spendingLevel || ''}">
+                    </div>
+                    <div>
+                        <div class="coc-edit-label">现金</div>
+                        <input type="text" class="coc-edit-input coc-edit-cash" value="${stats.assets?.cash || ''}">
+                    </div>
+                    <div>
+                        <div class="coc-edit-label">资产</div>
+                        <input type="text" class="coc-edit-input coc-edit-assets" value="${stats.assets?.assets || ''}">
+                    </div>
+                </div>
+
+                <div class="coc-edit-label">同伴关系</div>
+                <div id="coc-edit-relationships" class="coc-select-list">
+                    ${(stats.relationships || []).map(rel => `
+                        <div class="coc-edit-relationship-row">
+                            <input type="text" class="coc-edit-input coc-edit-rel-name" value="${rel.name}" placeholder="姓名" style="flex:1; padding:4px; font-size:11px;">
+                            <input type="text" class="coc-edit-input coc-edit-rel-desc" value="${rel.relationship}" placeholder="关系" style="flex:1; padding:4px; font-size:11px;">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="coc-add-relationship">+ 添加关系</button>
+
+                <div class="coc-edit-actions">
+                    <button class="coc-edit-save" id="coc-save-edit">💾 保存</button>
+                    <button class="coc-edit-cancel" id="coc-cancel-edit">✖ 取消</button>
+                </div>
+            </div>
+        `;
     }
     
     // 绑定编辑事件
@@ -236,14 +529,137 @@ function registerCharacterPanel(context, data, core) {
                 }
             };
         }
-        
-        // 添加技能按钮事件（从原文件复制）
-        // ...
-        
+
+        // 添加职业技能
+        document.getElementById('coc-add-occ-skill').onclick = () => {
+            const container = document.getElementById('coc-edit-occupational-skills');
+            const newRow = document.createElement('div');
+            newRow.className = 'coc-select-row';
+            newRow.innerHTML = `
+                <select class="coc-edit-occ-skill-name">
+                    <option value="">选择技能</option>
+                    ${SKILLS_LIST.occupational.map(skill => `<option value="${skill}">${skill}</option>`).join('')}
+                </select>
+                <input type="number" class="coc-edit-occ-skill-value" value="50" placeholder="数值">
+                <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+            `;
+            container.appendChild(newRow);
+        };
+
+        // 添加兴趣技能
+        document.getElementById('coc-add-int-skill').onclick = () => {
+            const container = document.getElementById('coc-edit-interest-skills');
+            const newRow = document.createElement('div');
+            newRow.className = 'coc-select-row';
+            newRow.innerHTML = `
+                <select class="coc-edit-int-skill-name">
+                    <option value="">选择技能</option>
+                    ${SKILLS_LIST.interest.map(skill => `<option value="${skill}">${skill}</option>`).join('')}
+                </select>
+                <input type="number" class="coc-edit-int-skill-value" value="50" placeholder="数值">
+                <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+            `;
+            container.appendChild(newRow);
+        };
+
+        // 添加格斗技能
+        document.getElementById('coc-add-fight-skill').onclick = () => {
+            const container = document.getElementById('coc-edit-fighting-skills');
+            const newRow = document.createElement('div');
+            newRow.className = 'coc-select-row';
+            newRow.innerHTML = `
+                <select class="coc-edit-fight-skill-name">
+                    <option value="">选择技能</option>
+                    ${SKILLS_LIST.fighting.map(skill => `<option value="${skill}">${skill}</option>`).join('')}
+                </select>
+                <input type="number" class="coc-edit-fight-skill-value" value="50" placeholder="数值">
+                <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+            `;
+            container.appendChild(newRow);
+        };
+
+        // 添加武器
+        document.getElementById('coc-add-weapon').onclick = () => {
+            const container = document.getElementById('coc-edit-weapons');
+            const newRow = document.createElement('div');
+            newRow.className = 'coc-select-row';
+            newRow.style.cssText = 'display: flex; gap: 4px; align-items: center; margin-bottom: 4px;';
+            newRow.innerHTML = `
+                <select class="coc-edit-weapon-select" style="flex:1; padding:4px; font-size:11px;">
+                    <option value="">选择武器</option>
+                    ${WEAPONS_LIST.map(w => `<option value="${w.name}" data-skill="${w.skill}" data-damage="${w.damage}">${w.name}</option>`).join('')}
+                </select>
+                <input type="text" class="coc-edit-weapon-skill" placeholder="技能%" style="flex:0.6; padding:4px; font-size:11px;">
+                <input type="text" class="coc-edit-weapon-damage" placeholder="伤害" style="flex:0.6; padding:4px; font-size:11px;">
+                <button class="coc-remove-btn" style="width:20px; height:20px; font-size:10px;" onclick="this.parentElement.remove()">✖</button>
+            `;
+            container.appendChild(newRow);
+
+            // 添加武器选择自动填充事件
+            newRow.querySelector('.coc-edit-weapon-select').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const skillInput = newRow.querySelector('.coc-edit-weapon-skill');
+                const damageInput = newRow.querySelector('.coc-edit-weapon-damage');
+                if (selectedOption.dataset.skill) {
+                    skillInput.value = selectedOption.dataset.skill;
+                }
+                if (selectedOption.dataset.damage) {
+                    damageInput.value = selectedOption.dataset.damage;
+                }
+            });
+        };
+
+        // 添加物品
+        document.getElementById('coc-add-possession').onclick = () => {
+            const container = document.getElementById('coc-edit-possessions');
+            const newRow = document.createElement('div');
+            newRow.className = 'coc-edit-possession-row';
+            newRow.style.cssText = 'display: flex; gap: 4px; margin-bottom: 4px; align-items: center;';
+            newRow.innerHTML = `
+                <input type="text" class="coc-edit-input coc-edit-possession-name" placeholder="物品名" style="flex:1; padding:4px; font-size:11px;">
+                <input type="number" class="coc-edit-input coc-edit-possession-qty" value="1" placeholder="数量" style="width:60px; padding:4px; font-size:11px;">
+                <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+            `;
+            container.appendChild(newRow);
+        };
+
+        // 添加关系
+        document.getElementById('coc-add-relationship').onclick = () => {
+            const container = document.getElementById('coc-edit-relationships');
+            const newRow = document.createElement('div');
+            newRow.className = 'coc-edit-relationship-row';
+            newRow.style.cssText = 'display: flex; gap: 4px; margin-bottom: 4px; align-items: center;';
+            newRow.innerHTML = `
+                <input type="text" class="coc-edit-input coc-edit-rel-name" placeholder="姓名" style="flex:1; padding:4px; font-size:11px;">
+                <input type="text" class="coc-edit-input coc-edit-rel-desc" placeholder="关系" style="flex:1; padding:4px; font-size:11px;">
+                <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+            `;
+            container.appendChild(newRow);
+        };
+
+        // 为已有的武器选择框绑定自动填充事件
+        document.querySelectorAll('.coc-edit-weapon-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const row = this.closest('.coc-select-row');
+                const selectedOption = this.options[this.selectedIndex];
+                if (row) {
+                    const skillInput = row.querySelector('.coc-edit-weapon-skill');
+                    const damageInput = row.querySelector('.coc-edit-weapon-damage');
+                    if (selectedOption.dataset.skill) {
+                        skillInput.value = selectedOption.dataset.skill;
+                    }
+                    if (selectedOption.dataset.damage) {
+                        damageInput.value = selectedOption.dataset.damage;
+                    }
+                }
+            });
+        });
+
         // 保存编辑
         document.getElementById('coc-save-edit').onclick = () => {
             const newStats = collectEditData();
             
+            // 保留头像
             if (currentEditStats.avatar) {
                 newStats.avatar = currentEditStats.avatar;
             }
@@ -260,7 +676,7 @@ function registerCharacterPanel(context, data, core) {
                 enterEditMode(currentEditName, newStats);
             };
         };
-        
+
         // 取消编辑
         document.getElementById('coc-cancel-edit').onclick = () => {
             isEditing = false;
@@ -269,10 +685,118 @@ function registerCharacterPanel(context, data, core) {
         };
     }
     
-    // 收集编辑数据（从原文件复制）
+    // 收集编辑数据
     function collectEditData() {
-        // 从原角色卡复制 collectEditData 函数
-        // ...
+        const stats = {};
+
+        stats.occupation = document.querySelector('.coc-edit-occupation')?.value || '调查员';
+        stats.age = parseInt(document.querySelector('.coc-edit-age')?.value) || 30;
+        stats.birthplace = document.querySelector('.coc-edit-birthplace')?.value || '';
+        stats.residence = document.querySelector('.coc-edit-residence')?.value || '';
+
+        document.querySelectorAll('.coc-edit-input-attr').forEach(input => {
+            const attr = input.dataset.attr;
+            stats[attr] = parseInt(input.value) || 50;
+        });
+
+        // 收集职业技能
+        const occupationalSkills = {};
+        document.querySelectorAll('#coc-edit-occupational-skills .coc-select-row').forEach(row => {
+            const select = row.querySelector('.coc-edit-occ-skill-name');
+            const valueInput = row.querySelector('.coc-edit-occ-skill-value');
+            if (select && valueInput && select.value) {
+                occupationalSkills[select.value] = parseInt(valueInput.value) || 50;
+            }
+        });
+        if (Object.keys(occupationalSkills).length > 0) {
+            stats.occupationalSkills = occupationalSkills;
+        }
+
+        // 收集兴趣技能
+        const interestSkills = {};
+        document.querySelectorAll('#coc-edit-interest-skills .coc-select-row').forEach(row => {
+            const select = row.querySelector('.coc-edit-int-skill-name');
+            const valueInput = row.querySelector('.coc-edit-int-skill-value');
+            if (select && valueInput && select.value) {
+                interestSkills[select.value] = parseInt(valueInput.value) || 50;
+            }
+        });
+        if (Object.keys(interestSkills).length > 0) {
+            stats.interestSkills = interestSkills;
+        }
+
+        // 收集格斗技能
+        const fightingSkills = {};
+        document.querySelectorAll('#coc-edit-fighting-skills .coc-select-row').forEach(row => {
+            const select = row.querySelector('.coc-edit-fight-skill-name');
+            const valueInput = row.querySelector('.coc-edit-fight-skill-value');
+            if (select && valueInput && select.value) {
+                fightingSkills[select.value] = parseInt(valueInput.value) || 50;
+            }
+        });
+        if (Object.keys(fightingSkills).length > 0) {
+            stats.fightingSkills = fightingSkills;
+        }
+
+        // 收集武器
+        const weapons = [];
+        document.querySelectorAll('#coc-edit-weapons .coc-select-row').forEach(row => {
+            const select = row.querySelector('.coc-edit-weapon-select');
+            const skillInput = row.querySelector('.coc-edit-weapon-skill');
+            const damageInput = row.querySelector('.coc-edit-weapon-damage');
+            if (select && select.value) {
+                weapons.push({
+                    name: select.value,
+                    skill: skillInput?.value || '',
+                    damage: damageInput?.value || ''
+                });
+            }
+        });
+        if (weapons.length > 0) {
+            stats.weapons = weapons;
+        }
+
+        stats.backstory = document.getElementById('coc-edit-backstory')?.value || '';
+
+        // 收集装备物品
+        const possessions = [];
+        document.querySelectorAll('#coc-edit-possessions .coc-edit-possession-row').forEach(row => {
+            const nameInput = row.querySelector('.coc-edit-possession-name');
+            const qtyInput = row.querySelector('.coc-edit-possession-qty');
+            if (nameInput && nameInput.value.trim()) {
+                possessions.push({
+                    name: nameInput.value.trim(),
+                    quantity: parseInt(qtyInput?.value) || 1
+                });
+            }
+        });
+        if (possessions.length > 0) {
+            stats.possessions = possessions;
+        }
+
+        stats.assets = {
+            spendingLevel: document.querySelector('.coc-edit-spending')?.value || '',
+            cash: document.querySelector('.coc-edit-cash')?.value || '',
+            assets: document.querySelector('.coc-edit-assets')?.value || ''
+        };
+
+        // 收集同伴关系
+        const relationships = [];
+        document.querySelectorAll('#coc-edit-relationships .coc-edit-relationship-row').forEach(row => {
+            const nameInput = row.querySelector('.coc-edit-rel-name');
+            const relInput = row.querySelector('.coc-edit-rel-desc');
+            if (nameInput && nameInput.value.trim() && relInput && relInput.value.trim()) {
+                relationships.push({
+                    name: nameInput.value.trim(),
+                    relationship: relInput.value.trim()
+                });
+            }
+        });
+        if (relationships.length > 0) {
+            stats.relationships = relationships;
+        }
+
+        return stats;
     }
     
     // 导入文件
@@ -358,7 +882,7 @@ function registerCharacterPanel(context, data, core) {
         }
     }
     
-    // 构建UI（从原角色卡复制 buildUI 函数）
+    // 构建UI
     function buildUI() {
         const winWidth = window.innerWidth;
         const winHeight = window.innerHeight;
