@@ -53,6 +53,9 @@ function registerCharacterPanel(context, data, core) {
     // 艺术/工艺技能列表
     const CRAFT_SKILLS = ['绘画', '雕塑', '摄影', '写作', '演奏', '唱歌', '舞蹈', '木工', '裁缝'];
     
+    // 外语列表
+    const LANGUAGE_SKILLS = ['英语', '汉语', '法语', '德语', '西班牙语', '拉丁语', '日语', '俄语', '阿拉伯语'];
+    
     // 职业数据库
     const OCCUPATIONS = {
         '会计师': {
@@ -597,6 +600,95 @@ function registerCharacterPanel(context, data, core) {
         return Object.keys(OCCUPATIONS).sort();
     }
 
+    // 获取职业的技能列表（展开占位符）
+    function getOccupationSkillList(occupationName) {
+        const occupation = OCCUPATIONS[occupationName];
+        if (!occupation) return [];
+        
+        let skillList = [];
+        occupation.skills.forEach(skill => {
+            if (skill.includes('社交技能')) {
+                const match = skill.match(/社交技能(\d+)项/);
+                const count = match ? parseInt(match[1]) : 1;
+                // 添加多次，让用户可以选择多个社交技能
+                for (let i = 0; i < count; i++) {
+                    skillList.push('社交技能');
+                }
+            } else if (skill.includes('外语')) {
+                const match = skill.match(/外语(\d+)项/);
+                const count = match ? parseInt(match[1]) : 1;
+                for (let i = 0; i < count; i++) {
+                    skillList.push('外语');
+                }
+            } else if (skill.includes('科学(')) {
+                skillList.push(skill); // 保留原样，如"科学(数学)"
+            } else if (skill.includes('艺术/工艺')) {
+                if (skill.includes('(')) {
+                    skillList.push(skill); // 保留原样，如"艺术/工艺(摄影)"
+                } else {
+                    skillList.push('艺术/工艺');
+                }
+            } else if (skill.includes('本专业学术技能')) {
+                const match = skill.match(/本专业学术技能(\d+)项/);
+                const count = match ? parseInt(match[1]) : 1;
+                for (let i = 0; i < count; i++) {
+                    skillList.push('学术技能');
+                }
+            } else {
+                skillList.push(skill);
+            }
+        });
+        
+        return skillList;
+    }
+
+    // 渲染技能选项（支持职业过滤）
+    function renderSkillOptions(selectedSkill, type, occupationName) {
+        let list = [];
+        
+        if (type === 'occupational') {
+            // 职业技能：只显示当前职业允许的技能
+            const occupation = OCCUPATIONS[occupationName];
+            if (occupation) {
+                // 从职业定义中获取技能列表并展开
+                list = getOccupationSkillList(occupationName);
+                
+                // 进一步展开占位符为具体选项
+                list = list.map(skill => {
+                    if (skill === '社交技能') {
+                        return SOCIAL_SKILLS;
+                    } else if (skill === '外语') {
+                        return LANGUAGE_SKILLS;
+                    } else if (skill === '艺术/工艺') {
+                        return CRAFT_SKILLS.map(s => `艺术/工艺(${s})`);
+                    } else if (skill === '学术技能') {
+                        return SCIENCE_SKILLS.map(s => `科学(${s})`);
+                    } else if (skill.includes('科学(')) {
+                        return [skill];
+                    } else if (skill.includes('艺术/工艺(')) {
+                        return [skill];
+                    } else {
+                        return skill;
+                    }
+                }).flat();
+            } else {
+                list = SKILLS_LIST.occupational;
+            }
+        } else if (type === 'interest') {
+            // 兴趣技能：所有技能都可以
+            list = SKILLS_LIST.interest;
+        } else {
+            list = SKILLS_LIST[type] || [];
+        }
+        
+        // 去重排序
+        list = [...new Set(list)].sort();
+        
+        return list.map(skill => 
+            `<option value="${skill}" ${skill === selectedSkill ? 'selected' : ''}>${skill}</option>`
+        ).join('');
+    }
+    
     // ==================== 头像上传处理 ====================
     
     function handleAvatarUpload(file, callback) {
@@ -647,7 +739,10 @@ function registerCharacterPanel(context, data, core) {
             const armor = stats.armor || 0;
             
             const occupation = stats.occupation || '调查员';
-            const age = stats.age || '—';
+            const gender = stats.gender || '—';
+            const birthYear = stats.birthYear || '—';
+            const currentYear = stats.currentYear || '—';
+            const age = (currentYear && birthYear && currentYear !== '—' && birthYear !== '—') ? currentYear - birthYear : '—';
             const birthplace = stats.birthplace || '—';
             const residence = stats.residence || '—';
             
@@ -667,10 +762,12 @@ function registerCharacterPanel(context, data, core) {
                             </div>
                             <div>
                                 <div class="coc-name">${name}</div>
-                                <div class="coc-subtitle">${occupation} · ${age}岁</div>
+                                <div class="coc-subtitle">${occupation} · ${gender} · ${age}岁</div>
                             </div>
                         </div>
-                        <div class="coc-info-grid">
+                        <div class="coc-info-grid" style="grid-template-columns: repeat(3, 1fr);">
+                            <div><span class="coc-info-label">出生年份：</span> ${birthYear}</div>
+                            <div><span class="coc-info-label">当前年份：</span> ${currentYear}</div>
                             <div><span class="coc-info-label">出生地：</span> ${birthplace}</div>
                             <div><span class="coc-info-label">居住地：</span> ${residence}</div>
                         </div>
@@ -862,7 +959,10 @@ function registerCharacterPanel(context, data, core) {
                         } else {
                             const defaultStats = {
                                 occupation: '调查员',
-                                age: 30,
+                                gender: '男',
+                                birthYear: 1890,
+                                currentYear: 1925,
+                                age: 35,
                                 birthplace: '',
                                 residence: '',
                                 STR: 50,
@@ -966,13 +1066,7 @@ function registerCharacterPanel(context, data, core) {
         bindEditEvents();
     }
     
-    // 渲染技能选项
-    function renderSkillOptions(selectedSkill, type) {
-        const list = SKILLS_LIST[type] || [];
-        return list.map(skill => 
-            `<option value="${skill}" ${skill === selectedSkill ? 'selected' : ''}>${skill}</option>`
-        ).join('');
-    }
+    // 渲染技能选项（已有，但上面已定义）
     
     // 渲染武器选项
     function renderWeaponOptions(selectedWeapon) {
@@ -1040,15 +1134,28 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                 </div>
                 
-                <div>
-                    <div class="coc-edit-label">职业</div>
-                    <input type="text" class="coc-edit-input coc-edit-occupation" value="${stats.occupation || '调查员'}">
-                </div>
-                <div class="coc-edit-grid">
+                <!-- 性别和年份 -->
+                <div class="coc-edit-grid" style="margin-top: 8px;">
                     <div>
-                        <div class="coc-edit-label">年龄</div>
-                        <input type="number" class="coc-edit-input coc-edit-age" value="${stats.age || 30}">
+                        <div class="coc-edit-label">性别</div>
+                        <select class="coc-edit-input coc-edit-gender" id="coc-edit-gender">
+                            <option value="男" ${stats.gender === '男' ? 'selected' : ''}>男</option>
+                            <option value="女" ${stats.gender === '女' ? 'selected' : ''}>女</option>
+                            <option value="其他" ${stats.gender === '其他' ? 'selected' : ''}>其他</option>
+                        </select>
                     </div>
+                    <div>
+                        <div class="coc-edit-label">出生年份</div>
+                        <input type="number" class="coc-edit-input coc-edit-birth-year" value="${stats.birthYear || 1890}" placeholder="1890">
+                    </div>
+                    <div>
+                        <div class="coc-edit-label">当前年份</div>
+                        <input type="number" class="coc-edit-input coc-edit-current-year" value="${stats.currentYear || 1925}" placeholder="1925">
+                    </div>
+                </div>
+                
+                <!-- 出生地和居住地 -->
+                <div class="coc-edit-grid">
                     <div>
                         <div class="coc-edit-label">出生地</div>
                         <input type="text" class="coc-edit-input coc-edit-birthplace" value="${stats.birthplace || ''}">
@@ -1075,7 +1182,7 @@ function registerCharacterPanel(context, data, core) {
                         <div class="coc-select-row">
                             <select class="coc-edit-occ-skill-name">
                                 <option value="">选择技能</option>
-                                ${renderSkillOptions(skill, 'occupational')}
+                                ${renderSkillOptions(skill, 'occupational', currentOccupation)}
                             </select>
                             <input type="number" class="coc-edit-occ-skill-value" value="${value}" placeholder="数值">
                             <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
@@ -1090,7 +1197,7 @@ function registerCharacterPanel(context, data, core) {
                         <div class="coc-select-row">
                             <select class="coc-edit-int-skill-name">
                                 <option value="">选择技能</option>
-                                ${renderSkillOptions(skill, 'interest')}
+                                ${renderSkillOptions(skill, 'interest', currentOccupation)}
                             </select>
                             <input type="number" class="coc-edit-int-skill-value" value="${value}" placeholder="数值">
                             <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
@@ -1105,7 +1212,7 @@ function registerCharacterPanel(context, data, core) {
                         <div class="coc-select-row">
                             <select class="coc-edit-fight-skill-name">
                                 <option value="">选择技能</option>
-                                ${renderSkillOptions(skill, 'fighting')}
+                                ${renderSkillOptions(skill, 'fighting', currentOccupation)}
                             </select>
                             <input type="number" class="coc-edit-fight-skill-value" value="${value}" placeholder="数值">
                             <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
@@ -1189,10 +1296,6 @@ function registerCharacterPanel(context, data, core) {
             occupationSelect.addEventListener('change', (e) => {
                 const newOccupation = e.target.value;
                 if (newOccupation) {
-                    // 更新职业输入框
-                    const occInput = document.querySelector('.coc-edit-occupation');
-                    if (occInput) occInput.value = newOccupation;
-                    
                     // 重新计算技能点显示
                     const attributes = {
                         STR: parseInt(document.querySelector('[data-attr="STR"]')?.value) || 50,
@@ -1209,10 +1312,26 @@ function registerCharacterPanel(context, data, core) {
                     const intPoints = calculateInterestPoints(attributes.INT);
                     
                     // 更新显示
-                    const occPointsDisplay = document.querySelector('.coc-edit-grid .coc-stat-value:first-child');
-                    const intPointsDisplay = document.querySelector('.coc-edit-grid .coc-stat-value:last-child');
-                    if (occPointsDisplay) occPointsDisplay.textContent = occPoints;
-                    if (intPointsDisplay) intPointsDisplay.textContent = intPoints;
+                    const occPointsDisplay = document.querySelectorAll('.coc-edit-grid .coc-stat-value');
+                    if (occPointsDisplay.length >= 2) {
+                        occPointsDisplay[0].textContent = occPoints;
+                        occPointsDisplay[1].textContent = intPoints;
+                    }
+                    
+                    // 刷新职业技能下拉框
+                    const occSkillContainer = document.getElementById('coc-edit-occupational-skills');
+                    if (occSkillContainer) {
+                        const rows = occSkillContainer.querySelectorAll('.coc-select-row');
+                        rows.forEach(row => {
+                            const select = row.querySelector('.coc-edit-occ-skill-name');
+                            if (select) {
+                                const currentValue = select.value;
+                                const skillOptions = renderSkillOptions(currentValue, 'occupational', newOccupation);
+                                select.innerHTML = `<option value="">选择技能</option>${skillOptions}`;
+                                select.value = currentValue;
+                            }
+                        });
+                    }
                 }
             });
         }
@@ -1242,12 +1361,15 @@ function registerCharacterPanel(context, data, core) {
             addOccSkill.onclick = () => {
                 const container = document.getElementById('coc-edit-occupational-skills');
                 if (container) {
+                    const occupationSelect = document.getElementById('coc-occupation-select');
+                    const currentOccupation = occupationSelect ? occupationSelect.value : '调查员';
+                    
                     const newRow = document.createElement('div');
                     newRow.className = 'coc-select-row';
                     newRow.innerHTML = `
                         <select class="coc-edit-occ-skill-name">
                             <option value="">选择技能</option>
-                            ${SKILLS_LIST.occupational.map(skill => `<option value="${skill}">${skill}</option>`).join('')}
+                            ${renderSkillOptions('', 'occupational', currentOccupation)}
                         </select>
                         <input type="number" class="coc-edit-occ-skill-value" value="50" placeholder="数值">
                         <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
@@ -1442,8 +1564,10 @@ function registerCharacterPanel(context, data, core) {
     function collectEditData() {
         const stats = {};
 
-        stats.occupation = document.querySelector('.coc-edit-occupation')?.value || '调查员';
-        stats.age = parseInt(document.querySelector('.coc-edit-age')?.value) || 30;
+        stats.occupation = document.getElementById('coc-occupation-select')?.value || '调查员';
+        stats.gender = document.querySelector('.coc-edit-gender')?.value || '男';
+        stats.birthYear = parseInt(document.querySelector('.coc-edit-birth-year')?.value) || 1890;
+        stats.currentYear = parseInt(document.querySelector('.coc-edit-current-year')?.value) || 1925;
         stats.birthplace = document.querySelector('.coc-edit-birthplace')?.value || '';
         stats.residence = document.querySelector('.coc-edit-residence')?.value || '';
 
