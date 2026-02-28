@@ -812,7 +812,7 @@ function registerCharacterPanel(context, data, core) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const data = JSON.parse(event.target.result);
+                    const jsonData = JSON.parse(event.target.result);
                     
                     let name, stats;
                     if (data.character && data.stats) {
