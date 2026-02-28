@@ -61,190 +61,198 @@ function registerCharacterPanel(context, data, core) {
         return `<div style="font-size: 40px; color: var(--coc-text-muted);">🦌</div>`;
     }
     
-    // ✅ 修复：渲染角色卡片（添加默认属性值）
+    // ✅ 修复：渲染角色卡片（添加错误保护和默认值）
     function renderCharacterCard(name, stats) {
-        stats = stats || {};
-        
-        // 添加默认属性值（防止计算函数报错）
-        if (!stats.CON) stats.CON = 50;
-        if (!stats.SIZ) stats.SIZ = 50;
-        if (!stats.STR) stats.STR = 50;
-        if (!stats.POW) stats.POW = 50;
-        if (!stats.DEX) stats.DEX = 50;
-        if (!stats.APP) stats.APP = 50;
-        if (!stats.INT) stats.INT = 50;
-        if (!stats.EDU) stats.EDU = 50;
-        if (!stats.LUCK) stats.LUCK = 50;
-        
-        const maxHP = calculateMaxHP(stats);
-        const currentHP = stats.HP || maxHP;
-        const hpPercent = Math.min(100, Math.max(0, (currentHP / maxHP) * 100));
-        
-        const maxSAN = calculateMaxSAN(stats);
-        const currentSAN = stats.SAN || maxSAN;
-        const sanPercent = Math.min(100, Math.max(0, (currentSAN / maxSAN) * 100));
-        
-        const move = calculateMove(stats);
-        const build = calculateBuild(stats.STR, stats.SIZ);
-        const db = calculateDamageBonus(stats.STR, stats.SIZ);
-        const armor = stats.armor || 0;
-        
-        const occupation = stats.occupation || '调查员';
-        const age = stats.age || '—';
-        const birthplace = stats.birthplace || '—';
-        const residence = stats.residence || '—';
-        
-        const occupationalSkills = stats.occupationalSkills || {};
-        const interestSkills = stats.interestSkills || {};
-        const fightingSkills = stats.fightingSkills || {};
-        const possessions = stats.possessions || [];
-        const assets = stats.assets || { spendingLevel: '—', cash: '—', assets: '—' };
-        const relationships = stats.relationships || [];
+        try {
+            stats = stats || {};
+            
+            // 添加默认属性值（防止计算函数报错）
+            if (!stats.CON) stats.CON = 50;
+            if (!stats.SIZ) stats.SIZ = 50;
+            if (!stats.STR) stats.STR = 50;
+            if (!stats.POW) stats.POW = 50;
+            if (!stats.DEX) stats.DEX = 50;
+            if (!stats.APP) stats.APP = 50;
+            if (!stats.INT) stats.INT = 50;
+            if (!stats.EDU) stats.EDU = 50;
+            if (!stats.LUCK) stats.LUCK = 50;
+            
+            const maxHP = calculateMaxHP(stats);
+            const currentHP = stats.HP || maxHP;
+            const hpPercent = Math.min(100, Math.max(0, (currentHP / maxHP) * 100));
+            
+            const maxSAN = calculateMaxSAN(stats);
+            const currentSAN = stats.SAN || maxSAN;
+            const sanPercent = Math.min(100, Math.max(0, (currentSAN / maxSAN) * 100));
+            
+            const move = calculateMove(stats);
+            const build = calculateBuild(stats.STR, stats.SIZ);
+            const db = calculateDamageBonus(stats.STR, stats.SIZ);
+            const armor = stats.armor || 0;
+            
+            const occupation = stats.occupation || '调查员';
+            const age = stats.age || '—';
+            const birthplace = stats.birthplace || '—';
+            const residence = stats.residence || '—';
+            
+            const occupationalSkills = stats.occupationalSkills || {};
+            const interestSkills = stats.interestSkills || {};
+            const fightingSkills = stats.fightingSkills || {};
+            const possessions = stats.possessions || [];
+            const assets = stats.assets || { spendingLevel: '—', cash: '—', assets: '—' };
+            const relationships = stats.relationships || [];
 
-        return `
-            <div class="coc-card">
-                <div>
-                    <div class="coc-profile">
-                        <div class="coc-avatar" style="overflow:hidden;">
-                            ${renderAvatar(stats.avatar, name)}
-                        </div>
-                        <div>
-                            <div class="coc-name">${name}</div>
-                            <div class="coc-subtitle">${occupation} · ${age}岁</div>
-                        </div>
-                    </div>
-                    <div class="coc-info-grid">
-                        <div><span class="coc-info-label">出生地：</span> ${birthplace}</div>
-                        <div><span class="coc-info-label">居住地：</span> ${residence}</div>
-                    </div>
-                </div>
-
-                <div class="coc-bar-container">
-                    <div class="coc-bar-item">
-                        <div class="coc-bar-header">
-                            <span>❤️ HP</span>
-                            <span>${currentHP}/${maxHP}</span>
-                        </div>
-                        <div class="coc-bar-bg">
-                            <div class="coc-bar-fill hp" style="width: ${hpPercent}%;"></div>
-                        </div>
-                    </div>
-                    <div class="coc-bar-item">
-                        <div class="coc-bar-header">
-                            <span>🧠 SAN</span>
-                            <span>${currentSAN}/${maxSAN}</span>
-                        </div>
-                        <div class="coc-bar-bg">
-                            <div class="coc-bar-fill san" style="width: ${sanPercent}%;"></div>
-                        </div>
-                    </div>
-                    <div class="coc-bar-item" style="text-align: center;">
-                        <div class="coc-bar-header" style="justify-content: center;">MOV</div>
-                        <div style="font-size: 16px; font-weight: 700;">${move}</div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="coc-section-title">📊 属性</div>
-                    <div class="coc-stats-grid">
-                        ${['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU', 'LUCK'].map(attr => `
-                            <div class="coc-stat-item">
-                                <div class="coc-stat-label">${attr}</div>
-                                <div class="coc-stat-value">${stats[attr] || '—'}</div>
+            return `
+                <div class="coc-card">
+                    <div>
+                        <div class="coc-profile">
+                            <div class="coc-avatar" style="overflow:hidden;">
+                                ${renderAvatar(stats.avatar, name)}
                             </div>
-                        `).join('')}
-                    </div>
-                    <div class="coc-stat-row">
-                        <div class="coc-stat-row-item">体格 ${build} · 伤害加值 ${db} · 护甲 ${armor}</div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="coc-section-title">🔍 职业技能</div>
-                    <div class="coc-skills-grid">
-                        ${Object.entries(occupationalSkills).map(([skill, value]) => `
-                            <div class="coc-skill-item">
-                                <span class="coc-skill-name">${skill}</span>
-                                <span class="coc-skill-value occupational">${value}%</span>
+                            <div>
+                                <div class="coc-name">${name}</div>
+                                <div class="coc-subtitle">${occupation} · ${age}岁</div>
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div>
-                    <div class="coc-section-title">✨ 兴趣技能</div>
-                    <div class="coc-skills-grid">
-                        ${Object.entries(interestSkills).map(([skill, value]) => `
-                            <div class="coc-skill-item">
-                                <span class="coc-skill-name">${skill}</span>
-                                <span class="coc-skill-value interest">${value}%</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div>
-                    <div class="coc-section-title">⚔️ 格斗技能</div>
-                    <div class="coc-skills-grid">
-                        ${Object.entries(fightingSkills).map(([skill, value]) => `
-                            <div class="coc-skill-item">
-                                <span class="coc-skill-name">${skill}</span>
-                                <span class="coc-skill-value fighting">${value}%</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div>
-                    <div class="coc-section-title">📜 背景故事</div>
-                    <div class="coc-backstory">${stats.backstory || '——'}</div>
-                </div>
-
-                <div>
-                    <div class="coc-section-title">🎒 装备物品</div>
-                    <div class="coc-weapons-list">
-                        ${possessions.length > 0 ? possessions.map(item => `
-                            <div class="coc-possession-row">
-                                <span>${item.name}</span>
-                                <span>${item.quantity || 1}x</span>
-                            </div>
-                        `).join('') : '<div style="color: #8e7c68; text-align: center;">无</div>'}
-                    </div>
-                </div>
-
-                <div>
-                    <div class="coc-section-title">💰 资产</div>
-                    <div class="coc-assets-grid">
-                        <div class="coc-asset-item">
-                            <div class="coc-asset-label">消费水平</div>
-                            <div class="coc-asset-value">${assets.spendingLevel}</div>
                         </div>
-                        <div class="coc-asset-item">
-                            <div class="coc-asset-label">现金</div>
-                            <div class="coc-asset-value">${assets.cash}</div>
-                        </div>
-                        <div class="coc-asset-item">
-                            <div class="coc-asset-label">资产</div>
-                            <div class="coc-asset-value">${assets.assets}</div>
+                        <div class="coc-info-grid">
+                            <div><span class="coc-info-label">出生地：</span> ${birthplace}</div>
+                            <div><span class="coc-info-label">居住地：</span> ${residence}</div>
                         </div>
                     </div>
-                </div>
 
-                <div>
-                    <div class="coc-section-title">🤝 同伴关系</div>
-                    <div class="coc-weapons-list">
-                        ${relationships.length > 0 ? relationships.map(rel => `
-                            <div class="coc-relationship-row">
-                                <span>${rel.name}</span>
-                                <span>${rel.relationship}</span>
+                    <div class="coc-bar-container">
+                        <div class="coc-bar-item">
+                            <div class="coc-bar-header">
+                                <span>❤️ HP</span>
+                                <span>${currentHP}/${maxHP}</span>
                             </div>
-                        `).join('') : '<div style="color: #8e7c68; text-align: center;">无</div>'}
+                            <div class="coc-bar-bg">
+                                <div class="coc-bar-fill hp" style="width: ${hpPercent}%;"></div>
+                            </div>
+                        </div>
+                        <div class="coc-bar-item">
+                            <div class="coc-bar-header">
+                                <span>🧠 SAN</span>
+                                <span>${currentSAN}/${maxSAN}</span>
+                            </div>
+                            <div class="coc-bar-bg">
+                                <div class="coc-bar-fill san" style="width: ${sanPercent}%;"></div>
+                            </div>
+                        </div>
+                        <div class="coc-bar-item" style="text-align: center;">
+                            <div class="coc-bar-header" style="justify-content: center;">MOV</div>
+                            <div style="font-size: 16px; font-weight: 700;">${move}</div>
+                        </div>
                     </div>
-                </div>
 
-                <button class="coc-btn edit" id="coc-edit-mode-btn">✏️ 编辑角色</button>
-            </div>
-        `;
+                    <div>
+                        <div class="coc-section-title">📊 属性</div>
+                        <div class="coc-stats-grid">
+                            ${['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU', 'LUCK'].map(attr => `
+                                <div class="coc-stat-item">
+                                    <div class="coc-stat-label">${attr}</div>
+                                    <div class="coc-stat-value">${stats[attr] || '—'}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="coc-stat-row">
+                            <div class="coc-stat-row-item">体格 ${build} · 伤害加值 ${db} · 护甲 ${armor}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">🔍 职业技能</div>
+                        <div class="coc-skills-grid">
+                            ${Object.entries(occupationalSkills).map(([skill, value]) => `
+                                <div class="coc-skill-item">
+                                    <span class="coc-skill-name">${skill}</span>
+                                    <span class="coc-skill-value occupational">${value}%</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">✨ 兴趣技能</div>
+                        <div class="coc-skills-grid">
+                            ${Object.entries(interestSkills).map(([skill, value]) => `
+                                <div class="coc-skill-item">
+                                    <span class="coc-skill-name">${skill}</span>
+                                    <span class="coc-skill-value interest">${value}%</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">⚔️ 格斗技能</div>
+                        <div class="coc-skills-grid">
+                            ${Object.entries(fightingSkills).map(([skill, value]) => `
+                                <div class="coc-skill-item">
+                                    <span class="coc-skill-name">${skill}</span>
+                                    <span class="coc-skill-value fighting">${value}%</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">📜 背景故事</div>
+                        <div class="coc-backstory">${stats.backstory || '——'}</div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">🎒 装备物品</div>
+                        <div class="coc-weapons-list">
+                            ${possessions.length > 0 ? possessions.map(item => `
+                                <div class="coc-possession-row">
+                                    <span>${item.name}</span>
+                                    <span>${item.quantity || 1}x</span>
+                                </div>
+                            `).join('') : '<div style="color: #8e7c68; text-align: center;">无</div>'}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">💰 资产</div>
+                        <div class="coc-assets-grid">
+                            <div class="coc-asset-item">
+                                <div class="coc-asset-label">消费水平</div>
+                                <div class="coc-asset-value">${assets.spendingLevel}</div>
+                            </div>
+                            <div class="coc-asset-item">
+                                <div class="coc-asset-label">现金</div>
+                                <div class="coc-asset-value">${assets.cash}</div>
+                            </div>
+                            <div class="coc-asset-item">
+                                <div class="coc-asset-label">资产</div>
+                                <div class="coc-asset-value">${assets.assets}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">🤝 同伴关系</div>
+                        <div class="coc-weapons-list">
+                            ${relationships.length > 0 ? relationships.map(rel => `
+                                <div class="coc-relationship-row">
+                                    <span>${rel.name}</span>
+                                    <span>${rel.relationship}</span>
+                                </div>
+                            `).join('') : '<div style="color: #8e7c68; text-align: center;">无</div>'}
+                        </div>
+                    </div>
+
+                    <button class="coc-btn edit" id="coc-edit-mode-btn">✏️ 编辑角色</button>
+                </div>
+            `;
+        } catch (e) {
+            console.error('[COC] 渲染卡片出错:', e);
+            return `<div style="color:red; padding:20px; background:#2a2a2a; border-radius:8px;">
+                ❌ 渲染错误: ${e.message}<br>
+                <small>请检查角色数据格式</small>
+            </div>`;
+        }
     }
     
     // 渲染查看模式
@@ -320,10 +328,18 @@ function registerCharacterPanel(context, data, core) {
                 
                 const char = data.get(value);
                 if (char) {
-                    document.getElementById('coc-stats-display').innerHTML = renderCharacterCard(value, char.stats);
-                    document.getElementById('coc-edit-mode-btn').onclick = () => {
-                        enterEditMode(value, char.stats);
-                    };
+                    try {
+                        const cardHtml = renderCharacterCard(value, char.stats);
+                        document.getElementById('coc-stats-display').innerHTML = cardHtml;
+                        document.getElementById('coc-edit-mode-btn').onclick = () => {
+                            enterEditMode(value, char.stats);
+                        };
+                    } catch (e) {
+                        console.error('[COC] 显示卡片出错:', e);
+                        document.getElementById('coc-stats-display').innerHTML = `<div style="color:red; padding:20px;">❌ 显示错误: ${e.message}</div>`;
+                    }
+                } else {
+                    document.getElementById('coc-stats-display').innerHTML = '<div class="coc-empty">👆 角色数据为空</div>';
                 }
             });
         }
