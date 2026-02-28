@@ -1,7 +1,8 @@
 // ==================== 角色卡面板UI ====================
 
 function registerCharacterPanel(context, data, core) {
-    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDamageBonus } = core;
+    // ✅ 修复：使用 calculateDB 而不是 calculateDamageBonus
+    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDB } = core;
     
     let panelElement = null;
     let isEditing = false;
@@ -61,7 +62,7 @@ function registerCharacterPanel(context, data, core) {
         return `<div style="font-size: 40px; color: var(--coc-text-muted);">🦌</div>`;
     }
     
-    // 渲染角色卡片（最终修复版）
+    // 渲染角色卡片
     function renderCharacterCard(name, stats) {
         try {
             stats = stats || {};
@@ -89,7 +90,8 @@ function registerCharacterPanel(context, data, core) {
             
             const move = calculateMove(stats);
             const build = calculateBuild(stats.STR, stats.SIZ);
-            const db = calculateDamageBonus(stats.STR, stats.SIZ);
+            // ✅ 修复：使用 calculateDB 而不是 calculateDamageBonus
+            const db = calculateDB(stats.STR, stats.SIZ);
             const armor = stats.armor || 0;
             
             const occupation = stats.occupation || '调查员';
@@ -97,7 +99,6 @@ function registerCharacterPanel(context, data, core) {
             const birthplace = stats.birthplace || '—';
             const residence = stats.residence || '—';
             
-            // 安全地获取对象，防止null/undefined
             const occupationalSkills = stats.occupationalSkills || {};
             const interestSkills = stats.interestSkills || {};
             const fightingSkills = stats.fightingSkills || {};
@@ -105,10 +106,8 @@ function registerCharacterPanel(context, data, core) {
             const assets = stats.assets || { spendingLevel: '—', cash: '—', assets: '—' };
             const relationships = stats.relationships || [];
 
-            // 确保渲染按钮存在
             return `
                 <div class="coc-card">
-                    <!-- 基本信息 -->
                     <div>
                         <div class="coc-profile">
                             <div class="coc-avatar" style="overflow:hidden;">
@@ -125,7 +124,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 状态条 -->
                     <div class="coc-bar-container">
                         <div class="coc-bar-item">
                             <div class="coc-bar-header">
@@ -151,7 +149,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 属性网格 -->
                     <div>
                         <div class="coc-section-title">📊 属性</div>
                         <div class="coc-stats-grid">
@@ -167,7 +164,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 职业技能 -->
                     <div>
                         <div class="coc-section-title">🔍 职业技能</div>
                         <div class="coc-skills-grid">
@@ -183,7 +179,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 兴趣技能 -->
                     <div>
                         <div class="coc-section-title">✨ 兴趣技能</div>
                         <div class="coc-skills-grid">
@@ -199,7 +194,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 格斗技能 -->
                     <div>
                         <div class="coc-section-title">⚔️ 格斗技能</div>
                         <div class="coc-skills-grid">
@@ -215,13 +209,11 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 背景故事 -->
                     <div>
                         <div class="coc-section-title">📜 背景故事</div>
                         <div class="coc-backstory">${stats.backstory || '——'}</div>
                     </div>
 
-                    <!-- 装备物品 -->
                     <div>
                         <div class="coc-section-title">🎒 装备物品</div>
                         <div class="coc-weapons-list">
@@ -236,7 +228,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 资产 -->
                     <div>
                         <div class="coc-section-title">💰 资产</div>
                         <div class="coc-assets-grid">
@@ -255,7 +246,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 同伴关系 -->
                     <div>
                         <div class="coc-section-title">🤝 同伴关系</div>
                         <div class="coc-weapons-list">
@@ -270,13 +260,11 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    <!-- 编辑按钮 - 确保这个按钮存在 -->
                     <button class="coc-btn edit" id="coc-edit-mode-btn">✏️ 编辑角色</button>
                 </div>
             `;
         } catch (e) {
             console.error('[COC] 渲染卡片出错:', e);
-            // 即使出错也返回一个包含编辑按钮的简单卡片
             return `
                 <div class="coc-card" style="padding:20px;">
                     <div style="color:red; margin-bottom:10px;">❌ 渲染错误: ${e.message}</div>
@@ -371,7 +359,6 @@ function registerCharacterPanel(context, data, core) {
                         if (display) {
                             display.innerHTML = cardHtml;
                             
-                            // 等待DOM更新后绑定编辑按钮事件
                             setTimeout(() => {
                                 const editBtn = document.getElementById('coc-edit-mode-btn');
                                 if (editBtn) {
@@ -704,7 +691,6 @@ function registerCharacterPanel(context, data, core) {
                     `;
                     container.appendChild(newRow);
 
-                    // 添加武器选择自动填充事件
                     newRow.querySelector('.coc-edit-weapon-select').addEventListener('change', function() {
                         const selectedOption = this.options[this.selectedIndex];
                         const skillInput = newRow.querySelector('.coc-edit-weapon-skill');
@@ -782,7 +768,6 @@ function registerCharacterPanel(context, data, core) {
             saveEdit.onclick = () => {
                 const newStats = collectEditData();
                 
-                // 保留头像
                 if (currentEditStats.avatar) {
                     newStats.avatar = currentEditStats.avatar;
                 }
@@ -799,7 +784,6 @@ function registerCharacterPanel(context, data, core) {
                 if (display) {
                     display.innerHTML = renderCharacterCard(currentEditName, newStats);
                     
-                    // 重新绑定编辑按钮
                     setTimeout(() => {
                         const editBtn = document.getElementById('coc-edit-mode-btn');
                         if (editBtn) {
@@ -1040,7 +1024,6 @@ function registerCharacterPanel(context, data, core) {
         const topBarHeight = topBar ? topBar.getBoundingClientRect().height : 0;
         const safeTop = topBarHeight + 5;
         
-        // 加载模板
         fetch('/scripts/extensions/third-party/SillyTavern-CoC/templates/character-panel.html')
             .then(response => response.text())
             .then(html => {
@@ -1075,6 +1058,5 @@ function registerCharacterPanel(context, data, core) {
             });
     }
     
-    // 返回构建函数
     return buildUI;
 }
