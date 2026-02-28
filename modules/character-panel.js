@@ -30,6 +30,19 @@ function registerCharacterPanel(context, data, core) {
             '射击(手枪)', '射击(步枪)', '射击(冲锋枪)', '射击(猎枪)', '投掷'
         ]
     };
+
+    // 职业列表（你可以在这里自己增删改）
+    const OCCUPATION_LIST = [
+        "调查员", "侦探", "警察", "医生", "护士", "记者", "作家", "教授", "学生",
+        "律师", "考古学家", "人类学家", "历史学家", "摄影师", "艺术家", "演员", "音乐家",
+        "技工", "工程师", "飞行员", "司机", "水手", "军人", "特工", "传教士", "神父",
+        "流浪汉", "罪犯", "黑帮成员", "商人", "店员", "服务员", "农民", "矿工"
+    ];
+
+    // 获取职业名称数组
+    function getOccupationNames() {
+        return OCCUPATION_LIST;
+    }
     
     // 预定义武器列表
     const WEAPONS_LIST = [
@@ -446,10 +459,15 @@ function registerCharacterPanel(context, data, core) {
                     <input type="file" id="coc-avatar-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
                 </div>
                 
-                <div>
-                    <div class="coc-edit-label">职业</div>
-                    <input type="text" class="coc-edit-input coc-edit-occupation" value="${stats.occupation || '调查员'}">
-                </div>
+                <!-- 这里已按你要求改成职业下拉框 -->
+                <div class="coc-edit-label">职业</div>
+                <select class="coc-edit-input coc-edit-occupation-select" id="coc-occupation-select">
+                    <option value="">选择职业</option>
+                    ${getOccupationNames().map(name => 
+                        `<option value="${name}" ${name === stats.occupation ? 'selected' : ''}>${name}</option>`
+                    ).join('')}
+                </select>
+
                 <div class="coc-edit-grid">
                     <div>
                         <div class="coc-edit-label">年龄</div>
@@ -814,7 +832,8 @@ function registerCharacterPanel(context, data, core) {
     function collectEditData() {
         const stats = {};
 
-        stats.occupation = document.querySelector('.coc-edit-occupation')?.value || '调查员';
+        // 从下拉框获取职业
+        stats.occupation = document.getElementById('coc-occupation-select')?.value || '调查员';
         stats.age = parseInt(document.querySelector('.coc-edit-age')?.value) || 30;
         stats.birthplace = document.querySelector('.coc-edit-birthplace')?.value || '';
         stats.residence = document.querySelector('.coc-edit-residence')?.value || '';
@@ -1045,18 +1064,4 @@ function registerCharacterPanel(context, data, core) {
                 const closeBtn = document.getElementById('coc-close-panel');
                 if (closeBtn) {
                     closeBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        panelElement.style.display = 'none';
-                    };
-                }
-                
-                bindToolbarEvents();
-                renderViewMode();
-            })
-            .catch(err => {
-                console.error('[COC] 加载模板失败:', err);
-            });
-    }
-    
-    return buildUI;
-}
+                       
