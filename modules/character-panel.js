@@ -61,9 +61,20 @@ function registerCharacterPanel(context, data, core) {
         return `<div style="font-size: 40px; color: var(--coc-text-muted);">🦌</div>`;
     }
     
-    // 渲染角色卡片
+    // ✅ 修复：渲染角色卡片（添加默认属性值）
     function renderCharacterCard(name, stats) {
         stats = stats || {};
+        
+        // 添加默认属性值（防止计算函数报错）
+        if (!stats.CON) stats.CON = 50;
+        if (!stats.SIZ) stats.SIZ = 50;
+        if (!stats.STR) stats.STR = 50;
+        if (!stats.POW) stats.POW = 50;
+        if (!stats.DEX) stats.DEX = 50;
+        if (!stats.APP) stats.APP = 50;
+        if (!stats.INT) stats.INT = 50;
+        if (!stats.EDU) stats.EDU = 50;
+        if (!stats.LUCK) stats.LUCK = 50;
         
         const maxHP = calculateMaxHP(stats);
         const currentHP = stats.HP || maxHP;
@@ -799,7 +810,7 @@ function registerCharacterPanel(context, data, core) {
         return stats;
     }
     
-    // ✅ 已修复：导入文件（把内部的 data 改为 jsonData）
+    // ✅ 修复：导入文件（把内部的 data 改为 jsonData）
     function importFromFile() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -812,7 +823,7 @@ function registerCharacterPanel(context, data, core) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const jsonData = JSON.parse(event.target.result);  // ✅ 改名为 jsonData
+                    const jsonData = JSON.parse(event.target.result);
                     
                     let name, stats;
                     if (jsonData.character && jsonData.stats) {
@@ -820,10 +831,10 @@ function registerCharacterPanel(context, data, core) {
                         stats = jsonData.stats;
                     } else {
                         name = file.name.replace('.json', '').replace(/-coc-stats$/, '');
-                        stats = jsonData;  // ✅ 这里也用 jsonData
+                        stats = jsonData;
                     }
                     
-                    data.set(name, stats);  // ✅ 这里用的是外部的 data 对象
+                    data.set(name, stats);
                     renderViewMode();
                     
                     setTimeout(() => {
