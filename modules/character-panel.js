@@ -799,7 +799,7 @@ function registerCharacterPanel(context, data, core) {
         return stats;
     }
     
-    // 导入文件
+    // ✅ 已修复：导入文件（把内部的 data 改为 jsonData）
     function importFromFile() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -812,18 +812,18 @@ function registerCharacterPanel(context, data, core) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const jsonData = JSON.parse(event.target.result);
+                    const jsonData = JSON.parse(event.target.result);  // ✅ 改名为 jsonData
                     
                     let name, stats;
-                    if (data.character && data.stats) {
-                        name = data.character;
-                        stats = data.stats;
+                    if (jsonData.character && jsonData.stats) {
+                        name = jsonData.character;
+                        stats = jsonData.stats;
                     } else {
                         name = file.name.replace('.json', '').replace(/-coc-stats$/, '');
-                        stats = data;
+                        stats = jsonData;  // ✅ 这里也用 jsonData
                     }
                     
-                    data.set(name, stats);
+                    data.set(name, stats);  // ✅ 这里用的是外部的 data 对象
                     renderViewMode();
                     
                     setTimeout(() => {
