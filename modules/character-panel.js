@@ -55,9 +55,11 @@ function registerCharacterPanel(context, data, core) {
     
     // 外语列表
     const LANGUAGE_SKILLS = ['英语', '汉语', '法语', '德语', '西班牙语', '拉丁语', '日语', '俄语', '阿拉伯语'];
+
+    // ==================== 完整的60种职业数据库 ====================
     
-    // 职业数据库（60种职业，与之前相同，为节省篇幅省略）
     const OCCUPATIONS = {
+        // 2.1 学术/知识型 (12种)
         '会计师': {
             name: '会计师',
             pointFormula: 'EDU * 4',
@@ -66,7 +68,96 @@ function registerCharacterPanel(context, data, core) {
             era: '均可',
             category: '学术型'
         },
-        // ... 其他59种职业（与之前相同，为节省篇幅省略，实际使用时需要完整复制）
+        '古董商': {
+            name: '古董商',
+            pointFormula: 'EDU * 4',
+            skills: ['估价', '艺术/工艺', '历史', '图书馆使用', '侦查', '社交技能1项', '外语1项'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '建筑师': {
+            name: '建筑师',
+            pointFormula: 'EDU * 4',
+            skills: ['艺术/工艺', '法律', '图书馆使用', '机械维修', '侦查', '科学(数学)'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '考古学家': {
+            name: '考古学家',
+            pointFormula: 'EDU * 4',
+            skills: ['估价', '考古学', '历史', '外语', '图书馆使用', '机械维修', '科学(地质)'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '化学家': {
+            name: '化学家',
+            pointFormula: 'EDU * 4',
+            skills: ['化学', '教育', '图书馆使用', '医学', '物理', '侦查', '科学(药学)'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '设计师': {
+            name: '设计师',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['艺术/工艺', '机械维修', '心理', '社交技能2项', '侦查'],
+            creditRating: '均可',
+            era: '均可',
+            category: '学术型'
+        },
+        '医生': {
+            name: '医生',
+            pointFormula: 'EDU * 4',
+            skills: ['急救', '医学', '外语', '心理', '科学(生物)', '科学(药学)', '信用评级'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '工程师': {
+            name: '工程师',
+            pointFormula: 'EDU * 4',
+            skills: ['艺术/工艺', '电气维修', '图书馆使用', '机械维修', '操作重型机械', '科学(物理)'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '记者': {
+            name: '记者',
+            pointFormula: 'EDU * 4',
+            skills: ['艺术/工艺', '历史', '图书馆使用', '聆听', '心理', '写作', '社交技能1项'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '律师': {
+            name: '律师',
+            pointFormula: 'EDU * 4',
+            skills: ['会计', '法律', '图书馆使用', '说服', '心理', '社交技能1项', '侦查'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '图书馆员': {
+            name: '图书馆员',
+            pointFormula: 'EDU * 4',
+            skills: ['会计', '图书馆使用', '外语', '心理', '社交技能1项', '历史', '计算机使用(现代)'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+        '教授': {
+            name: '教授',
+            pointFormula: 'EDU * 4',
+            skills: ['图书馆使用', '外语', '心理', '社交技能2项', '侦查', '本专业学术技能2项'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '学术型'
+        },
+
+        // 2.2 行动/执法型 (12种)
         '警察': {
             name: '警察',
             pointFormula: 'EDU * 2 + STR * 2',
@@ -75,7 +166,382 @@ function registerCharacterPanel(context, data, core) {
             era: '均可',
             category: '行动型'
         },
-        // ... 完整职业列表请从之前的代码复制
+        '警探': {
+            name: '警探',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['艺术/工艺', '射击', '恐吓', '法律', '聆听', '心理', '侦查', '格斗'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '联邦探员': {
+            name: '联邦探员',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['射击', '法律', '聆听', '说服', '心理', '侦查', '格斗', '潜行'],
+            creditRating: '职业技能',
+            era: '现代',
+            category: '行动型'
+        },
+        '军人': {
+            name: '军人',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['射击', '格斗', '爆破', '躲藏', '潜行', '生存', '导航', '急救'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '士兵': {
+            name: '士兵',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['射击', '格斗', '躲藏', '机械维修', '潜行', '生存', '聆听'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '军官': {
+            name: '军官',
+            pointFormula: 'EDU * 2 + POW * 2',
+            skills: ['会计', '射击', '导航', '心理', '社交技能1项', '生存', '战术'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '保镖': {
+            name: '保镖',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['格斗', '射击', '聆听', '侦查', '恐吓', '急救', '驾驶'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '猎人': {
+            name: '猎人',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['射击', '聆听', '自然', '导航', '潜行', '追踪', '生存', '格斗'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '保安': {
+            name: '保安',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['格斗', '射击', '聆听', '侦查', '法律', '急救', '驾驶'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '私家侦探': {
+            name: '私家侦探',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['法律', '图书馆使用', '聆听', '摄影', '心理', '侦查', '乔装', '格斗'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+        '法医': {
+            name: '法医',
+            pointFormula: 'EDU * 4',
+            skills: ['医学', '人类学', '生物', '化学', '摄影', '侦查', '法律'],
+            creditRating: '职业技能',
+            era: '现代',
+            category: '行动型'
+        },
+        '消防员': {
+            name: '消防员',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['攀爬', '急救', '跳跃', '机械维修', '驾驶', '力量', '格斗'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '行动型'
+        },
+
+        // 2.3 社交/艺术型 (12种)
+        '演员': {
+            name: '演员',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['艺术/工艺', '乔装', '心理', '社交技能3项', '聆听'],
+            creditRating: '均可',
+            era: '均可',
+            category: '社交型'
+        },
+        '艺术家': {
+            name: '艺术家',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['艺术/工艺', '历史', '心理', '侦查', '社交技能1项', '自然'],
+            creditRating: '均可',
+            era: '均可',
+            category: '社交型'
+        },
+        '作家': {
+            name: '作家',
+            pointFormula: 'EDU * 4',
+            skills: ['艺术/工艺', '历史', '图书馆使用', '自然', '心理', '社交技能1项'],
+            creditRating: '均可',
+            era: '均可',
+            category: '社交型'
+        },
+        '音乐家': {
+            name: '音乐家',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['艺术/工艺(乐器)', '心理', '社交技能2项', '聆听', '乔装'],
+            creditRating: '均可',
+            era: '均可',
+            category: '社交型'
+        },
+        '摄影师': {
+            name: '摄影师',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['艺术/工艺(摄影)', '化学', '乔装', '侦查', '机械维修', '心理'],
+            creditRating: '均可',
+            era: '均可',
+            category: '社交型'
+        },
+        '神职人员': {
+            name: '神职人员',
+            pointFormula: 'EDU * 2 + POW * 2',
+            skills: ['会计', '历史', '图书馆使用', '聆听', '心理', '社交技能1项', '说服'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '社交型'
+        },
+        '社交名流': {
+            name: '社交名流',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['艺术/工艺', '历史', '骑术', '心理', '社交技能2项', '外语'],
+            creditRating: '均可',
+            era: '1920s',
+            category: '社交型'
+        },
+        '秘书': {
+            name: '秘书',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['会计', '艺术/工艺', '图书馆使用', '心理', '社交技能2项', '打字'],
+            creditRating: '均可',
+            era: '均可',
+            category: '社交型'
+        },
+        '外交官': {
+            name: '外交官',
+            pointFormula: 'EDU * 4',
+            skills: ['外语2项', '心理', '社交技能2项', '法律', '历史', '说服'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '社交型'
+        },
+        '酒吧老板': {
+            name: '酒吧老板',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['会计', '社交技能2项', '心理', '聆听', '格斗', '射击'],
+            creditRating: '均可',
+            era: '均可',
+            category: '社交型'
+        },
+        '妓女/男妓': {
+            name: '妓女/男妓',
+            pointFormula: 'EDU * 2 + APP * 2',
+            skills: ['艺术/工艺', '乔装', '心理', '潜行', '社交技能2项', '聆听'],
+            creditRating: '兴趣技能',
+            era: '均可',
+            category: '社交型'
+        },
+
+        // 2.4 技术/实用型 (12种)
+        '驾驶员': {
+            name: '驾驶员',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['汽车驾驶', '机械维修', '导航', '心理', '社交技能1项', '电气维修'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '机械师': {
+            name: '机械师',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['艺术/工艺', '电气维修', '机械维修', '驾驶', '图书馆使用', '操作重型机械'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '技师': {
+            name: '技师',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['艺术/工艺', '电气维修', '机械维修', '图书馆使用', '科学(物理)', '操作重型机械'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '电工': {
+            name: '电工',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['电气维修', '机械维修', '图书馆使用', '科学(物理)', '攀爬'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '木匠': {
+            name: '木匠',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['艺术/工艺(木工)', '机械维修', '攀爬', '数学', '驾驶'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '矿工': {
+            name: '矿工',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['攀爬', '爆破', '机械维修', '操作重型机械', '生存', '地质'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '水手': {
+            name: '水手',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['机械维修', '导航', '格斗', '潜行', '游泳', '投掷', '驾驶(船)'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '飞行员': {
+            name: '飞行员',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['机械维修', '导航', '驾驶(飞机)', '电子', '气象', '无线电'],
+            creditRating: '职业技能',
+            era: '现代',
+            category: '技术型'
+        },
+        '农夫': {
+            name: '农夫',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['农业', '艺术/工艺', '汽车驾驶', '机械维修', '自然', '操作重型机械', '追踪'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '渔民': {
+            name: '渔民',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['自然', '导航', '游泳', '格斗', '驾驶(船)', '生存', '机械维修'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '技术型'
+        },
+        '快递员': {
+            name: '快递员',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['驾驶', '潜行', '躲藏', '机械维修', '导航', '社交技能1项'],
+            creditRating: '职业技能',
+            era: '现代',
+            category: '技术型'
+        },
+        '电话接线员': {
+            name: '电话接线员',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['聆听', '打字', '社交技能2项', '心理', '计算机使用(现代)'],
+            creditRating: '职业技能',
+            era: '现代',
+            category: '技术型'
+        },
+
+        // 2.5 底层/边缘型 (6种)
+        '流浪汉': {
+            name: '流浪汉',
+            pointFormula: 'EDU * 2 + POW * 2',
+            skills: ['躲藏', '聆听', '心理', '潜行', '社交技能1项', '生存', '攀爬'],
+            creditRating: '兴趣技能',
+            era: '均可',
+            category: '边缘型'
+        },
+        '盗贼': {
+            name: '盗贼',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['估价', '格斗', '躲藏', '聆听', '锁匠', '潜行', '偷窃', '攀爬'],
+            creditRating: '兴趣技能',
+            era: '均可',
+            category: '边缘型'
+        },
+        '赌徒': {
+            name: '赌徒',
+            pointFormula: 'EDU * 2 + POW * 2',
+            skills: ['艺术/工艺', '聆听', '心理', '侦查', '社交技能2项', '潜行'],
+            creditRating: '兴趣技能',
+            era: '均可',
+            category: '边缘型'
+        },
+        '黑帮': {
+            name: '黑帮',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['格斗', '射击', '恐吓', '聆听', '心理', '侦查', '驾驶', '法律'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '边缘型'
+        },
+        '走私犯': {
+            name: '走私犯',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['驾驶', '潜行', '躲藏', '社交技能1项', '侦查', '格斗', '射击'],
+            creditRating: '兴趣技能',
+            era: '均可',
+            category: '边缘型'
+        },
+        '街头混混': {
+            name: '街头混混',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['格斗', '躲藏', '聆听', '潜行', '偷窃', '攀爬', '跳跃'],
+            creditRating: '兴趣技能',
+            era: '均可',
+            category: '边缘型'
+        },
+
+        // 2.6 特殊/复古型 (6种)
+        '部落成员': {
+            name: '部落成员',
+            pointFormula: 'EDU * 2 + POW * 2',
+            skills: ['格斗', '躲藏', '聆听', '自然', '潜行', '生存', '追踪', '投掷'],
+            creditRating: '兴趣技能',
+            era: '复古',
+            category: '特殊型'
+        },
+        '萨满': {
+            name: '萨满',
+            pointFormula: 'EDU * 2 + POW * 2',
+            skills: ['人类学', '自然', '心理', '医学(草药)', '社交技能1项', '神秘学'],
+            creditRating: '兴趣技能',
+            era: '复古',
+            category: '特殊型'
+        },
+        '牛仔': {
+            name: '牛仔',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['格斗', '射击', '骑术', '追踪', '生存', '自然', '投掷'],
+            creditRating: '职业技能',
+            era: '复古',
+            category: '特殊型'
+        },
+        '探险家': {
+            name: '探险家',
+            pointFormula: 'EDU * 2 + STR * 2',
+            skills: ['攀爬', '导航', '自然', '生存', '格斗', '射击', '外语'],
+            creditRating: '职业技能',
+            era: '均可',
+            category: '特殊型'
+        },
+        '特技演员': {
+            name: '特技演员',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['攀爬', '跳跃', '潜行', '格斗', '驾驶', '骑术', '游泳'],
+            creditRating: '职业技能',
+            era: '现代',
+            category: '特殊型'
+        },
+        '马戏团演员': {
+            name: '马戏团演员',
+            pointFormula: 'EDU * 2 + DEX * 2',
+            skills: ['艺术/工艺', '攀爬', '跳跃', '乔装', '潜行', '社交技能1项'],
+            creditRating: '兴趣技能',
+            era: '均可',
+            category: '特殊型'
+        }
     };
 
     // 技能基础值表
@@ -206,18 +672,6 @@ function registerCharacterPanel(context, data, core) {
 
     function calculateInterestPoints(intelligence) {
         return intelligence * 2;
-    }
-
-    // 计算已使用的职业技能点
-    function calculateUsedOccupationalPoints(skills) {
-        if (!skills) return 0;
-        return Object.values(skills).reduce((sum, value) => sum + (value - getSkillBaseValue(skill)), 0);
-    }
-
-    // 计算已使用的兴趣技能点
-    function calculateUsedInterestPoints(skills) {
-        if (!skills) return 0;
-        return Object.values(skills).reduce((sum, value) => sum + (value - getSkillBaseValue(skill)), 0);
     }
 
     function getSkillBaseValue(skillName) {
@@ -820,8 +1274,8 @@ function registerCharacterPanel(context, data, core) {
                                 <option value="">选择技能</option>
                                 ${renderSkillOptions(skill, 'occupational', currentOccupation)}
                             </select>
-                            <input type="number" class="coc-edit-occ-skill-value" value="${value}" placeholder="数值" onchange="updatePointsTotal()">
-                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsTotal()">✖</button>
+                            <input type="number" class="coc-edit-occ-skill-value" value="${value}" placeholder="数值" onchange="updatePointsDisplay()">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsDisplay()">✖</button>
                         </div>
                     `).join('')}
                 </div>
@@ -835,8 +1289,8 @@ function registerCharacterPanel(context, data, core) {
                                 <option value="">选择技能</option>
                                 ${renderSkillOptions(skill, 'interest', currentOccupation)}
                             </select>
-                            <input type="number" class="coc-edit-int-skill-value" value="${value}" placeholder="数值" onchange="updatePointsTotal()">
-                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsTotal()">✖</button>
+                            <input type="number" class="coc-edit-int-skill-value" value="${value}" placeholder="数值" onchange="updatePointsDisplay()">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); updatePointsDisplay()">✖</button>
                         </div>
                     `).join('')}
                 </div>
