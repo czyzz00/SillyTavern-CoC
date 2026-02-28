@@ -117,3 +117,15 @@ function calculateMaxHP(stats) {
 function calculateMaxSAN(stats) {
     return stats.POW || 60;
 }
+// ==================== 导出所有核心函数 ====================
+const core = {
+    rollD100,
+    rollWithBonusPenalty,
+    parseDiceFormula,
+    judgeCOC,
+    calculateDB,
+    calculateBuild,
+    calculateMove,
+    calculateMaxHP,
+    calculateMaxSAN
+};
