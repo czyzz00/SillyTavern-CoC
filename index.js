@@ -1,4 +1,4 @@
-// COC骰子系统 - KP联动版（修复参数匹配）
+// COC骰子系统 - KP联动版（支持从角色列表选择）
 (function() {
     'use strict';
 
@@ -80,6 +80,34 @@
                 }
             }
             
+            // 获取所有可用角色名的函数
+            function getAvailableCharacters() {
+                const characters = [];
+                
+                // 添加所有角色
+                if (context.characters) {
+                    context.characters.forEach(char => {
+                        if (char?.name) {
+                            characters.push(char.name);
+                        }
+                    });
+                }
+                
+                // 如果是群聊，添加群成员
+                if (context.groups && context.groupId) {
+                    const currentGroup = context.groups.find(g => g.id === context.groupId);
+                    if (currentGroup?.members) {
+                        currentGroup.members.forEach(member => {
+                            if (member?.name) {
+                                characters.push(member.name);
+                            }
+                        });
+                    }
+                }
+                
+                return [...new Set(characters)].sort();
+            }
+            
             // ==================== 注册Slash命令 ====================
             
             context.registerSlashCommand('coc', (args, value) => {
@@ -135,20 +163,55 @@
                 
             }, ['cocroll', 'cr'], 'COC命令 - 用@指定角色');
             
-            context.registerSlashCommand('setkp', (args, value) => {
-                const kpName = value || args?.name || '';
-                if (!kpName) {
-                    sendMessageAs('❌ 请指定KP角色名: /setkp 克苏鲁', 'system');
+            // ✅ 修复版：/setkp 支持从角色列表选择
+            context.registerSlashCommand(
+                'setkp',
+                (args, value) => {
+                    const kpName = value || args?.name || '';
+                    
+                    if (!kpName) {
+                        const availableChars = getAvailableCharacters().join('、');
+                        sendMessageAs(`❌ 请指定KP角色名。可用角色: ${availableChars}\n示例: /setkp 克苏鲁`, 'system');
+                        return '';
+                    }
+                    
+                    // 验证角色是否存在
+                    const availableChars = getAvailableCharacters();
+                    if (!availableChars.includes(kpName)) {
+                        sendMessageAs(`❌ 角色 "${kpName}" 不存在。可用角色: ${availableChars.join('、')}`, 'system');
+                        return '';
+                    }
+                    
+                    const settings = context.extensionSettings[MODULE_NAME];
+                    settings.kpCharacter = kpName;
+                    context.saveSettingsDebounced();
+                    sendMessageAs(`✅ 已将 ${kpName} 设置为KP。此后所有系统消息将由该角色发出。`, 'system');
                     return '';
+                    
+                },
+                ['setkeeper', 'kp'], // 别名
+                '设置KP角色 - 用法: /setkp 角色名',
+                [ // 命名参数定义，支持自动补全
+                    {
+                        name: 'name',
+                        type: 'string',
+                        description: '角色名',
+                        required: true,
+                        enumProvider: () => getAvailableCharacters()
+                    }
+                ]
+            );
+            
+            // 查看当前KP
+            context.registerSlashCommand('getkp', () => {
+                const kp = context.extensionSettings[MODULE_NAME].kpCharacter;
+                if (kp) {
+                    sendMessageAs(`📋 当前KP: ${kp}`, 'system');
+                } else {
+                    sendMessageAs('📋 当前未设置KP，请使用 /setkp 角色名 进行设置', 'system');
                 }
-                
-                const settings = context.extensionSettings[MODULE_NAME];
-                settings.kpCharacter = kpName;
-                context.saveSettingsDebounced();
-                sendMessageAs(`✅ 已将 ${kpName} 设置为KP`, 'system');
                 return '';
-                
-            }, [], '设置KP角色');
+            }, [], '查看当前KP角色');
             
             // ==================== 注册函数调用 ====================
             
@@ -229,7 +292,6 @@
                     stealth: false
                 });
                 
-                // ✅ 修复版：属性检定函数（接受中英文）
                 context.registerFunctionTool({
                     name: "coc_attribute_check",
                     displayName: "COC属性检定",
@@ -252,33 +314,26 @@
                     action: async ({ character, attribute }) => {
                         const roll = rollD100();
                         
-                        // 属性名称映射表
                         const attributeMap = {
-                            // 中文 -> 英文
                             '力量': 'STR', '敏捷': 'DEX', '体质': 'CON', '外貌': 'APP',
                             '意志': 'POW', '体型': 'SIZ', '智力': 'INT', '教育': 'EDU',
                             '幸运': 'LUCK',
-                            // 英文别名
                             'STRENGTH': 'STR', 'DEXTERITY': 'DEX', 'CONSTITUTION': 'CON',
                             'APPEARANCE': 'APP', 'POWER': 'POW', 'SIZE': 'SIZ',
                             'INTELLIGENCE': 'INT', 'EDUCATION': 'EDU', 'LUCK': 'LUCK'
                         };
                         
-                        // 获取标准英文属性名
                         let standardAttr = attributeMap[attribute] || attributeMap[attribute.toUpperCase()];
                         if (!standardAttr) {
-                            // 如果没找到，尝试直接使用输入（可能是STR/DEX等）
                             standardAttr = attribute.toUpperCase();
                         }
                         
-                        // 读取角色属性值
                         const settings = context.extensionSettings[MODULE_NAME];
                         const attributeValue = settings.characters?.[character]?.[standardAttr] || 50;
                         const successRate = attributeValue * 5;
                         
                         const result = judgeCOC(roll, successRate);
                         
-                        // 在返回消息中使用原始输入（保持用户看到的是"力量"而不是"STR"）
                         return `**${character}** 进行 **${attribute}** 属性检定：\n` +
                                `🎲 D100 = \`${roll}\` | 成功率 \`${successRate}%\`\n` +
                                `结果: ${result.emoji} **${result.text}**`;
@@ -291,15 +346,23 @@
                 console.log('[COC] 当前模型不支持函数调用');
             }
             
+            // ==================== 启动提示 ====================
             const kpName = context.extensionSettings[MODULE_NAME].kpCharacter;
+            const availableChars = getAvailableCharacters().slice(0, 5).join('、');
+            const more = getAvailableCharacters().length > 5 ? '...' : '';
+            
             alert(`✅ COC骰子系统加载成功！\n\n` +
                   `【手动指令】\n` +
                   `/coc 100 @角色名 - 掷D100\n` +
                   `/coc 侦查 @角色名 - 技能检定\n` +
-                  `/setkp 角色名 - 设置KP\n\n` +
+                  `/setkp 角色名 - 设置KP（支持自动补全）\n` +
+                  `/getkp - 查看当前KP\n\n` +
+                  `【可用角色】\n` +
+                  `${availableChars}${more}\n\n` +
+                  `【当前KP】\n` +
+                  `${kpName || '未设置'}\n\n` +
                   `【AI自动】\n` +
-                  `当前KP: ${kpName || '未设置'}\n` +
-                  `支持中文/英文属性名称：力量/STR、敏捷/DEX等`);
+                  `如果模型支持函数调用，AI会自动触发检定`);
             
         } catch (error) {
             alert('❌ 初始化失败: ' + error.message);
