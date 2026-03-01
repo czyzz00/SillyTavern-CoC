@@ -56,6 +56,84 @@ function registerCharacterPanel(context, data, core) {
     // 外语列表
     const LANGUAGE_SKILLS = ['英语', '汉语', '法语', '德语', '西班牙语', '拉丁语', '日语', '俄语', '阿拉伯语'];
 
+    // ==================== 新增：疯狂症状表 ====================
+    
+    // 即时症状（战斗中使用）
+    const INSANITY_INSTANT_SYMPTOMS = [
+        { id: 1, name: '失忆', description: '不记得过去几分钟发生了什么，陷入迷茫' },
+        { id: 2, name: '假性残疾', description: '身体某部分失去功能（瘸了/瞎了/失声），持续1D10轮' },
+        { id: 3, name: '暴力倾向', description: '对周围人无差别攻击，不分敌我' },
+        { id: 4, name: '偏执', description: '怀疑所有人都在害自己，试图逃跑或攻击' },
+        { id: 5, name: '仪式行为', description: '必须重复做某个动作（数数/转圈/拍手），否则无法行动' },
+        { id: 6, name: '幻觉', description: '看到不存在的东西，根据幻觉行动' },
+        { id: 7, name: '恐慌症', description: '疯狂逃跑，试图远离一切' },
+        { id: 8, name: '逃避行为', description: '蜷缩角落，抱头不动，对外界无反应' },
+        { id: 9, name: '恐惧症', description: '对特定事物（疯狂来源）产生极度恐惧' },
+        { id: 10, name: '躁狂症', description: '过度兴奋，执着于某件事物' }
+    ];
+
+    // 总结症状（剧本结束时）
+    const INSANITY_SUMMARY_SYMPTOMS = [
+        { id: 1, name: '失忆', description: '有1D6小时的空白期，完全不记得发生了什么' },
+        { id: 2, name: '假性残疾', description: '留下永久症状，如长期跛脚、视力模糊等' },
+        { id: 3, name: '暴力倾向', description: '醒来后不记得，但周围人害怕你' },
+        { id: 4, name: '偏执', description: '之后会对特定类型的人起疑心' },
+        { id: 5, name: '仪式行为', description: '养成怪癖，每天必须做某个动作' },
+        { id: 6, name: '幻觉', description: '偶尔会看到不存在的幻象' },
+        { id: 7, name: '恐慌症', description: '获得恐惧症，特定场景触发' },
+        { id: 8, name: '逃避行为', description: '回避特定情况，如黑暗、人群等' },
+        { id: 9, name: '恐惧症', description: '获得永久恐惧症' },
+        { id: 10, name: '躁狂症', description: '获得永久躁狂症' }
+    ];
+
+    // 恐惧症列表（100种常见）
+    const PHOBIAS = [
+        '黑暗恐惧症', '高处恐惧症', '封闭空间恐惧症', '蜘蛛恐惧症', '蛇恐惧症',
+        '血液恐惧症', '死亡恐惧症', '人群恐惧症', '孤独恐惧症', '黑暗恐惧症',
+        '闪电恐惧症', '雷声恐惧症', '水恐惧症', '火恐惧症', '刀恐惧症',
+        '枪械恐惧症', '医生恐惧症', '医院恐惧症', '猫恐惧症', '狗恐惧症',
+        '老鼠恐惧症', '昆虫恐惧症', '飞行恐惧症', '驾驶恐惧症', '桥梁恐惧症',
+        '隧道恐惧症', '电梯恐惧症', '镜子恐惧症', '影子恐惧症', '鬼魂恐惧症',
+        '怪物恐惧症', '外星人恐惧症', '失败恐惧症', '成功恐惧症', '承诺恐惧症',
+        '亲密关系恐惧症', '社交恐惧症', '公开演讲恐惧症', '考试恐惧症', '工作恐惧症',
+        '权威恐惧症', '批评恐惧症', '拒绝恐惧症', '尴尬恐惧症', '噪音恐惧症',
+        '寂静恐惧症', '颜色恐惧症', '数字恐惧症', '十字架恐惧症', '宗教恐惧症',
+        '魔法恐惧症', '科学恐惧症', '技术进步恐惧症', '机器人恐惧症', 'AI恐惧症',
+        '时间恐惧症', '衰老恐惧症', '生病恐惧症', '疼痛恐惧症', '呕吐恐惧症',
+        '吞咽恐惧症', '窒息恐惧症', '溺水恐惧症', '中毒恐惧症', '辐射恐惧症',
+        '污染恐惧症', '细菌恐惧症', '肮脏恐惧症', '陌生环境恐惧症', '陌生人人恐惧症',
+        '外国人恐惧症', '异性恐惧症', '同性恐惧症', '亲吻恐惧症', '拥抱恐惧症',
+        '身体接触恐惧症', '裸露恐惧症', '性行为恐惧症', '怀孕恐惧症', '分娩恐惧症',
+        '婴儿恐惧症', '儿童恐惧症', '老人恐惧症', '尸体恐惧症', '墓地恐惧症',
+        '葬礼恐惧症', '幽灵恐惧症', '恶魔恐惧症', '天使恐惧症', '神明恐惧症',
+        '诅咒恐惧症', '预言恐惧症', '梦境恐惧症', '失眠恐惧症', '清醒恐惧症',
+        '镜子恐惧症', '照片恐惧症', '摄像机恐惧症', '被注视恐惧症', '被跟踪恐惧症',
+        '被监视恐惧症', '被偷听恐惧症', '被背叛恐惧症'
+    ];
+
+    // 躁狂症列表（100种常见）
+    const MANIAS = [
+        '清洁癖', '整理癖', '囤积癖', '偷窃癖', '说谎癖',
+        '购物癖', '赌博癖', '工作狂', '运动狂', '读书狂',
+        '写作狂', '绘画狂', '音乐狂', '舞蹈狂', '美食狂',
+        '饮酒狂', '吸烟狂', '药物狂', '性瘾', '自慰狂',
+        '暴露癖', '偷窥癖', '电话狂', '短信狂', '网络狂',
+        '游戏狂', '自拍狂', '发帖狂', '点赞狂', '收藏癖',
+        '记录癖', '检查癖', '重复癖', '计数癖', '仪式癖',
+        '洗手狂', '洗澡狂', '刷牙狂', '梳头狂', '照镜狂',
+        '自言自语狂', '傻笑狂', '哭泣狂', '尖叫狂', '跳跃狂',
+        '旋转狂', '摇晃狂', '点头狂', '眨眼狂', '清喉咙狂',
+        '咬指甲狂', '拔毛癖', '皮肤抠挖癖', '伤口舔舐癖', '异物插入癖',
+        '甜食狂', '咸食狂', '辣食狂', '冷食狂', '热食狂',
+        '咖啡狂', '茶狂', '可乐狂', '水狂', '冰狂',
+        '阳光狂', '月光狂', '星光狂', '灯光狂', '烛光狂',
+        '红色狂', '蓝色狂', '绿色狂', '黄色狂', '紫色狂',
+        '圆形狂', '方形狂', '三角形狂', '对称狂', '不对称狂',
+        '数字狂', '字母狂', '词语狂', '名字狂', '日期狂',
+        '时间狂', '方向狂', '位置狂', '顺序狂', '分类狂',
+        '收藏狂', '展示狂', '赠送狂', '交换狂', '买卖狂'
+    ];
+    
     // ==================== 完整的60种职业数据库 ====================
     
     const OCCUPATIONS = {
@@ -849,6 +927,319 @@ function registerCharacterPanel(context, data, core) {
         return list.map(skill => 
             `<option value="${skill}" ${skill === selectedSkill ? 'selected' : ''}>${skill}</option>`
         ).join('');
+    }
+    
+    // ==================== 疯狂系统核心函数 ====================
+
+    /**
+     * 理智检定（增强版，带疯狂判定）
+     */
+    function enhancedSanCheck(characterName, lossFormula, source) {
+        const char = data.get(characterName);
+        if (!char) return null;
+        
+        const currentSan = char.stats.SAN || 50;
+        const roll = rollD100();
+        const result = judgeCOC(roll, currentSan);
+        
+        const [successLoss, failLoss] = lossFormula.split('/');
+        let loss;
+        if (result.text === '成功' || result.text === '困难成功' || result.text === '极难成功') {
+            loss = parseDiceFormula(successLoss).total;
+        } else {
+            loss = parseDiceFormula(failLoss).total;
+        }
+        
+        const newSan = Math.max(0, currentSan - loss);
+        char.stats.SAN = newSan;
+        
+        // 初始化条件字段
+        if (!char.stats.conditions) char.stats.conditions = {};
+        const conditions = char.stats.conditions;
+        
+        // 疯狂判定
+        let insanityResult = null;
+        
+        // 1. 永久疯狂
+        if (newSan <= 0) {
+            conditions.isPermanentlyInsane = true;
+            insanityResult = {
+                type: 'permanent',
+                message: '💔 角色永久疯狂！'
+            };
+        }
+        // 2. 不定性疯狂（一天内损失 ≥ 当前SAN的1/5）
+        else if (loss >= Math.floor(currentSan / 5)) {
+            conditions.isIndefinitelyInsane = true;
+            conditions.indefiniteStart = new Date().toISOString();
+            insanityResult = {
+                type: 'indefinite',
+                message: '😵 角色陷入不定性疯狂！将持续整个模组'
+            };
+        }
+        // 3. 临时疯狂（损失 ≥ 5）
+        else if (loss >= 5) {
+            // 需要进行智力检定
+            const int = char.stats.INT || 50;
+            const intRoll = rollD100();
+            const intResult = judgeCOC(intRoll, int);
+            
+            if (intResult.text === '失败' || intResult.text === '大失败') {
+                // 智力检定失败 → 陷入临时疯狂
+                const symptom = rollInstantInsanity();
+                conditions.isTemporarilyInsane = true;
+                conditions.insanitySymptom = symptom;
+                conditions.insanityDuration = Math.floor(Math.random() * 10) + 1; // 1D10小时
+                conditions.insanityStart = new Date().toISOString();
+                
+                // 触发即时症状
+                applyInsanitySymptom(characterName, symptom);
+                
+                insanityResult = {
+                    type: 'temporary',
+                    symptom: symptom,
+                    duration: conditions.insanityDuration,
+                    message: `😱 角色陷入临时疯狂！症状：${symptom.name}，持续${conditions.insanityDuration}小时`
+                };
+            } else {
+                // 智力检定成功 → 理解发生了什么，但没疯
+                insanityResult = {
+                    type: 'resisted',
+                    message: '🧠 智力检定成功，角色理解了恐怖，避免了疯狂'
+                };
+            }
+        }
+        
+        // 4. 如果已处于潜在疯狂阶段，且这次看到的是疯狂来源
+        if (conditions.isInPotentialPhase && source === conditions.triggerSource) {
+            // 触发恐惧症效果：相关技能获得一个惩罚骰（这里只是记录）
+            if (!conditions.activePhobias) conditions.activePhobias = [];
+            conditions.activePhobias.push({
+                source: source,
+                triggeredAt: new Date().toISOString()
+            });
+        }
+        
+        // 克苏鲁神话技能成长（如果是克苏鲁相关事件）
+        if (source === 'mythos') {
+            if (!char.stats.cthulhuMythos) char.stats.cthulhuMythos = 0;
+            if (insanityResult && insanityResult.type !== 'resisted') {
+                // 第一次疯狂 +5，之后每次 +1
+                if (char.stats.cthulhuMythos === 0) {
+                    char.stats.cthulhuMythos += 5;
+                } else {
+                    char.stats.cthulhuMythos += 1;
+                }
+            }
+        }
+        
+        data.save();
+        
+        return {
+            roll,
+            result,
+            loss,
+            newSan,
+            insanity: insanityResult,
+            cthulhuMythos: char.stats.cthulhuMythos
+        };
+    }
+
+    /**
+     * 随机即时疯狂症状
+     */
+    function rollInstantInsanity() {
+        const roll = Math.floor(Math.random() * INSANITY_INSTANT_SYMPTOMS.length);
+        return INSANITY_INSTANT_SYMPTOMS[roll];
+    }
+
+    /**
+     * 随机总结疯狂症状
+     */
+    function rollSummaryInsanity() {
+        const roll = Math.floor(Math.random() * INSANITY_SUMMARY_SYMPTOMS.length);
+        return INSANITY_SUMMARY_SYMPTOMS[roll];
+    }
+
+    /**
+     * 随机恐惧症
+     */
+    function rollRandomPhobia() {
+        const roll = Math.floor(Math.random() * PHOBIAS.length);
+        return PHOBIAS[roll];
+    }
+
+    /**
+     * 随机躁狂症
+     */
+    function rollRandomMania() {
+        const roll = Math.floor(Math.random() * MANIAS.length);
+        return MANIAS[roll];
+    }
+
+    /**
+     * 应用疯狂症状
+     */
+    function applyInsanitySymptom(characterName, symptom) {
+        const char = data.get(characterName);
+        if (!char) return;
+        
+        if (!char.stats.conditions.insanityHistory) {
+            char.stats.conditions.insanityHistory = [];
+        }
+        
+        char.stats.conditions.insanityHistory.push({
+            symptom: symptom,
+            timestamp: new Date().toISOString()
+        });
+        
+        data.save();
+    }
+
+    /**
+     * 临时疯狂结束，进入潜在疯狂阶段
+     */
+    function endTemporaryInsanity(characterName) {
+        const char = data.get(characterName);
+        if (!char || !char.stats.conditions.isTemporarilyInsane) return;
+        
+        char.stats.conditions.isTemporarilyInsane = false;
+        char.stats.conditions.isInPotentialPhase = true;
+        
+        // 随机一个总结症状（可选）
+        const summarySymptom = rollSummaryInsanity();
+        if (!char.stats.conditions.summarySymptoms) {
+            char.stats.conditions.summarySymptoms = [];
+        }
+        char.stats.conditions.summarySymptoms.push(summarySymptom);
+        
+        data.save();
+        
+        return {
+            message: `🧠 临时疯狂结束，进入潜在疯狂阶段。总结症状：${summarySymptom.name}`,
+            symptom: summarySymptom
+        };
+    }
+
+    /**
+     * 现实认知检定
+     */
+    function realityCheck(characterName) {
+        const char = data.get(characterName);
+        if (!char) return null;
+        
+        const currentSan = char.stats.SAN || 50;
+        const roll = rollD100();
+        const result = judgeCOC(roll, currentSan);
+        
+        if (result.text !== '失败' && result.text !== '大失败') {
+            // 成功看穿幻觉
+            return {
+                success: true,
+                roll,
+                result,
+                message: '👁️ 你意识到这是幻觉！'
+            };
+        } else {
+            // 失败，损失1SAN
+            const newSan = Math.max(0, currentSan - 1);
+            char.stats.SAN = newSan;
+            data.save();
+            return {
+                success: false,
+                roll,
+                result,
+                newSan,
+                message: '😵 你无法看穿幻觉，损失1点理智'
+            };
+        }
+    }
+
+    /**
+     * 疯狂治疗
+     */
+    function treatInsanity(characterName, treatmentType) {
+        const char = data.get(characterName);
+        if (!char) return null;
+        
+        const currentSan = char.stats.SAN || 50;
+        const maxSan = calculateMaxSAN(char.stats);
+        const roll = rollD100();
+        
+        let sanGain = 0;
+        let success = false;
+        let message = '';
+        
+        switch(treatmentType) {
+            case 'private':
+                // 私人护理：01-95成功恢复3SAN，接着理智检定成功则治愈
+                if (roll <= 95) {
+                    sanGain = 3;
+                    success = true;
+                    message = '✅ 私人护理成功，恢复3点理智';
+                    
+                    // 理智检定决定是否治愈
+                    const sanRoll = rollD100();
+                    const sanResult = judgeCOC(sanRoll, currentSan + sanGain);
+                    if (sanResult.text !== '失败' && sanResult.text !== '大失败') {
+                        char.stats.conditions.isIndefinitelyInsane = false;
+                        message += '，疯狂症状治愈！';
+                    }
+                } else {
+                    message = '❌ 私人护理无效';
+                }
+                break;
+                
+            case 'asylum':
+                // 收容所：01-50恢复3SAN，51-95无效，96-100恶化
+                if (roll <= 50) {
+                    sanGain = 3;
+                    success = true;
+                    message = '✅ 收容所治疗成功，恢复3点理智';
+                } else if (roll <= 95) {
+                    message = '❌ 收容所治疗无效';
+                } else {
+                    sanGain = -1;
+                    message = '💔 收容所治疗恶化，损失1点理智';
+                }
+                break;
+                
+            case 'self':
+                // 自救：根据角色背景条目进行理智检定
+                // 这里简化为1D6恢复，失败则损失1
+                if (roll <= 50) { // 假设50%成功率
+                    sanGain = Math.floor(Math.random() * 6) + 1;
+                    success = true;
+                    message = `✅ 自救成功，恢复${sanGain}点理智`;
+                } else {
+                    sanGain = -1;
+                    message = '❌ 自救失败，损失1点理智';
+                }
+                break;
+        }
+        
+        const newSan = Math.max(0, Math.min(maxSan, currentSan + sanGain));
+        char.stats.SAN = newSan;
+        data.save();
+        
+        return {
+            success,
+            sanGain,
+            newSan,
+            message
+        };
+    }
+
+    /**
+     * 检查潜在疯狂阶段面对恐惧源的效果
+     */
+    function applyPhobiaPenalty(characterName, skillRoll, skillName) {
+        const char = data.get(characterName);
+        if (!char || !char.stats.conditions.isInPotentialPhase) return skillRoll;
+        
+        // 如果技能名与恐惧症相关，返回带惩罚骰的结果
+        // 这里简化为返回原值，实际使用时需要在检定函数中处理
+        return skillRoll;
     }
     
     // ==================== 头像上传处理 ====================
