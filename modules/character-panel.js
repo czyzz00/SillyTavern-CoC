@@ -1,7 +1,7 @@
 // ==================== 角色卡面板UI ====================
 
 function registerCharacterPanel(context, data, core) {
-    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDamageBonus, calculateDB } = core;
+    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDamageBonus, calculateDB, rollD100 } = core;
     
     let panelElement = null;
     let isEditing = false;
@@ -544,6 +544,30 @@ function registerCharacterPanel(context, data, core) {
         }
     };
 
+    // ==================== 职业信用评级范围 ====================
+    const CREDIT_RATING_RANGES = {
+        '会计师': [30, 70], '古董商': [30, 60], '建筑师': [30, 70],
+        '考古学家': [10, 40], '化学家': [10, 40], '设计师': [20, 50],
+        '医生': [30, 80], '工程师': [30, 60], '记者': [10, 30],
+        '律师': [30, 80], '图书馆员': [10, 35], '教授': [20, 60],
+        '警察': [9, 30], '警探': [20, 50], '联邦探员': [20, 60],
+        '军人': [8, 30], '士兵': [5, 20], '军官': [20, 50],
+        '保镖': [15, 40], '猎人': [10, 30], '保安': [8, 20],
+        '私家侦探': [20, 45], '法医': [20, 50], '消防员': [8, 20],
+        '演员': [10, 40], '艺术家': [5, 30], '作家': [5, 30],
+        '音乐家': [5, 30], '摄影师': [10, 30], '神职人员': [5, 30],
+        '社交名流': [40, 80], '秘书': [10, 30], '外交官': [30, 70],
+        '酒吧老板': [20, 40], '妓女/男妓': [1, 20],
+        '驾驶员': [10, 30], '机械师': [10, 30], '技师': [10, 30],
+        '电工': [10, 30], '木匠': [10, 30], '矿工': [5, 20],
+        '水手': [5, 20], '飞行员': [20, 50], '农夫': [5, 20],
+        '渔民': [5, 20], '快递员': [5, 20], '电话接线员': [5, 20],
+        '流浪汉': [0, 5], '盗贼': [1, 20], '赌徒': [1, 20],
+        '黑帮': [5, 30], '走私犯': [5, 20], '街头混混': [0, 5],
+        '部落成员': [0, 5], '萨满': [0, 5], '牛仔': [5, 20],
+        '探险家': [20, 50], '特技演员': [5, 20], '马戏团演员': [1, 15]
+    };
+
     // 技能基础值表
     const SKILL_BASE_VALUES = {
         '会计': 5, '人类学': 1, '估价': 5, '考古学': 1, '艺术/工艺': 5,
@@ -877,6 +901,7 @@ function registerCharacterPanel(context, data, core) {
             const possessions = stats.possessions || [];
             const assets = stats.assets || { spendingLevel: '—', cash: '—', assets: '—' };
             const relationships = stats.relationships || [];
+            const insanity = stats.insanity || [];
 
             return `
                 <div class="coc-card">
@@ -935,6 +960,9 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                         <div class="coc-stat-row">
                             <div class="coc-stat-row-item">体格 ${build} · 伤害加值 ${db} · 护甲 ${armor}</div>
+                        </div>
+                        <div class="coc-stat-row">
+                            <div class="coc-stat-row-item">⚡ 闪避: ${Math.floor(stats.DEX / 2)}%</div>
                         </div>
                     </div>
 
@@ -1017,6 +1045,20 @@ function registerCharacterPanel(context, data, core) {
                                 <div class="coc-asset-label">资产</div>
                                 <div class="coc-asset-value">${assets.assets}</div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">🧠 疯狂症状</div>
+                        <div class="coc-weapons-list">
+                            ${insanity.length > 0 
+                                ? insanity.map(item => `
+                                    <div class="coc-relationship-row">
+                                        <span>${item.type}</span>
+                                        <span>${item.description}</span>
+                                    </div>
+                                `).join('') 
+                                : '<div style="color: #8e7c68; text-align: center; padding: 8px;">无</div>'}
                         </div>
                     </div>
 
@@ -1117,7 +1159,8 @@ function registerCharacterPanel(context, data, core) {
                                 fightingSkills: {},
                                 possessions: [],
                                 assets: { spendingLevel: '', cash: '', assets: '' },
-                                relationships: []
+                                relationships: [],
+                                insanity: []
                             };
                             data.set(name, defaultStats);
                             renderViewMode();
@@ -1407,6 +1450,19 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                 </div>
 
+                <!-- 疯狂症状 -->
+                <div class="coc-edit-label">🧠 疯狂症状</div>
+                <div id="coc-edit-insanity" class="coc-select-list">
+                    ${(stats.insanity || []).map(ins => `
+                        <div class="coc-edit-relationship-row">
+                            <input type="text" class="coc-edit-input coc-edit-insanity-type" value="${ins.type}" placeholder="类型 (恐惧症/躁狂症)" style="flex:1; padding:4px;">
+                            <input type="text" class="coc-edit-input coc-edit-insanity-desc" value="${ins.description}" placeholder="描述" style="flex:1; padding:4px;">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="coc-add-insanity">+ 添加疯狂症状</button>
+
                 <div class="coc-edit-label">同伴关系</div>
                 <div id="coc-edit-relationships" class="coc-select-list">
                     ${(stats.relationships || []).map(rel => `
@@ -1669,6 +1725,24 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
+        // 添加疯狂症状按钮
+        const addInsanity = document.getElementById('coc-add-insanity');
+        if (addInsanity) {
+            addInsanity.onclick = () => {
+                const container = document.getElementById('coc-edit-insanity');
+                if (container) {
+                    const newRow = document.createElement('div');
+                    newRow.className = 'coc-edit-relationship-row';
+                    newRow.innerHTML = `
+                        <input type="text" class="coc-edit-input coc-edit-insanity-type" placeholder="恐惧症/躁狂症" style="flex:1; padding:4px;">
+                        <input type="text" class="coc-edit-input coc-edit-insanity-desc" placeholder="描述" style="flex:1; padding:4px;">
+                        <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                    `;
+                    container.appendChild(newRow);
+                }
+            };
+        }
+
         // 添加关系
         const addRelationship = document.getElementById('coc-add-relationship');
         if (addRelationship) {
@@ -1844,6 +1918,22 @@ function registerCharacterPanel(context, data, core) {
             assets: document.querySelector('.coc-edit-assets')?.value || ''
         };
 
+        // 疯狂症状
+        const insanity = [];
+        document.querySelectorAll('#coc-edit-insanity .coc-edit-relationship-row').forEach(row => {
+            const typeInput = row.querySelector('.coc-edit-insanity-type');
+            const descInput = row.querySelector('.coc-edit-insanity-desc');
+            if (typeInput && typeInput.value.trim()) {
+                insanity.push({
+                    type: typeInput.value.trim(),
+                    description: descInput?.value.trim() || ''
+                });
+            }
+        });
+        if (insanity.length > 0) {
+            stats.insanity = insanity;
+        }
+
         // 同伴关系
         const relationships = [];
         document.querySelectorAll('#coc-edit-relationships .coc-edit-relationship-row').forEach(row => {
@@ -2000,6 +2090,61 @@ function registerCharacterPanel(context, data, core) {
                 console.error('[COC] 加载模板失败:', err);
             });
     }
+    
+    // 成长面板函数（可选）
+    function renderGrowthPanel(name, stats) {
+        const usedSkills = stats.usedSkills || [];
+        
+        return `
+            <div class="coc-edit-section">
+                <div class="coc-edit-title">📈 幕间成长 - ${name}</div>
+                <div class="coc-edit-label">本次剧本使用过的技能：</div>
+                <div id="coc-used-skills" class="coc-select-list">
+                    ${usedSkills.length > 0 ? usedSkills.map(skill => `
+                        <div class="coc-select-row">
+                            <span class="coc-skill-name">${skill}</span>
+                            <span class="coc-skill-value">${stats.skills?.[skill] || 0}%</span>
+                            <button class="coc-btn small" onclick="applySkillGrowth('${name}', '${skill}')">📈 成长</button>
+                        </div>
+                    `).join('') : '<div style="color: #8e7c68;">本次剧本未使用技能</div>'}
+                </div>
+                <button class="coc-add-btn" id="coc-mark-skill-btn">➕ 手动标记技能使用</button>
+                <div class="coc-edit-actions">
+                    <button class="coc-edit-save" id="coc-growth-done">完成</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 应用技能成长
+    function applySkillGrowth(characterName, skillName) {
+        const char = data.get(characterName);
+        if (!char) return;
+        
+        const currentValue = char.stats.skills?.[skillName] || 50;
+        const roll = rollD100();
+        
+        if (roll > currentValue) {
+            const increase = Math.floor(Math.random() * 10) + 1;
+            const newValue = currentValue + increase;
+            
+            if (!char.stats.skills) char.stats.skills = {};
+            char.stats.skills[skillName] = newValue;
+            
+            if (char.stats.usedSkills) {
+                char.stats.usedSkills = char.stats.usedSkills.filter(s => s !== skillName);
+            }
+            
+            data.save();
+            
+            alert(`✅ ${skillName} 成长成功！ ${currentValue}% → ${newValue}% (+${increase})`);
+        } else {
+            alert(`❌ ${skillName} 成长失败，未能突破当前值`);
+        }
+    }
+    
+    // 暴露全局函数
+    window.applySkillGrowth = applySkillGrowth;
     
     return buildUI;
 }
