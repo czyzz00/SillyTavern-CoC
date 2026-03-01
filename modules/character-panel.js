@@ -602,6 +602,20 @@ function registerCharacterPanel(context, data, core) {
         '80-89': { eduGrowth: 4, strConDexMod: -80, appMod: -25 }
     };
 
+    // 根据出生年份和当前年份获取年龄范围
+    function getAgeRangeFromBirthYear(birthYear, currentYear) {
+        const age = currentYear - birthYear;
+        if (age < 15) return null;
+        if (age <= 19) return '15-19';
+        if (age <= 39) return '20-39';
+        if (age <= 49) return '40-49';
+        if (age <= 59) return '50-59';
+        if (age <= 69) return '60-69';
+        if (age <= 79) return '70-79';
+        if (age <= 89) return '80-89';
+        return null;
+    }
+
     // 应用年龄修正
     function applyAgeModifiers(attributes, ageRange) {
         const mod = AGE_MODIFIERS[ageRange];
@@ -643,6 +657,28 @@ function registerCharacterPanel(context, data, core) {
         return newAttrs;
     }
 
+    // 显示年龄修正提示
+    function showAgeModifierToast(ageRange) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c241e;
+            border: 2px solid #c88a5a;
+            color: #f0e6d8;
+            padding: 10px 20px;
+            border-radius: 30px;
+            z-index: 1000000;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        `;
+        toast.textContent = `年龄范围 ${ageRange} 已应用修正，属性已更新`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
     // ==================== 技能点计算 ====================
 
     function calculateOccupationPoints(occupationName, attributes) {
@@ -672,12 +708,6 @@ function registerCharacterPanel(context, data, core) {
 
     function calculateInterestPoints(intelligence) {
         return intelligence * 2;
-    }
-
-    // ✅ 修复：计算技能的实际加点值（减去基础值）
-    function getSkillPointsSpent(skillName, skillValue) {
-        const baseValue = getSkillBaseValue(skillName);
-        return Math.max(0, skillValue - baseValue);
     }
 
     function getSkillBaseValue(skillName) {
@@ -1044,7 +1074,7 @@ function registerCharacterPanel(context, data, core) {
                 const value = e.target.value;
                 
                 if (value === '__NEW__') {
-                    // ✅ 随机生成属性
+                    // 随机生成属性
                     const randomAttrs = generateRandomAttributes();
                     
                     const newName = prompt('请输入新角色名:');
@@ -1155,8 +1185,6 @@ function registerCharacterPanel(context, data, core) {
         bindEditEvents();
     }
     
-    // 渲染技能选项（已有，但上面已定义）
-    
     // 渲染武器选项
     function renderWeaponOptions(selectedWeapon) {
         return WEAPONS_LIST.map(weapon => 
@@ -1170,7 +1198,7 @@ function registerCharacterPanel(context, data, core) {
         const currentOccupation = stats.occupation || '调查员';
         
         // 计算当前属性值
-        const attributes = {
+        let attributes = {
             STR: stats.STR || 50,
             DEX: stats.DEX || 50,
             CON: stats.CON || 50,
@@ -1181,24 +1209,19 @@ function registerCharacterPanel(context, data, core) {
             EDU: stats.EDU || 50
         };
         
+        // 应用年龄修正
+        const ageRange = getAgeRangeFromBirthYear(stats.birthYear || 1890, stats.currentYear || 1925);
+        if (ageRange) {
+            attributes = applyAgeModifiers(attributes, ageRange);
+        }
+        
         // 计算技能点
         const occPoints = calculateOccupationPoints(currentOccupation, attributes);
         const intPoints = calculateInterestPoints(attributes.INT);
         
-        // ✅ 修复：计算已使用点数（只算超出基础值的部分）
-        let usedOccPoints = 0;
-        if (stats.occupationalSkills) {
-            Object.entries(stats.occupationalSkills).forEach(([skill, value]) => {
-                usedOccPoints += getSkillPointsSpent(skill, value);
-            });
-        }
-        
-        let usedIntPoints = 0;
-        if (stats.interestSkills) {
-            Object.entries(stats.interestSkills).forEach(([skill, value]) => {
-                usedIntPoints += getSkillPointsSpent(skill, value);
-            });
-        }
+        const birthYear = stats.birthYear || 1890;
+        const currentYear = stats.currentYear || 1925;
+        const currentAgeRange = getAgeRangeFromBirthYear(birthYear, currentYear);
         
         return `
             <div class="coc-edit-section">
@@ -1226,17 +1249,15 @@ function registerCharacterPanel(context, data, core) {
                     </select>
                 </div>
                 
-                <!-- 技能点显示（实时更新） -->
+                <!-- 技能点显示（仅显示总数） -->
                 <div class="coc-edit-grid" style="margin-top: 8px;">
                     <div>
                         <div class="coc-edit-label">职业技能点</div>
-                        <div class="coc-stat-value" style="text-align:center;" id="occ-points-total">${occPoints}</div>
-                        <div class="coc-edit-label" style="font-size:8px;">已用: <span id="occ-points-used">${usedOccPoints}</span> / 剩余: <span id="occ-points-remaining">${occPoints - usedOccPoints}</span></div>
+                        <div class="coc-stat-value" style="text-align:center;">${occPoints}</div>
                     </div>
                     <div>
                         <div class="coc-edit-label">兴趣技能点</div>
-                        <div class="coc-stat-value" style="text-align:center;" id="int-points-total">${intPoints}</div>
-                        <div class="coc-edit-label" style="font-size:8px;">已用: <span id="int-points-used">${usedIntPoints}</span> / 剩余: <span id="int-points-remaining">${intPoints - usedIntPoints}</span></div>
+                        <div class="coc-stat-value" style="text-align:center;">${intPoints}</div>
                     </div>
                 </div>
                 
@@ -1252,12 +1273,19 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                     <div>
                         <div class="coc-edit-label">出生年份</div>
-                        <input type="number" class="coc-edit-input coc-edit-birth-year" value="${stats.birthYear || 1890}" placeholder="1890">
+                        <input type="number" class="coc-edit-input coc-edit-birth-year" value="${birthYear}" placeholder="1890" id="coc-edit-birth-year">
                     </div>
                     <div>
                         <div class="coc-edit-label">当前年份</div>
-                        <input type="number" class="coc-edit-input coc-edit-current-year" value="${stats.currentYear || 1925}" placeholder="1925">
+                        <input type="number" class="coc-edit-input coc-edit-current-year" value="${currentYear}" placeholder="1925" id="coc-edit-current-year">
                     </div>
+                </div>
+                
+                <!-- 年龄范围提示 -->
+                <div style="margin-top: 4px; margin-bottom: 8px;">
+                    <span style="color: ${currentAgeRange ? '#c88a5a' : '#b85a5a'}; font-size: 12px;">
+                        ${currentAgeRange ? `年龄范围: ${currentAgeRange}` : '年龄超出规则范围 (15-89岁)'}
+                    </span>
                 </div>
                 
                 <!-- 出生地和居住地 -->
@@ -1278,7 +1306,7 @@ function registerCharacterPanel(context, data, core) {
                     ${['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'LUCK'].map(attr => `
                         <div>
                             <div class="coc-edit-label">${attr}</div>
-                            <input type="number" class="coc-edit-input" value="${stats[attr] || 50}" readonly style="background:#555; color:#aaa;">
+                            <input type="number" class="coc-edit-input" value="${attributes[attr] || 50}" readonly style="background:#555; color:#aaa;">
                         </div>
                     `).join('')}
                 </div>
@@ -1291,8 +1319,8 @@ function registerCharacterPanel(context, data, core) {
                                 <option value="">选择技能</option>
                                 ${renderSkillOptions(skill, 'occupational', currentOccupation)}
                             </select>
-                            <input type="number" class="coc-edit-occ-skill-value" value="${value}" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
-                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
+                            <input type="number" class="coc-edit-occ-skill-value" value="${value}" placeholder="数值">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                         </div>
                     `).join('')}
                 </div>
@@ -1306,8 +1334,8 @@ function registerCharacterPanel(context, data, core) {
                                 <option value="">选择技能</option>
                                 ${renderSkillOptions(skill, 'interest', currentOccupation)}
                             </select>
-                            <input type="number" class="coc-edit-int-skill-value" value="${value}" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
-                            <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
+                            <input type="number" class="coc-edit-int-skill-value" value="${value}" placeholder="数值">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                         </div>
                     `).join('')}
                 </div>
@@ -1395,39 +1423,6 @@ function registerCharacterPanel(context, data, core) {
         `;
     }
     
-    // ✅ 修复：更新点数显示（考虑基础值）
-    function updatePointsDisplay() {
-        const occTotal = parseInt(document.getElementById('occ-points-total')?.textContent) || 0;
-        const intTotal = parseInt(document.getElementById('int-points-total')?.textContent) || 0;
-        
-        let occUsed = 0;
-        document.querySelectorAll('#coc-edit-occupational-skills .coc-select-row').forEach(row => {
-            const select = row.querySelector('.coc-edit-occ-skill-name');
-            const valueInput = row.querySelector('.coc-edit-occ-skill-value');
-            if (select && valueInput && select.value) {
-                const skillName = select.value;
-                const skillValue = parseInt(valueInput.value) || 0;
-                occUsed += getSkillPointsSpent(skillName, skillValue);
-            }
-        });
-        
-        let intUsed = 0;
-        document.querySelectorAll('#coc-edit-interest-skills .coc-select-row').forEach(row => {
-            const select = row.querySelector('.coc-edit-int-skill-name');
-            const valueInput = row.querySelector('.coc-edit-int-skill-value');
-            if (select && valueInput && select.value) {
-                const skillName = select.value;
-                const skillValue = parseInt(valueInput.value) || 0;
-                intUsed += getSkillPointsSpent(skillName, skillValue);
-            }
-        });
-        
-        document.getElementById('occ-points-used').textContent = occUsed;
-        document.getElementById('int-points-used').textContent = intUsed;
-        document.getElementById('occ-points-remaining').textContent = occTotal - occUsed;
-        document.getElementById('int-points-remaining').textContent = intTotal - intUsed;
-    }
-    
     // 绑定编辑事件
     function bindEditEvents() {
         // 职业选择变更事件
@@ -1451,9 +1446,12 @@ function registerCharacterPanel(context, data, core) {
                     const occPoints = calculateOccupationPoints(newOccupation, attributes);
                     const intPoints = calculateInterestPoints(attributes.INT);
                     
-                    document.getElementById('occ-points-total').textContent = occPoints;
-                    document.getElementById('int-points-total').textContent = intPoints;
-                    updatePointsDisplay();
+                    // 更新显示
+                    const occPointsDisplay = document.querySelectorAll('.coc-edit-grid .coc-stat-value');
+                    if (occPointsDisplay.length >= 2) {
+                        occPointsDisplay[0].textContent = occPoints;
+                        occPointsDisplay[1].textContent = intPoints;
+                    }
                     
                     // 刷新职业技能下拉框
                     const occSkillContainer = document.getElementById('coc-edit-occupational-skills');
@@ -1472,6 +1470,61 @@ function registerCharacterPanel(context, data, core) {
                 }
             });
         }
+
+        // 年份变更事件
+        const birthYearInput = document.getElementById('coc-edit-birth-year');
+        const currentYearInput = document.getElementById('coc-edit-current-year');
+        
+        function updateAgeModifiers() {
+            const birthYear = parseInt(birthYearInput.value) || 1890;
+            const currentYear = parseInt(currentYearInput.value) || 1925;
+            const ageRange = getAgeRangeFromBirthYear(birthYear, currentYear);
+            
+            if (ageRange) {
+                // 获取当前属性值
+                const attributes = {
+                    STR: parseInt(document.querySelector('[data-attr="STR"]')?.value) || 50,
+                    DEX: parseInt(document.querySelector('[data-attr="DEX"]')?.value) || 50,
+                    CON: parseInt(document.querySelector('[data-attr="CON"]')?.value) || 50,
+                    APP: parseInt(document.querySelector('[data-attr="APP"]')?.value) || 50,
+                    POW: parseInt(document.querySelector('[data-attr="POW"]')?.value) || 50,
+                    INT: parseInt(document.querySelector('[data-attr="INT"]')?.value) || 50,
+                    SIZ: parseInt(document.querySelector('[data-attr="SIZ"]')?.value) || 50,
+                    EDU: parseInt(document.querySelector('[data-attr="EDU"]')?.value) || 50
+                };
+                
+                // 应用年龄修正
+                const modifiedAttrs = applyAgeModifiers(attributes, ageRange);
+                
+                // 更新属性显示
+                const attrInputs = document.querySelectorAll('.coc-edit-input[readonly]');
+                const attrNames = ['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'LUCK'];
+                attrInputs.forEach((input, index) => {
+                    if (index < attrNames.length) {
+                        input.value = modifiedAttrs[attrNames[index]] || 50;
+                    }
+                });
+                
+                // 更新年龄范围提示
+                const ageRangeSpan = document.querySelector('div[style*="margin-top: 4px"] span');
+                if (ageRangeSpan) {
+                    ageRangeSpan.textContent = `年龄范围: ${ageRange}`;
+                    ageRangeSpan.style.color = '#c88a5a';
+                }
+                
+                showAgeModifierToast(ageRange);
+            } else {
+                // 年龄超出规则范围
+                const ageRangeSpan = document.querySelector('div[style*="margin-top: 4px"] span');
+                if (ageRangeSpan) {
+                    ageRangeSpan.textContent = '年龄超出规则范围 (15-89岁)';
+                    ageRangeSpan.style.color = '#b85a5a';
+                }
+            }
+        }
+        
+        if (birthYearInput) birthYearInput.addEventListener('change', updateAgeModifiers);
+        if (currentYearInput) currentYearInput.addEventListener('change', updateAgeModifiers);
         
         // 头像上传
         const uploadBtn = document.getElementById('coc-avatar-upload-btn');
@@ -1508,14 +1561,10 @@ function registerCharacterPanel(context, data, core) {
                             <option value="">选择技能</option>
                             ${renderSkillOptions('', 'occupational', currentOccupation)}
                         </select>
-                        <input type="number" class="coc-edit-occ-skill-value" value="50" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
-                        <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
+                        <input type="number" class="coc-edit-occ-skill-value" value="50" placeholder="数值">
+                        <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                     `;
                     container.appendChild(newRow);
-                    
-                    // 绑定输入事件
-                    newRow.querySelector('.coc-edit-occ-skill-value').addEventListener('input', updatePointsDisplay);
-                    newRow.querySelector('.coc-edit-occ-skill-value').addEventListener('change', updatePointsDisplay);
                 }
             };
         }
@@ -1533,22 +1582,13 @@ function registerCharacterPanel(context, data, core) {
                             <option value="">选择技能</option>
                             ${SKILLS_LIST.interest.map(skill => `<option value="${skill}">${skill}</option>`).join('')}
                         </select>
-                        <input type="number" class="coc-edit-int-skill-value" value="50" placeholder="数值" onchange="updatePointsDisplay()" oninput="updatePointsDisplay()">
-                        <button class="coc-remove-btn" onclick="this.parentElement.remove(); setTimeout(updatePointsDisplay, 10)">✖</button>
+                        <input type="number" class="coc-edit-int-skill-value" value="50" placeholder="数值">
+                        <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
                     `;
                     container.appendChild(newRow);
-                    
-                    newRow.querySelector('.coc-edit-int-skill-value').addEventListener('input', updatePointsDisplay);
-                    newRow.querySelector('.coc-edit-int-skill-value').addEventListener('change', updatePointsDisplay);
                 }
             };
         }
-
-        // 为所有现有技能输入绑定事件
-        document.querySelectorAll('.coc-edit-occ-skill-value, .coc-edit-int-skill-value').forEach(input => {
-            input.addEventListener('input', updatePointsDisplay);
-            input.addEventListener('change', updatePointsDisplay);
-        });
 
         // 添加格斗技能
         const addFightSkill = document.getElementById('coc-add-fight-skill');
@@ -1708,9 +1748,6 @@ function registerCharacterPanel(context, data, core) {
                 if (editSection) editSection.style.display = 'none';
             };
         }
-
-        // 初始化点数显示
-        setTimeout(updatePointsDisplay, 100);
     }
     
     // 收集编辑数据
@@ -1719,21 +1756,17 @@ function registerCharacterPanel(context, data, core) {
 
         stats.occupation = document.getElementById('coc-occupation-select')?.value || '调查员';
         stats.gender = document.querySelector('.coc-edit-gender')?.value || '男';
-        stats.birthYear = parseInt(document.querySelector('.coc-edit-birth-year')?.value) || 1890;
-        stats.currentYear = parseInt(document.querySelector('.coc-edit-current-year')?.value) || 1925;
+        stats.birthYear = parseInt(document.getElementById('coc-edit-birth-year')?.value) || 1890;
+        stats.currentYear = parseInt(document.getElementById('coc-edit-current-year')?.value) || 1925;
         stats.birthplace = document.querySelector('.coc-edit-birthplace')?.value || '';
         stats.residence = document.querySelector('.coc-edit-residence')?.value || '';
 
-        // 保留原有属性值（不可修改）
-        document.querySelectorAll('.coc-edit-input[readonly]').forEach(input => {
-            // 从父元素找属性名
-            const parent = input.closest('div');
-            if (parent) {
-                const label = parent.querySelector('.coc-edit-label');
-                if (label) {
-                    const attr = label.textContent.trim();
-                    stats[attr] = parseInt(input.value) || 50;
-                }
+        // 保存当前显示的属性值（已经过年龄修正）
+        const attrInputs = document.querySelectorAll('.coc-edit-input[readonly]');
+        const attrNames = ['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'LUCK'];
+        attrInputs.forEach((input, index) => {
+            if (index < attrNames.length) {
+                stats[attrNames[index]] = parseInt(input.value) || 50;
             }
         });
 
@@ -1974,9 +2007,6 @@ function registerCharacterPanel(context, data, core) {
                 console.error('[COC] 加载模板失败:', err);
             });
     }
-    
-    // 将更新函数暴露给全局
-    window.updatePointsDisplay = updatePointsDisplay;
     
     return buildUI;
 }
