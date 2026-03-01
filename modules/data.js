@@ -123,8 +123,8 @@ class CharacterData {
         
         return [...new Set(characters)].sort();
     }
-}
-// ✅ 新增：标记技能使用（直接复制这段）
+    
+    // 标记技能使用
     markSkillUsed(characterName, skillName) {
         const char = this.get(characterName);
         if (char) {
@@ -137,3 +137,4 @@ class CharacterData {
         }
         return false;
     }
+}
