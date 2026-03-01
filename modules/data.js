@@ -124,3 +124,16 @@ class CharacterData {
         return [...new Set(characters)].sort();
     }
 }
+// ✅ 新增：标记技能使用（直接复制这段）
+    markSkillUsed(characterName, skillName) {
+        const char = this.get(characterName);
+        if (char) {
+            if (!char.stats.usedSkills) char.stats.usedSkills = [];
+            if (!char.stats.usedSkills.includes(skillName)) {
+                char.stats.usedSkills.push(skillName);
+                this.save();
+            }
+            return true;
+        }
+        return false;
+    }
