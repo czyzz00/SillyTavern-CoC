@@ -1293,6 +1293,88 @@ function registerCharacterPanel(context, data, core) {
             const assets = stats.assets || { spendingLevel: '—', cash: '—', assets: '—' };
             const relationships = stats.relationships || [];
             const insanity = stats.insanity || [];
+            const luck = stats.luck || { current: 50, max: 50 };
+            const conditions = stats.conditions || {};
+            const cthulhuMythos = stats.cthulhuMythos || 0;
+
+            // 渲染状态徽章
+            function renderStatusBadges(conditions) {
+                let badges = '';
+                if (conditions?.isDying) badges += '<span class="coc-badge dying">💀 濒死</span>';
+                if (conditions?.isMajorWound) badges += '<span class="coc-badge major">⚡ 重伤</span>';
+                if (conditions?.isUnconscious) badges += '<span class="coc-badge unconscious">😵 昏迷</span>';
+                if (conditions?.permanentScar) badges += '<span class="coc-badge scar">💔 伤残</span>';
+                if (conditions?.isPermanentlyInsane) badges += '<span class="coc-badge permanent">💀 永久疯狂</span>';
+                if (conditions?.isIndefinitelyInsane) badges += '<span class="coc-badge indefinite">😵 不定疯狂</span>';
+                if (conditions?.isTemporarilyInsane) badges += '<span class="coc-badge temporary">😱 临时疯狂</span>';
+                if (conditions?.isInPotentialPhase) badges += '<span class="coc-badge potential">👁️ 潜在疯狂</span>';
+                return badges;
+            }
+
+            // 渲染当前疯狂症状
+            function renderCurrentInsanity() {
+                if (!conditions.isTemporarilyInsane && !conditions.isIndefinitelyInsane && !conditions.isPermanentlyInsane) {
+                    return '';
+                }
+                
+                let html = '<div class="coc-insanity-section">';
+                
+                if (conditions.isTemporarilyInsane && conditions.insanitySymptom) {
+                    const remaining = conditions.insanityDuration ? 
+                        `剩余 ${conditions.insanityDuration} 小时` : '';
+                    html += `
+                        <div class="coc-insanity-symptom">
+                            <span class="coc-insanity-label">😱 临时疯狂</span>
+                            <span class="coc-insanity-name">${conditions.insanitySymptom.name}</span>
+                            <span class="coc-insanity-desc">${conditions.insanitySymptom.description}</span>
+                            <div class="coc-insanity-timer">${remaining}</div>
+                        </div>
+                    `;
+                }
+                
+                if (conditions.isIndefinitelyInsane) {
+                    html += `
+                        <div class="coc-insanity-symptom">
+                            <span class="coc-insanity-label">😵 不定性疯狂</span>
+                            <span>将持续整个模组</span>
+                        </div>
+                    `;
+                }
+                
+                if (conditions.isPermanentlyInsane) {
+                    html += `
+                        <div class="coc-insanity-symptom">
+                            <span class="coc-insanity-label">💀 永久疯狂</span>
+                            <span>角色已无法恢复理智</span>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                return html;
+            }
+
+            // 渲染恐惧症/躁狂症
+            function renderPhobiasManias() {
+                const phobias = conditions.phobias || [];
+                const manias = conditions.manias || [];
+                
+                if (phobias.length === 0 && manias.length === 0) return '';
+                
+                let html = '<div class="coc-section-title">🧠 恐惧症/躁狂症</div>';
+                html += '<div class="coc-weapons-list">';
+                
+                phobias.forEach(phobia => {
+                    html += `<div class="coc-relationship-row"><span>😨 恐惧症: ${phobia}</span></div>`;
+                });
+                
+                manias.forEach(mania => {
+                    html += `<div class="coc-relationship-row"><span>🎭 躁狂症: ${mania}</span></div>`;
+                });
+                
+                html += '</div>';
+                return html;
+            }
 
             return `
                 <div class="coc-card">
@@ -1304,6 +1386,7 @@ function registerCharacterPanel(context, data, core) {
                             <div>
                                 <div class="coc-name">${name}</div>
                                 <div class="coc-subtitle">${occupation} · ${gender} · ${age}岁</div>
+                                <div style="margin-top: 4px;">${renderStatusBadges(conditions)}</div>
                             </div>
                         </div>
                         <div class="coc-info-grid" style="grid-template-columns: repeat(3, 1fr);">
@@ -1311,8 +1394,12 @@ function registerCharacterPanel(context, data, core) {
                             <div><span class="coc-info-label">当前年份：</span> ${currentYear}</div>
                             <div><span class="coc-info-label">出生地：</span> ${birthplace}</div>
                             <div><span class="coc-info-label">居住地：</span> ${residence}</div>
+                            <div><span class="coc-info-label">幸运：</span> ${luck.current}/${luck.max}</div>
+                            <div><span class="coc-info-label">克苏鲁神话：</span> ${cthulhuMythos}%</div>
                         </div>
                     </div>
+
+                    ${renderCurrentInsanity()}
 
                     <div class="coc-bar-container">
                         <div class="coc-bar-item">
@@ -1402,6 +1489,8 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
+                    ${renderPhobiasManias()}
+
                     <div>
                         <div class="coc-section-title">📜 背景故事</div>
                         <div class="coc-backstory">${stats.backstory || '——'}</div>
@@ -1440,7 +1529,7 @@ function registerCharacterPanel(context, data, core) {
                     </div>
 
                     <div>
-                        <div class="coc-section-title">🧠 疯狂症状</div>
+                        <div class="coc-section-title">🧠 疯狂症状记录</div>
                         <div class="coc-weapons-list">
                             ${insanity.length > 0 
                                 ? insanity.map(item => `
@@ -1468,6 +1557,8 @@ function registerCharacterPanel(context, data, core) {
                     </div>
 
                     <button class="coc-btn edit" id="coc-edit-mode-btn">✏️ 编辑角色</button>
+                    <button class="coc-btn edit" id="coc-growth-mode-btn" style="margin-top: 8px; background:#7ba6b8;">📈 幕间成长</button>
+                    <button class="coc-btn edit" id="coc-healing-mode-btn" style="margin-top: 8px; background:#c88a5a;">🏥 医疗恢复</button>
                 </div>
             `;
         } catch (e) {
