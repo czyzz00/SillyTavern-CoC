@@ -185,4 +185,28 @@ function registerSlashCommands(context, data, core) {
         }
         return '';
     }, [], '查看当前KP');
+
+    // 伤害命令
+    context.registerSlashCommand('damage', (args, value) => {
+        const [target, damage] = value.split(' ');
+        const result = takeDamage(target, parseInt(damage));
+        sendMessageAs(JSON.stringify(result), 'system');
+        return '';
+    }, [], '造成伤害: /damage 李昂 5');
+
+    // 急救命令
+    context.registerSlashCommand('firstaid', (args, value) => {
+        const [target, medic] = value.split(' ');
+        const result = firstAid(target, medic);
+        sendMessageAs(result.message, 'system');
+        return '';
+    }, [], '急救: /firstaid 李昂 医生');
+
+    // 燃运命令
+    context.registerSlashCommand('luck', (args, value) => {
+        const [target, points] = value.split(' ');
+        // 需要结合上次检定结果
+        sendMessageAs('需要指定检定', 'system');
+        return '';
+    }, [], '使用幸运: /luck 李昂 10');
 }
