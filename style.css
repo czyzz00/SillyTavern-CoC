@@ -617,3 +617,23 @@
     justify-content: space-between;
     align-items: center;
 }
+/* 疯狂状态徽章 */
+.coc-badge.permanent { background: #000; color: #ff4444; border: 1px solid #ff4444; }
+.coc-badge.indefinite { background: #4a2e2e; color: #ff8888; }
+.coc-badge.temporary { background: #7e4e4e; color: #ffaa88; }
+.coc-badge.potential { background: #2e4a4a; color: #88ffff; }
+
+/* 疯狂症状面板 */
+.coc-insanity-symptom {
+    background: rgba(184, 90, 90, 0.1);
+    border-left: 3px solid #b85a5a;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 4px;
+}
+
+.coc-insanity-timer {
+    font-size: 11px;
+    color: #ffaa88;
+    margin-top: 2px;
+}
