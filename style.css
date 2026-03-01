@@ -580,3 +580,40 @@
     touch-action: none;
     border: 1px solid var(--coc-gold);
 }
+
+/* 状态徽章 */
+.coc-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-right: 4px;
+}
+
+.coc-badge.dying { background: #b85a5a; color: white; }
+.coc-badge.major { background: #c88a5a; color: white; }
+.coc-badge.unconscious { background: #7e6b55; color: white; }
+.coc-badge.scar { background: #4e4236; color: #f0e6d8; }
+
+/* 警告框 */
+.coc-warning {
+    background: rgba(184, 90, 90, 0.2);
+    border: 1px solid #b85a5a;
+    color: #f0e6d8;
+    padding: 8px;
+    border-radius: 8px;
+    margin: 8px 0;
+}
+
+/* 幸运选项 */
+.coc-luck-option {
+    background: rgba(123, 166, 184, 0.2);
+    border: 1px solid #7ba6b8;
+    padding: 8px;
+    border-radius: 8px;
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
