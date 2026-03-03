@@ -726,6 +726,7 @@ function expandOccupationSkills(occupation) {
         const socialMatch = skill.match(/社交技能(\d+)项/);
         if (socialMatch) {
             const count = parseInt(socialMatch[1]);
+            // 注意：这里只是标记，实际需要玩家选择
             expanded.push(`社交技能(${count}项)`);
             return;
         }
@@ -838,6 +839,197 @@ function getOccupationsByEra(era) {
         .map(occ => occ.name);
 }
 
+// ==================== 疯狂系统 ====================
+
+// 临时疯狂 - 即时症状（1D10）
+const INSTANT_INSANITY = [
+    { name: "失忆", description: "玩家记起自己是谁，但不记得过去5分钟发生的事" },
+    { name: "假性残疾", description: "心理原因导致身体机能丧失（失明、失聪、瘫痪等）" },
+    { name: "暴力倾向", description: "对周围人无差别攻击，不分敌友" },
+    { name: "偏执", description: "对所有人产生严重不信任，认为他们都要害自己" },
+    { name: "仪式行为", description: "必须重复某个特定动作才能进行其他行动" },
+    { name: "恐惧症", description: "对某事物产生极度恐惧，会不顾一切逃离" },
+    { name: "躁狂症", description: "对某事物产生极度狂热，无法控制" },
+    { name: "幻觉", description: "看到/听到不存在的事物，分不清现实" },
+    { name: "人格解体", description: "感觉自己不是自己，像在观察陌生人" },
+    { name: "道德障碍", description: "失去道德约束，做出极端行为" }
+];
+
+// 总结症状（疯狂发作后醒来）
+const SUMMARY_INSANITY = [
+    { name: "失忆", description: "不记得疯狂期间发生的事" },
+    { name: "恐惧症", description: "获得一项新的恐惧症" },
+    { name: "躁狂症", description: "获得一项新的躁狂症" },
+    { name: "人格改变", description: "性格发生永久改变" },
+    { name: "幻觉残留", description: "偶尔还会看到幻觉" }
+];
+
+// 恐惧症列表
+const PHOBIAS = [
+    "恐高症", "幽闭恐惧症", "社交恐惧症", "恐水症", "恐火症",
+    "恐血恐惧症", "恐黑症", "恐惧动物症", "恐尸症", "恐惧神明症"
+];
+
+// 躁狂症列表
+const MANIAS = [
+    "洁癖", "囤积癖", "仪式行为", "说谎癖", "偷窃癖",
+    "纵火癖", "暴露癖", "强迫性计数", "强迫性洗手", "嗜血"
+];
+
+// 触发临时疯狂
+function triggerTemporaryInsanity(characterName) {
+    const char = data.get(characterName);
+    if (!char) return { success: false, message: '角色不存在' };
+    
+    // 智力检定决定是否意识到真相
+    const int = char.stats.INT || 50;
+    const roll = rollD100();
+    const realize = roll <= int; // 成功才陷入疯狂
+    
+    if (realize) {
+        const duration = Math.floor(Math.random() * 10) + 1; // 1D10小时
+        const symptom = INSTANT_INSANITY[Math.floor(Math.random() * INSTANT_INSANITY.length)];
+        
+        // 记录疯狂状态
+        if (!char.stats.insanity) char.stats.insanity = [];
+        char.stats.insanity.push({
+            type: 'temporary',
+            symptom: symptom.name,
+            description: symptom.description,
+            duration,
+            startTime: new Date().toISOString(),
+            phase: 'active' // 疯狂发作阶段
+        });
+        
+        // 克苏鲁神话技能增长（如果是神话相关）
+        char.stats.skills['克苏鲁神话'] = (char.stats.skills['克苏鲁神话'] || 0) + 5;
+        
+        data.save();
+        return {
+            success: true,
+            type: 'temporary',
+            symptom: symptom.name,
+            description: symptom.description,
+            duration,
+            message: `😱 ${characterName} 陷入临时疯狂！症状：${symptom.name} - ${symptom.description}，持续 ${duration} 小时`
+        };
+    }
+    
+    return {
+        success: false,
+        message: `🧠 ${characterName} 意志坚定，抵抗了疯狂`
+    };
+}
+
+// 触发不定性疯狂
+function triggerIndefiniteInsanity(characterName) {
+    const char = data.get(characterName);
+    if (!char) return { success: false, message: '角色不存在' };
+    
+    // 随机选择一个总结症状
+    const summary = SUMMARY_INSANITY[Math.floor(Math.random() * SUMMARY_INSANITY.length)];
+    
+    // 如果是恐惧症或躁狂症，需要具体类型
+    let specificType = '';
+    if (summary.name === '恐惧症') {
+        specificType = PHOBIAS[Math.floor(Math.random() * PHOBIAS.length)];
+    } else if (summary.name === '躁狂症') {
+        specificType = MANIAS[Math.floor(Math.random() * MANIAS.length)];
+    }
+    
+    const fullDescription = specificType ? `${summary.name} - ${specificType}：${summary.description}` : summary.description;
+    
+    if (!char.stats.insanity) char.stats.insanity = [];
+    char.stats.insanity.push({
+        type: 'indefinite',
+        symptom: summary.name,
+        specificType,
+        description: fullDescription,
+        startTime: new Date().toISOString(),
+        phase: 'active'
+    });
+    
+    data.save();
+    
+    return {
+        success: true,
+        type: 'indefinite',
+        symptom: summary.name,
+        specificType,
+        description: fullDescription,
+        message: `😨 ${characterName} 陷入不定性疯狂！症状：${fullDescription}`
+    };
+}
+
+// 触发永久疯狂
+function triggerPermanentInsanity(characterName) {
+    const char = data.get(characterName);
+    if (!char) return { success: false, message: '角色不存在' };
+    
+    // 随机选择一个永久症状
+    const summary = SUMMARY_INSANITY[Math.floor(Math.random() * SUMMARY_INSANITY.length)];
+    let specificType = '';
+    
+    if (summary.name === '恐惧症') {
+        specificType = PHOBIAS[Math.floor(Math.random() * PHOBIAS.length)];
+    } else if (summary.name === '躁狂症') {
+        specificType = MANIAS[Math.floor(Math.random() * MANIAS.length)];
+    }
+    
+    const fullDescription = specificType ? `${summary.name} - ${specificType}：${summary.description}` : summary.description;
+    
+    if (!char.stats.insanity) char.stats.insanity = [];
+    char.stats.insanity.push({
+        type: 'permanent',
+        symptom: summary.name,
+        specificType,
+        description: fullDescription,
+        startTime: new Date().toISOString(),
+        phase: 'permanent'
+    });
+    
+    // SAN归零
+    char.stats.SAN = 0;
+    
+    data.save();
+    
+    return {
+        success: true,
+        type: 'permanent',
+        symptom: summary.name,
+        specificType,
+        description: fullDescription,
+        message: `💔 ${characterName} 陷入永久疯狂！症状：${fullDescription}`
+    };
+}
+
+// 根据理智损失触发疯狂
+function checkInsanityFromSanLoss(characterName, loss, previousSan) {
+    const char = data.get(characterName);
+    if (!char) return null;
+    
+    const results = [];
+    
+    // 临时疯狂：一次损失 ≥5点SAN
+    if (loss >= 5) {
+        results.push(triggerTemporaryInsanity(characterName));
+    }
+    
+    // 不定性疯狂：一天内损失 ≥当前SAN的1/5
+    // 这里简化处理，需要记录每日损失
+    const oneFifth = Math.floor(previousSan / 5);
+    if (loss >= oneFifth) {
+        results.push(triggerIndefiniteInsanity(characterName));
+    }
+    
+    // 永久疯狂：SAN降至0
+    if (char.stats.SAN <= 0) {
+        results.push(triggerPermanentInsanity(characterName));
+    }
+    
+    return results;
+}
+
 // ==================== 导出所有核心函数 ====================
 const core = {
     // 骰子函数
@@ -870,5 +1062,15 @@ const core = {
     SOCIAL_SKILLS,
     SCIENCE_SKILLS,
     CRAFT_SKILLS,
-    SKILL_BASE_VALUES
+    SKILL_BASE_VALUES,
+    
+    // 疯狂系统
+    INSTANT_INSANITY,
+    SUMMARY_INSANITY,
+    PHOBIAS,
+    MANIAS,
+    triggerTemporaryInsanity,
+    triggerIndefiniteInsanity,
+    triggerPermanentInsanity,
+    checkInsanityFromSanLoss
 };
