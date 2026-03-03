@@ -6,7 +6,8 @@ function registerFunctionCalls(context, data, core) {
         return;
     }
     
-    const { rollD100, rollWithBonusPenalty, parseDiceFormula, judgeCOC, calculateDB } = core;
+    const { rollD100, rollWithBonusPenalty, parseDiceFormula, judgeCOC, calculateDB, 
+            triggerTemporaryInsanity, triggerIndefiniteInsanity, triggerPermanentInsanity, checkInsanityFromSanLoss } = core;
     
     // 理智检定（内部函数）
     function sanCheck(character, lossFormula) {
@@ -26,13 +27,17 @@ function registerFunctionCalls(context, data, core) {
         const newSan = Math.max(0, currentSan - loss);
         data.updateSan(character, newSan);
         
+        // 检查是否触发疯狂
+        const insanityResults = checkInsanityFromSanLoss(character, loss, currentSan);
+        
         return {
             roll,
             result,
             loss,
             newSan,
             isInsane: newSan <= 0,
-            isTemporaryInsanity: loss >= 5 && currentSan - loss < currentSan
+            isTemporaryInsanity: loss >= 5 && currentSan - loss < currentSan,
+            insanityResults
         };
     }
     
@@ -182,7 +187,7 @@ function registerFunctionCalls(context, data, core) {
     context.registerFunctionTool({
         name: "coc_sanity_check",
         displayName: "COC理智检定",
-        description: "进行理智检定，自动扣除理智值。",
+        description: "进行理智检定，自动扣除理智值，并可能触发疯狂。",
         parameters: {
             $schema: 'http://json-schema.org/draft-04/schema#',
             type: 'object',
@@ -210,6 +215,15 @@ function registerFunctionCalls(context, data, core) {
                 message += `\n💔 **角色永久疯狂！**`;
             } else if (result.isTemporaryInsanity) {
                 message += `\n😱 **临时疯狂！**`;
+            }
+            
+            if (result.insanityResults && result.insanityResults.length > 0) {
+                message += `\n\n🧠 **疯狂症状：**`;
+                result.insanityResults.forEach(r => {
+                    if (r.success) {
+                        message += `\n${r.message}`;
+                    }
+                });
             }
             
             return message;
@@ -280,6 +294,42 @@ function registerFunctionCalls(context, data, core) {
             }
             
             return message;
+        },
+        stealth: false
+    });
+    
+    // 疯狂触发函数
+    context.registerFunctionTool({
+        name: "coc_trigger_insanity",
+        displayName: "触发疯狂",
+        description: "手动触发角色的疯狂状态（临时/不定性/永久）。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {
+                character: {
+                    type: 'string',
+                    description: '角色名'
+                },
+                type: {
+                    type: 'string',
+                    enum: ['temporary', 'indefinite', 'permanent'],
+                    description: '疯狂类型'
+                }
+            },
+            required: ['character', 'type']
+        },
+        action: async ({ character, type }) => {
+            let result;
+            if (type === 'temporary') {
+                result = triggerTemporaryInsanity(character);
+            } else if (type === 'indefinite') {
+                result = triggerIndefiniteInsanity(character);
+            } else {
+                result = triggerPermanentInsanity(character);
+            }
+            
+            return result.message || '疯狂触发失败';
         },
         stealth: false
     });
