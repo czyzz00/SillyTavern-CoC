@@ -1,7 +1,8 @@
 // ==================== 斜杠命令 ====================
 
 function registerSlashCommands(context, data, core) {
-    const { rollD100, parseDiceFormula, judgeCOC, calculateDB } = core;
+    const { rollD100, parseDiceFormula, judgeCOC, calculateDB, 
+            triggerTemporaryInsanity, triggerIndefiniteInsanity, triggerPermanentInsanity } = core;
     
     // 获取角色技能值（从data获取）
     function getSkillValue(characterName, skillName) {
@@ -210,35 +211,33 @@ function registerSlashCommands(context, data, core) {
         return '';
     }, [], '使用幸运: /luck 李昂 10');
     
-    // 增强版理智检定命令
-    context.registerSlashCommand('san2', (args, value) => {
+    // 疯狂触发命令
+    context.registerSlashCommand('insanity', (args, value) => {
         const input = value || '';
-    
+        
         let targetChar = context.name2 || '未知角色';
-        let lossFormula = '1d3/1d6';
-        let source = 'normal';
-    
-        const parts = input.split(' ');
-        if (parts.length >= 1) targetChar = parts[0];
-        if (parts.length >= 2) lossFormula = parts[1];
-        if (parts.length >= 3) source = parts[2];
-    
-        const result = enhancedSanCheck(targetChar, lossFormula, source);
-    
-        let message = `**${targetChar}** 进行理智检定\n` +
-                      `🎲 D100 = \`${result.roll}\` | 当前理智 \`${result.newSan + result.loss}\`\n` +
-                      `结果: ${result.result.emoji} **${result.result.text}**，损失 \`${result.loss}\` 点理智\n` +
-                      `剩余理智: **${result.newSan}**`;
-    
-        if (result.insanity) {
-            message += `\n${result.insanity.message}`;
+        let type = 'temporary';
+        
+        const atMatch = input.match(/@(\S+)/);
+        if (atMatch) {
+            targetChar = atMatch[1];
+            const command = input.replace(/@\S+/, '').trim();
+            if (command === 'temp' || command === 'temporary') type = 'temporary';
+            else if (command === 'indefinite') type = 'indefinite';
+            else if (command === 'perm' || command === 'permanent') type = 'permanent';
         }
-    
-        if (result.cthulhuMythos) {
-            message += `\n📚 克苏鲁神话技能 +${result.cthulhuMythos === 5 ? '5' : '1'}`;
+        
+        let result;
+        if (type === 'temporary') {
+            result = triggerTemporaryInsanity(targetChar);
+        } else if (type === 'indefinite') {
+            result = triggerIndefiniteInsanity(targetChar);
+        } else {
+            result = triggerPermanentInsanity(targetChar);
         }
-    
-        sendMessageAs(message, 'system');
+        
+        sendMessageAs(result.message || '疯狂触发失败', 'system');
         return '';
-    }, [], '增强版理智检定 - 格式: /san2 角色名 1d3/1d6 来源');
+        
+    }, [], '触发疯狂: /insanity temporary @李昂 或 /insanity indefinite @李昂');
 }
