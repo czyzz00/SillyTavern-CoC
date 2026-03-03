@@ -209,4 +209,36 @@ function registerSlashCommands(context, data, core) {
         sendMessageAs('需要指定检定', 'system');
         return '';
     }, [], '使用幸运: /luck 李昂 10');
+    
+    // 增强版理智检定命令
+    context.registerSlashCommand('san2', (args, value) => {
+        const input = value || '';
+    
+        let targetChar = context.name2 || '未知角色';
+        let lossFormula = '1d3/1d6';
+        let source = 'normal';
+    
+        const parts = input.split(' ');
+        if (parts.length >= 1) targetChar = parts[0];
+        if (parts.length >= 2) lossFormula = parts[1];
+        if (parts.length >= 3) source = parts[2];
+    
+        const result = enhancedSanCheck(targetChar, lossFormula, source);
+    
+        let message = `**${targetChar}** 进行理智检定\n` +
+                      `🎲 D100 = \`${result.roll}\` | 当前理智 \`${result.newSan + result.loss}\`\n` +
+                      `结果: ${result.result.emoji} **${result.result.text}**，损失 \`${result.loss}\` 点理智\n` +
+                      `剩余理智: **${result.newSan}**`;
+    
+        if (result.insanity) {
+            message += `\n${result.insanity.message}`;
+        }
+    
+        if (result.cthulhuMythos) {
+            message += `\n📚 克苏鲁神话技能 +${result.cthulhuMythos === 5 ? '5' : '1'}`;
+        }
+    
+        sendMessageAs(message, 'system');
+        return '';
+    }, [], '增强版理智检定 - 格式: /san2 角色名 1d3/1d6 来源');
 }
