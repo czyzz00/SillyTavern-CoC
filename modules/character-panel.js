@@ -56,6 +56,19 @@ function registerCharacterPanel(context, data, core) {
     // 外语列表
     const LANGUAGE_SKILLS = ['英语', '汉语', '法语', '德语', '西班牙语', '拉丁语', '日语', '俄语', '阿拉伯语'];
 
+    // ==================== 属性中文对照表 ====================
+    const ATTRIBUTE_NAMES_CN = {
+        'STR': '力量',
+        'CON': '体质',
+        'SIZ': '体型',
+        'DEX': '敏捷',
+        'APP': '外貌',
+        'INT': '智力',
+        'POW': '意志',
+        'EDU': '教育',
+        'LUCK': '幸运'
+    };
+
     // ==================== 疯狂系统常量 ====================
     const INSTANT_INSANITY_SYMPTOMS = [
         "失忆：不记得过去5分钟发生的事，也无法建立新的短期记忆",
