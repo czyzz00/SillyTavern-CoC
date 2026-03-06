@@ -1028,7 +1028,7 @@ function registerCharacterPanel(context, data, core) {
                         <div class="coc-stats-grid">
                             ${['STR', 'CON', 'SIZ', 'DEX', 'APP', 'INT', 'POW', 'EDU', 'LUCK'].map(attr => `
                                 <div class="coc-stat-item">
-                                    <div class="coc-stat-label">${attr}</div>
+                                    <div class="coc-stat-label">${attr}<br><span style="font-size:9px; color:#b8a68f;">${ATTRIBUTE_NAMES_CN[attr]}</span></div>
                                     <div class="coc-stat-value">${stats[attr] || '—'}</div>
                                 </div>
                             `).join('')}
