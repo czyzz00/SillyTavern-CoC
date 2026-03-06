@@ -56,84 +56,42 @@ function registerCharacterPanel(context, data, core) {
     // 外语列表
     const LANGUAGE_SKILLS = ['英语', '汉语', '法语', '德语', '西班牙语', '拉丁语', '日语', '俄语', '阿拉伯语'];
 
-    // ==================== 新增：疯狂症状表 ====================
-    
-    // 即时症状（战斗中使用）
-    const INSANITY_INSTANT_SYMPTOMS = [
-        { id: 1, name: '失忆', description: '不记得过去几分钟发生了什么，陷入迷茫' },
-        { id: 2, name: '假性残疾', description: '身体某部分失去功能（瘸了/瞎了/失声），持续1D10轮' },
-        { id: 3, name: '暴力倾向', description: '对周围人无差别攻击，不分敌我' },
-        { id: 4, name: '偏执', description: '怀疑所有人都在害自己，试图逃跑或攻击' },
-        { id: 5, name: '仪式行为', description: '必须重复做某个动作（数数/转圈/拍手），否则无法行动' },
-        { id: 6, name: '幻觉', description: '看到不存在的东西，根据幻觉行动' },
-        { id: 7, name: '恐慌症', description: '疯狂逃跑，试图远离一切' },
-        { id: 8, name: '逃避行为', description: '蜷缩角落，抱头不动，对外界无反应' },
-        { id: 9, name: '恐惧症', description: '对特定事物（疯狂来源）产生极度恐惧' },
-        { id: 10, name: '躁狂症', description: '过度兴奋，执着于某件事物' }
+    // ==================== 疯狂系统常量 ====================
+    const INSTANT_INSANITY_SYMPTOMS = [
+        "失忆：不记得过去5分钟发生的事，也无法建立新的短期记忆",
+        "假性残疾：心理原因导致身体机能丧失（失明、失聪、失声等）",
+        "暴力倾向：对周围人无差别攻击，优先攻击最近的目标",
+        "偏执：对所有人产生严重不信任，认为他们想伤害自己",
+        "仪式行为：必须重复某个动作才能行动（如洗手、数数、转圈）",
+        "恐惧症：对某事物产生极度恐惧，会避开或逃离该事物",
+        "躁狂症：对某事物产生极度狂热，会不顾一切追求该事物",
+        "幻觉：看到/听到不存在的事物，并根据幻觉行动",
+        "人格解体：感觉自己不是自己，像在看别人的生活",
+        "道德障碍：失去道德约束，做出平时不会做的事"
     ];
 
-    // 总结症状（剧本结束时）
-    const INSANITY_SUMMARY_SYMPTOMS = [
-        { id: 1, name: '失忆', description: '有1D6小时的空白期，完全不记得发生了什么' },
-        { id: 2, name: '假性残疾', description: '留下永久症状，如长期跛脚、视力模糊等' },
-        { id: 3, name: '暴力倾向', description: '醒来后不记得，但周围人害怕你' },
-        { id: 4, name: '偏执', description: '之后会对特定类型的人起疑心' },
-        { id: 5, name: '仪式行为', description: '养成怪癖，每天必须做某个动作' },
-        { id: 6, name: '幻觉', description: '偶尔会看到不存在的幻象' },
-        { id: 7, name: '恐慌症', description: '获得恐惧症，特定场景触发' },
-        { id: 8, name: '逃避行为', description: '回避特定情况，如黑暗、人群等' },
-        { id: 9, name: '恐惧症', description: '获得永久恐惧症' },
-        { id: 10, name: '躁狂症', description: '获得永久躁狂症' }
+    const SUMMARY_INSANITY_SYMPTOMS = [
+        "失忆：不记得疯狂期间发生的事",
+        "恐惧症：获得一项新的恐惧症",
+        "躁狂症：获得一项新的躁狂症",
+        "人格改变：性格发生永久改变（KP根据情况设定）",
+        "幻觉残留：偶尔还会看到幻觉，但能意识到是假的"
     ];
 
-    // 恐惧症列表（100种常见）
     const PHOBIAS = [
-        '黑暗恐惧症', '高处恐惧症', '封闭空间恐惧症', '蜘蛛恐惧症', '蛇恐惧症',
-        '血液恐惧症', '死亡恐惧症', '人群恐惧症', '孤独恐惧症', '黑暗恐惧症',
-        '闪电恐惧症', '雷声恐惧症', '水恐惧症', '火恐惧症', '刀恐惧症',
-        '枪械恐惧症', '医生恐惧症', '医院恐惧症', '猫恐惧症', '狗恐惧症',
-        '老鼠恐惧症', '昆虫恐惧症', '飞行恐惧症', '驾驶恐惧症', '桥梁恐惧症',
-        '隧道恐惧症', '电梯恐惧症', '镜子恐惧症', '影子恐惧症', '鬼魂恐惧症',
-        '怪物恐惧症', '外星人恐惧症', '失败恐惧症', '成功恐惧症', '承诺恐惧症',
-        '亲密关系恐惧症', '社交恐惧症', '公开演讲恐惧症', '考试恐惧症', '工作恐惧症',
-        '权威恐惧症', '批评恐惧症', '拒绝恐惧症', '尴尬恐惧症', '噪音恐惧症',
-        '寂静恐惧症', '颜色恐惧症', '数字恐惧症', '十字架恐惧症', '宗教恐惧症',
-        '魔法恐惧症', '科学恐惧症', '技术进步恐惧症', '机器人恐惧症', 'AI恐惧症',
-        '时间恐惧症', '衰老恐惧症', '生病恐惧症', '疼痛恐惧症', '呕吐恐惧症',
-        '吞咽恐惧症', '窒息恐惧症', '溺水恐惧症', '中毒恐惧症', '辐射恐惧症',
-        '污染恐惧症', '细菌恐惧症', '肮脏恐惧症', '陌生环境恐惧症', '陌生人人恐惧症',
-        '外国人恐惧症', '异性恐惧症', '同性恐惧症', '亲吻恐惧症', '拥抱恐惧症',
-        '身体接触恐惧症', '裸露恐惧症', '性行为恐惧症', '怀孕恐惧症', '分娩恐惧症',
-        '婴儿恐惧症', '儿童恐惧症', '老人恐惧症', '尸体恐惧症', '墓地恐惧症',
-        '葬礼恐惧症', '幽灵恐惧症', '恶魔恐惧症', '天使恐惧症', '神明恐惧症',
-        '诅咒恐惧症', '预言恐惧症', '梦境恐惧症', '失眠恐惧症', '清醒恐惧症',
-        '镜子恐惧症', '照片恐惧症', '摄像机恐惧症', '被注视恐惧症', '被跟踪恐惧症',
-        '被监视恐惧症', '被偷听恐惧症', '被背叛恐惧症'
+        "恐高症", "幽闭恐惧症", "广场恐惧症", "社交恐惧症", "黑暗恐惧症",
+        "恐血恐惧症", "恐水恐惧症", "火焰恐惧症", "雷电恐惧症", "动物恐惧症",
+        "蜘蛛恐惧症", "蛇类恐惧症", "死亡恐惧症", "疾病恐惧症", "疯狂恐惧症",
+        "尸体恐惧症", "镜子恐惧症", "数字恐惧症", "神明恐惧症", "孤独恐惧症"
     ];
 
-    // 躁狂症列表（100种常见）
     const MANIAS = [
-        '清洁癖', '整理癖', '囤积癖', '偷窃癖', '说谎癖',
-        '购物癖', '赌博癖', '工作狂', '运动狂', '读书狂',
-        '写作狂', '绘画狂', '音乐狂', '舞蹈狂', '美食狂',
-        '饮酒狂', '吸烟狂', '药物狂', '性瘾', '自慰狂',
-        '暴露癖', '偷窥癖', '电话狂', '短信狂', '网络狂',
-        '游戏狂', '自拍狂', '发帖狂', '点赞狂', '收藏癖',
-        '记录癖', '检查癖', '重复癖', '计数癖', '仪式癖',
-        '洗手狂', '洗澡狂', '刷牙狂', '梳头狂', '照镜狂',
-        '自言自语狂', '傻笑狂', '哭泣狂', '尖叫狂', '跳跃狂',
-        '旋转狂', '摇晃狂', '点头狂', '眨眼狂', '清喉咙狂',
-        '咬指甲狂', '拔毛癖', '皮肤抠挖癖', '伤口舔舐癖', '异物插入癖',
-        '甜食狂', '咸食狂', '辣食狂', '冷食狂', '热食狂',
-        '咖啡狂', '茶狂', '可乐狂', '水狂', '冰狂',
-        '阳光狂', '月光狂', '星光狂', '灯光狂', '烛光狂',
-        '红色狂', '蓝色狂', '绿色狂', '黄色狂', '紫色狂',
-        '圆形狂', '方形狂', '三角形狂', '对称狂', '不对称狂',
-        '数字狂', '字母狂', '词语狂', '名字狂', '日期狂',
-        '时间狂', '方向狂', '位置狂', '顺序狂', '分类狂',
-        '收藏狂', '展示狂', '赠送狂', '交换狂', '买卖狂'
+        "清洁癖", "囤积癖", "偷窃癖", "纵火癖", "赌博癖",
+        "谎言癖", "购物癖", "暴食癖", "酗酒癖", "药物癖",
+        "工作狂", "运动狂", "宗教狂", "权力狂", "知识狂",
+        "收藏癖", "仪式癖", "自虐癖", "虐待癖", "暴露癖"
     ];
-    
+
     // ==================== 完整的60种职业数据库 ====================
     
     const OCCUPATIONS = {
@@ -929,319 +887,6 @@ function registerCharacterPanel(context, data, core) {
         ).join('');
     }
     
-    // ==================== 疯狂系统核心函数 ====================
-
-    /**
-     * 理智检定（增强版，带疯狂判定）
-     */
-    function enhancedSanCheck(characterName, lossFormula, source) {
-        const char = data.get(characterName);
-        if (!char) return null;
-        
-        const currentSan = char.stats.SAN || 50;
-        const roll = rollD100();
-        const result = judgeCOC(roll, currentSan);
-        
-        const [successLoss, failLoss] = lossFormula.split('/');
-        let loss;
-        if (result.text === '成功' || result.text === '困难成功' || result.text === '极难成功') {
-            loss = parseDiceFormula(successLoss).total;
-        } else {
-            loss = parseDiceFormula(failLoss).total;
-        }
-        
-        const newSan = Math.max(0, currentSan - loss);
-        char.stats.SAN = newSan;
-        
-        // 初始化条件字段
-        if (!char.stats.conditions) char.stats.conditions = {};
-        const conditions = char.stats.conditions;
-        
-        // 疯狂判定
-        let insanityResult = null;
-        
-        // 1. 永久疯狂
-        if (newSan <= 0) {
-            conditions.isPermanentlyInsane = true;
-            insanityResult = {
-                type: 'permanent',
-                message: '💔 角色永久疯狂！'
-            };
-        }
-        // 2. 不定性疯狂（一天内损失 ≥ 当前SAN的1/5）
-        else if (loss >= Math.floor(currentSan / 5)) {
-            conditions.isIndefinitelyInsane = true;
-            conditions.indefiniteStart = new Date().toISOString();
-            insanityResult = {
-                type: 'indefinite',
-                message: '😵 角色陷入不定性疯狂！将持续整个模组'
-            };
-        }
-        // 3. 临时疯狂（损失 ≥ 5）
-        else if (loss >= 5) {
-            // 需要进行智力检定
-            const int = char.stats.INT || 50;
-            const intRoll = rollD100();
-            const intResult = judgeCOC(intRoll, int);
-            
-            if (intResult.text === '失败' || intResult.text === '大失败') {
-                // 智力检定失败 → 陷入临时疯狂
-                const symptom = rollInstantInsanity();
-                conditions.isTemporarilyInsane = true;
-                conditions.insanitySymptom = symptom;
-                conditions.insanityDuration = Math.floor(Math.random() * 10) + 1; // 1D10小时
-                conditions.insanityStart = new Date().toISOString();
-                
-                // 触发即时症状
-                applyInsanitySymptom(characterName, symptom);
-                
-                insanityResult = {
-                    type: 'temporary',
-                    symptom: symptom,
-                    duration: conditions.insanityDuration,
-                    message: `😱 角色陷入临时疯狂！症状：${symptom.name}，持续${conditions.insanityDuration}小时`
-                };
-            } else {
-                // 智力检定成功 → 理解发生了什么，但没疯
-                insanityResult = {
-                    type: 'resisted',
-                    message: '🧠 智力检定成功，角色理解了恐怖，避免了疯狂'
-                };
-            }
-        }
-        
-        // 4. 如果已处于潜在疯狂阶段，且这次看到的是疯狂来源
-        if (conditions.isInPotentialPhase && source === conditions.triggerSource) {
-            // 触发恐惧症效果：相关技能获得一个惩罚骰（这里只是记录）
-            if (!conditions.activePhobias) conditions.activePhobias = [];
-            conditions.activePhobias.push({
-                source: source,
-                triggeredAt: new Date().toISOString()
-            });
-        }
-        
-        // 克苏鲁神话技能成长（如果是克苏鲁相关事件）
-        if (source === 'mythos') {
-            if (!char.stats.cthulhuMythos) char.stats.cthulhuMythos = 0;
-            if (insanityResult && insanityResult.type !== 'resisted') {
-                // 第一次疯狂 +5，之后每次 +1
-                if (char.stats.cthulhuMythos === 0) {
-                    char.stats.cthulhuMythos += 5;
-                } else {
-                    char.stats.cthulhuMythos += 1;
-                }
-            }
-        }
-        
-        data.save();
-        
-        return {
-            roll,
-            result,
-            loss,
-            newSan,
-            insanity: insanityResult,
-            cthulhuMythos: char.stats.cthulhuMythos
-        };
-    }
-
-    /**
-     * 随机即时疯狂症状
-     */
-    function rollInstantInsanity() {
-        const roll = Math.floor(Math.random() * INSANITY_INSTANT_SYMPTOMS.length);
-        return INSANITY_INSTANT_SYMPTOMS[roll];
-    }
-
-    /**
-     * 随机总结疯狂症状
-     */
-    function rollSummaryInsanity() {
-        const roll = Math.floor(Math.random() * INSANITY_SUMMARY_SYMPTOMS.length);
-        return INSANITY_SUMMARY_SYMPTOMS[roll];
-    }
-
-    /**
-     * 随机恐惧症
-     */
-    function rollRandomPhobia() {
-        const roll = Math.floor(Math.random() * PHOBIAS.length);
-        return PHOBIAS[roll];
-    }
-
-    /**
-     * 随机躁狂症
-     */
-    function rollRandomMania() {
-        const roll = Math.floor(Math.random() * MANIAS.length);
-        return MANIAS[roll];
-    }
-
-    /**
-     * 应用疯狂症状
-     */
-    function applyInsanitySymptom(characterName, symptom) {
-        const char = data.get(characterName);
-        if (!char) return;
-        
-        if (!char.stats.conditions.insanityHistory) {
-            char.stats.conditions.insanityHistory = [];
-        }
-        
-        char.stats.conditions.insanityHistory.push({
-            symptom: symptom,
-            timestamp: new Date().toISOString()
-        });
-        
-        data.save();
-    }
-
-    /**
-     * 临时疯狂结束，进入潜在疯狂阶段
-     */
-    function endTemporaryInsanity(characterName) {
-        const char = data.get(characterName);
-        if (!char || !char.stats.conditions.isTemporarilyInsane) return;
-        
-        char.stats.conditions.isTemporarilyInsane = false;
-        char.stats.conditions.isInPotentialPhase = true;
-        
-        // 随机一个总结症状（可选）
-        const summarySymptom = rollSummaryInsanity();
-        if (!char.stats.conditions.summarySymptoms) {
-            char.stats.conditions.summarySymptoms = [];
-        }
-        char.stats.conditions.summarySymptoms.push(summarySymptom);
-        
-        data.save();
-        
-        return {
-            message: `🧠 临时疯狂结束，进入潜在疯狂阶段。总结症状：${summarySymptom.name}`,
-            symptom: summarySymptom
-        };
-    }
-
-    /**
-     * 现实认知检定
-     */
-    function realityCheck(characterName) {
-        const char = data.get(characterName);
-        if (!char) return null;
-        
-        const currentSan = char.stats.SAN || 50;
-        const roll = rollD100();
-        const result = judgeCOC(roll, currentSan);
-        
-        if (result.text !== '失败' && result.text !== '大失败') {
-            // 成功看穿幻觉
-            return {
-                success: true,
-                roll,
-                result,
-                message: '👁️ 你意识到这是幻觉！'
-            };
-        } else {
-            // 失败，损失1SAN
-            const newSan = Math.max(0, currentSan - 1);
-            char.stats.SAN = newSan;
-            data.save();
-            return {
-                success: false,
-                roll,
-                result,
-                newSan,
-                message: '😵 你无法看穿幻觉，损失1点理智'
-            };
-        }
-    }
-
-    /**
-     * 疯狂治疗
-     */
-    function treatInsanity(characterName, treatmentType) {
-        const char = data.get(characterName);
-        if (!char) return null;
-        
-        const currentSan = char.stats.SAN || 50;
-        const maxSan = calculateMaxSAN(char.stats);
-        const roll = rollD100();
-        
-        let sanGain = 0;
-        let success = false;
-        let message = '';
-        
-        switch(treatmentType) {
-            case 'private':
-                // 私人护理：01-95成功恢复3SAN，接着理智检定成功则治愈
-                if (roll <= 95) {
-                    sanGain = 3;
-                    success = true;
-                    message = '✅ 私人护理成功，恢复3点理智';
-                    
-                    // 理智检定决定是否治愈
-                    const sanRoll = rollD100();
-                    const sanResult = judgeCOC(sanRoll, currentSan + sanGain);
-                    if (sanResult.text !== '失败' && sanResult.text !== '大失败') {
-                        char.stats.conditions.isIndefinitelyInsane = false;
-                        message += '，疯狂症状治愈！';
-                    }
-                } else {
-                    message = '❌ 私人护理无效';
-                }
-                break;
-                
-            case 'asylum':
-                // 收容所：01-50恢复3SAN，51-95无效，96-100恶化
-                if (roll <= 50) {
-                    sanGain = 3;
-                    success = true;
-                    message = '✅ 收容所治疗成功，恢复3点理智';
-                } else if (roll <= 95) {
-                    message = '❌ 收容所治疗无效';
-                } else {
-                    sanGain = -1;
-                    message = '💔 收容所治疗恶化，损失1点理智';
-                }
-                break;
-                
-            case 'self':
-                // 自救：根据角色背景条目进行理智检定
-                // 这里简化为1D6恢复，失败则损失1
-                if (roll <= 50) { // 假设50%成功率
-                    sanGain = Math.floor(Math.random() * 6) + 1;
-                    success = true;
-                    message = `✅ 自救成功，恢复${sanGain}点理智`;
-                } else {
-                    sanGain = -1;
-                    message = '❌ 自救失败，损失1点理智';
-                }
-                break;
-        }
-        
-        const newSan = Math.max(0, Math.min(maxSan, currentSan + sanGain));
-        char.stats.SAN = newSan;
-        data.save();
-        
-        return {
-            success,
-            sanGain,
-            newSan,
-            message
-        };
-    }
-
-    /**
-     * 检查潜在疯狂阶段面对恐惧源的效果
-     */
-    function applyPhobiaPenalty(characterName, skillRoll, skillName) {
-        const char = data.get(characterName);
-        if (!char || !char.stats.conditions.isInPotentialPhase) return skillRoll;
-        
-        // 如果技能名与恐惧症相关，返回带惩罚骰的结果
-        // 这里简化为返回原值，实际使用时需要在检定函数中处理
-        return skillRoll;
-    }
-    
     // ==================== 头像上传处理 ====================
     
     function handleAvatarUpload(file, callback) {
@@ -1258,6 +903,31 @@ function registerCharacterPanel(context, data, core) {
             return `<img src="${avatarData}" alt="${name}" style="width:100%; height:100%; object-fit:cover;">`;
         }
         return `<div style="font-size: 40px; color: var(--coc-text-muted);">🦌</div>`;
+    }
+    
+    // 渲染疯狂状态
+    function renderInsanityStatus(insanity) {
+        if (!insanity) return '';
+        
+        let status = '';
+        if (insanity.phase === 'active') {
+            status = '🔴 疯狂发作中';
+        } else if (insanity.phase === 'latent') {
+            status = '🟡 潜在疯狂';
+        }
+        
+        if (insanity.type === 'temporary') {
+            status += ` (临时 · ${insanity.duration}小时)`;
+            if (insanity.symptom) {
+                status += `<br><small>症状：${insanity.symptom}</small>`;
+            }
+        } else if (insanity.type === 'indefinite') {
+            status += ' (不定性)';
+        } else if (insanity.type === 'permanent') {
+            status = '💔 永久疯狂';
+        }
+        
+        return `<div class="coc-insanity-status" style="margin:8px 0; padding:8px; background:#332b23; border-radius:8px;">${status}</div>`;
     }
     
     // 渲染角色卡片
@@ -1293,88 +963,6 @@ function registerCharacterPanel(context, data, core) {
             const assets = stats.assets || { spendingLevel: '—', cash: '—', assets: '—' };
             const relationships = stats.relationships || [];
             const insanity = stats.insanity || [];
-            const luck = stats.luck || { current: 50, max: 50 };
-            const conditions = stats.conditions || {};
-            const cthulhuMythos = stats.cthulhuMythos || 0;
-
-            // 渲染状态徽章
-            function renderStatusBadges(conditions) {
-                let badges = '';
-                if (conditions?.isDying) badges += '<span class="coc-badge dying">💀 濒死</span>';
-                if (conditions?.isMajorWound) badges += '<span class="coc-badge major">⚡ 重伤</span>';
-                if (conditions?.isUnconscious) badges += '<span class="coc-badge unconscious">😵 昏迷</span>';
-                if (conditions?.permanentScar) badges += '<span class="coc-badge scar">💔 伤残</span>';
-                if (conditions?.isPermanentlyInsane) badges += '<span class="coc-badge permanent">💀 永久疯狂</span>';
-                if (conditions?.isIndefinitelyInsane) badges += '<span class="coc-badge indefinite">😵 不定疯狂</span>';
-                if (conditions?.isTemporarilyInsane) badges += '<span class="coc-badge temporary">😱 临时疯狂</span>';
-                if (conditions?.isInPotentialPhase) badges += '<span class="coc-badge potential">👁️ 潜在疯狂</span>';
-                return badges;
-            }
-
-            // 渲染当前疯狂症状
-            function renderCurrentInsanity() {
-                if (!conditions.isTemporarilyInsane && !conditions.isIndefinitelyInsane && !conditions.isPermanentlyInsane) {
-                    return '';
-                }
-                
-                let html = '<div class="coc-insanity-section">';
-                
-                if (conditions.isTemporarilyInsane && conditions.insanitySymptom) {
-                    const remaining = conditions.insanityDuration ? 
-                        `剩余 ${conditions.insanityDuration} 小时` : '';
-                    html += `
-                        <div class="coc-insanity-symptom">
-                            <span class="coc-insanity-label">😱 临时疯狂</span>
-                            <span class="coc-insanity-name">${conditions.insanitySymptom.name}</span>
-                            <span class="coc-insanity-desc">${conditions.insanitySymptom.description}</span>
-                            <div class="coc-insanity-timer">${remaining}</div>
-                        </div>
-                    `;
-                }
-                
-                if (conditions.isIndefinitelyInsane) {
-                    html += `
-                        <div class="coc-insanity-symptom">
-                            <span class="coc-insanity-label">😵 不定性疯狂</span>
-                            <span>将持续整个模组</span>
-                        </div>
-                    `;
-                }
-                
-                if (conditions.isPermanentlyInsane) {
-                    html += `
-                        <div class="coc-insanity-symptom">
-                            <span class="coc-insanity-label">💀 永久疯狂</span>
-                            <span>角色已无法恢复理智</span>
-                        </div>
-                    `;
-                }
-                
-                html += '</div>';
-                return html;
-            }
-
-            // 渲染恐惧症/躁狂症
-            function renderPhobiasManias() {
-                const phobias = conditions.phobias || [];
-                const manias = conditions.manias || [];
-                
-                if (phobias.length === 0 && manias.length === 0) return '';
-                
-                let html = '<div class="coc-section-title">🧠 恐惧症/躁狂症</div>';
-                html += '<div class="coc-weapons-list">';
-                
-                phobias.forEach(phobia => {
-                    html += `<div class="coc-relationship-row"><span>😨 恐惧症: ${phobia}</span></div>`;
-                });
-                
-                manias.forEach(mania => {
-                    html += `<div class="coc-relationship-row"><span>🎭 躁狂症: ${mania}</span></div>`;
-                });
-                
-                html += '</div>';
-                return html;
-            }
 
             return `
                 <div class="coc-card">
@@ -1386,20 +974,16 @@ function registerCharacterPanel(context, data, core) {
                             <div>
                                 <div class="coc-name">${name}</div>
                                 <div class="coc-subtitle">${occupation} · ${gender} · ${age}岁</div>
-                                <div style="margin-top: 4px;">${renderStatusBadges(conditions)}</div>
                             </div>
                         </div>
+                        ${renderInsanityStatus(stats.insanity)}
                         <div class="coc-info-grid" style="grid-template-columns: repeat(3, 1fr);">
                             <div><span class="coc-info-label">出生年份：</span> ${birthYear}</div>
                             <div><span class="coc-info-label">当前年份：</span> ${currentYear}</div>
                             <div><span class="coc-info-label">出生地：</span> ${birthplace}</div>
                             <div><span class="coc-info-label">居住地：</span> ${residence}</div>
-                            <div><span class="coc-info-label">幸运：</span> ${luck.current}/${luck.max}</div>
-                            <div><span class="coc-info-label">克苏鲁神话：</span> ${cthulhuMythos}%</div>
                         </div>
                     </div>
-
-                    ${renderCurrentInsanity()}
 
                     <div class="coc-bar-container">
                         <div class="coc-bar-item">
@@ -1489,8 +1073,6 @@ function registerCharacterPanel(context, data, core) {
                         </div>
                     </div>
 
-                    ${renderPhobiasManias()}
-
                     <div>
                         <div class="coc-section-title">📜 背景故事</div>
                         <div class="coc-backstory">${stats.backstory || '——'}</div>
@@ -1529,16 +1111,30 @@ function registerCharacterPanel(context, data, core) {
                     </div>
 
                     <div>
-                        <div class="coc-section-title">🧠 疯狂症状记录</div>
+                        <div class="coc-section-title">😨 恐惧症</div>
                         <div class="coc-weapons-list">
-                            ${insanity.length > 0 
-                                ? insanity.map(item => `
+                            ${(stats.phobias || []).length > 0 
+                                ? stats.phobias.map(p => `
                                     <div class="coc-relationship-row">
-                                        <span>${item.type}</span>
-                                        <span>${item.description}</span>
+                                        <span>${p.name}</span>
+                                        <span>${p.source || ''}</span>
                                     </div>
                                 `).join('') 
-                                : '<div style="color: #8e7c68; text-align: center; padding: 8px;">无</div>'}
+                                : '<div style="color: #8e7c68;">无</div>'}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="coc-section-title">😈 躁狂症</div>
+                        <div class="coc-weapons-list">
+                            ${(stats.manias || []).length > 0 
+                                ? stats.manias.map(m => `
+                                    <div class="coc-relationship-row">
+                                        <span>${m.name}</span>
+                                        <span>${m.source || ''}</span>
+                                    </div>
+                                `).join('') 
+                                : '<div style="color: #8e7c68;">无</div>'}
                         </div>
                     </div>
 
@@ -1557,8 +1153,6 @@ function registerCharacterPanel(context, data, core) {
                     </div>
 
                     <button class="coc-btn edit" id="coc-edit-mode-btn">✏️ 编辑角色</button>
-                    <button class="coc-btn edit" id="coc-growth-mode-btn" style="margin-top: 8px; background:#7ba6b8;">📈 幕间成长</button>
-                    <button class="coc-btn edit" id="coc-healing-mode-btn" style="margin-top: 8px; background:#c88a5a;">🏥 医疗恢复</button>
                 </div>
             `;
         } catch (e) {
@@ -1618,11 +1212,10 @@ function registerCharacterPanel(context, data, core) {
                             const defaultStats = {
                                 occupation: '调查员',
                                 gender: '男',
-                                birthYear: 1895, // 假设当前1925年，30岁则1895年出生
+                                birthYear: 1895,
                                 currentYear: 1925,
                                 birthplace: '',
                                 residence: '',
-                                // 保存基础属性用于后续年龄调整
                                 baseSTR: baseAttrs.baseSTR,
                                 baseDEX: baseAttrs.baseDEX,
                                 baseCON: baseAttrs.baseCON,
@@ -1632,7 +1225,6 @@ function registerCharacterPanel(context, data, core) {
                                 baseINT: baseAttrs.baseINT,
                                 baseEDU: baseAttrs.baseEDU,
                                 baseLUCK: baseAttrs.baseLUCK,
-                                // 当前实际属性（已应用年龄修正）
                                 ...finalAttrs,
                                 HP: Math.floor((finalAttrs.CON + finalAttrs.SIZ) / 10),
                                 SAN: finalAttrs.POW,
@@ -1642,7 +1234,9 @@ function registerCharacterPanel(context, data, core) {
                                 possessions: [],
                                 assets: { spendingLevel: '', cash: '', assets: '' },
                                 relationships: [],
-                                insanity: []
+                                insanity: [],
+                                phobias: [],
+                                manias: []
                             };
                             data.set(name, defaultStats);
                             renderViewMode();
@@ -1743,7 +1337,6 @@ function registerCharacterPanel(context, data, core) {
         const occupationNames = getOccupationNames();
         const currentOccupation = stats.occupation || '调查员';
         
-        // 计算当前属性值
         const attributes = {
             STR: stats.STR || 50,
             DEX: stats.DEX || 50,
@@ -1755,7 +1348,6 @@ function registerCharacterPanel(context, data, core) {
             EDU: stats.EDU || 50
         };
         
-        // 计算技能点
         const occPoints = calculateOccupationPoints(currentOccupation, attributes);
         const intPoints = calculateInterestPoints(attributes.INT);
         
@@ -1763,7 +1355,6 @@ function registerCharacterPanel(context, data, core) {
             <div class="coc-edit-section">
                 <div class="coc-edit-title">✏️ 编辑 ${name}</div>
                 
-                <!-- 头像上传区 -->
                 <div class="coc-edit-avatar">
                     <div class="coc-edit-avatar-preview" id="coc-avatar-preview">
                         ${stats.avatar 
@@ -1774,7 +1365,6 @@ function registerCharacterPanel(context, data, core) {
                     <input type="file" id="coc-avatar-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
                 </div>
                 
-                <!-- 职业选择 -->
                 <div>
                     <div class="coc-edit-label">职业</div>
                     <select class="coc-edit-input coc-edit-occupation-select" id="coc-occupation-select">
@@ -1785,7 +1375,6 @@ function registerCharacterPanel(context, data, core) {
                     </select>
                 </div>
                 
-                <!-- 技能点显示（只显示总数，不实时计算） -->
                 <div class="coc-edit-grid" style="margin-top: 8px;">
                     <div>
                         <div class="coc-edit-label">职业技能点</div>
@@ -1797,7 +1386,6 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                 </div>
                 
-                <!-- 年龄和年份 -->
                 <div class="coc-edit-grid" style="margin-top: 8px;">
                     <div>
                         <div class="coc-edit-label">性别</div>
@@ -1817,7 +1405,6 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                 </div>
                 
-                <!-- 出生地和居住地 -->
                 <div class="coc-edit-grid">
                     <div>
                         <div class="coc-edit-label">出生地</div>
@@ -1829,8 +1416,7 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                 </div>
 
-                <!-- 属性（不可编辑，只读） -->
-                <div class="coc-edit-label">属性（随机生成，不可修改）</div>
+                <div class="coc-edit-label">属性</div>
                 <div class="coc-edit-grid">
                     ${['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'LUCK'].map(attr => `
                         <div>
@@ -1932,19 +1518,6 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                 </div>
 
-                <!-- 疯狂症状 -->
-                <div class="coc-edit-label">🧠 疯狂症状</div>
-                <div id="coc-edit-insanity" class="coc-select-list">
-                    ${(stats.insanity || []).map(ins => `
-                        <div class="coc-edit-relationship-row">
-                            <input type="text" class="coc-edit-input coc-edit-insanity-type" value="${ins.type}" placeholder="类型 (恐惧症/躁狂症)" style="flex:1; padding:4px;">
-                            <input type="text" class="coc-edit-input coc-edit-insanity-desc" value="${ins.description}" placeholder="描述" style="flex:1; padding:4px;">
-                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
-                        </div>
-                    `).join('')}
-                </div>
-                <button class="coc-add-btn" id="coc-add-insanity">+ 添加疯狂症状</button>
-
                 <div class="coc-edit-label">同伴关系</div>
                 <div id="coc-edit-relationships" class="coc-select-list">
                     ${(stats.relationships || []).map(rel => `
@@ -1967,13 +1540,11 @@ function registerCharacterPanel(context, data, core) {
     
     // 绑定编辑事件
     function bindEditEvents() {
-        // 职业选择变更事件
         const occupationSelect = document.getElementById('coc-occupation-select');
         if (occupationSelect) {
             occupationSelect.addEventListener('change', (e) => {
                 const newOccupation = e.target.value;
                 if (newOccupation) {
-                    // 重新计算技能点显示
                     const attributes = {
                         STR: currentEditStats.STR || 50,
                         DEX: currentEditStats.DEX || 50,
@@ -1991,7 +1562,6 @@ function registerCharacterPanel(context, data, core) {
                     document.getElementById('occ-points-total').textContent = occPoints;
                     document.getElementById('int-points-total').textContent = intPoints;
                     
-                    // 刷新职业技能下拉框
                     const occSkillContainer = document.getElementById('coc-edit-occupational-skills');
                     if (occSkillContainer) {
                         const rows = occSkillContainer.querySelectorAll('.coc-select-row');
@@ -2009,7 +1579,6 @@ function registerCharacterPanel(context, data, core) {
             });
         }
         
-        // 年龄变更事件
         const birthYearInput = document.getElementById('coc-edit-birth-year');
         const currentYearInput = document.getElementById('coc-edit-current-year');
         
@@ -2018,7 +1587,6 @@ function registerCharacterPanel(context, data, core) {
             const currentYear = parseInt(currentYearInput.value) || 1925;
             const age = currentYear - birthYear;
             
-            // 获取保存的基础属性
             const baseAttrs = {
                 baseSTR: currentEditStats.baseSTR || currentEditStats.STR,
                 baseDEX: currentEditStats.baseDEX || currentEditStats.DEX,
@@ -2031,10 +1599,8 @@ function registerCharacterPanel(context, data, core) {
                 baseLUCK: currentEditStats.baseLUCK || currentEditStats.LUCK
             };
             
-            // 重新应用年龄修正
             const newAttrs = applyAgeEffects(baseAttrs, age);
             
-            // 更新当前编辑状态
             currentEditStats.STR = newAttrs.STR;
             currentEditStats.DEX = newAttrs.DEX;
             currentEditStats.CON = newAttrs.CON;
@@ -2045,7 +1611,6 @@ function registerCharacterPanel(context, data, core) {
             currentEditStats.EDU = newAttrs.EDU;
             currentEditStats.LUCK = newAttrs.LUCK;
             
-            // 更新UI中的属性显示
             document.getElementById('coc-attr-STR').value = newAttrs.STR;
             document.getElementById('coc-attr-DEX').value = newAttrs.DEX;
             document.getElementById('coc-attr-CON').value = newAttrs.CON;
@@ -2056,7 +1621,6 @@ function registerCharacterPanel(context, data, core) {
             document.getElementById('coc-attr-EDU').value = newAttrs.EDU;
             document.getElementById('coc-attr-LUCK').value = newAttrs.LUCK;
             
-            // 重新计算技能点（因为EDU可能变化）
             const occPoints = calculateOccupationPoints(currentEditStats.occupation, newAttrs);
             const intPoints = calculateInterestPoints(newAttrs.INT);
             document.getElementById('occ-points-total').textContent = occPoints;
@@ -2068,7 +1632,6 @@ function registerCharacterPanel(context, data, core) {
             currentYearInput.addEventListener('change', recalcAgeAndAttributes);
         }
         
-        // 头像上传
         const uploadBtn = document.getElementById('coc-avatar-upload-btn');
         const avatarInput = document.getElementById('coc-avatar-input');
         const avatarPreview = document.getElementById('coc-avatar-preview');
@@ -2087,7 +1650,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 添加职业技能
         const addOccSkill = document.getElementById('coc-add-occ-skill');
         if (addOccSkill) {
             addOccSkill.onclick = () => {
@@ -2111,7 +1673,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 添加兴趣技能
         const addIntSkill = document.getElementById('coc-add-int-skill');
         if (addIntSkill) {
             addIntSkill.onclick = () => {
@@ -2132,7 +1693,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 添加格斗技能
         const addFightSkill = document.getElementById('coc-add-fight-skill');
         if (addFightSkill) {
             addFightSkill.onclick = () => {
@@ -2153,7 +1713,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 添加武器
         const addWeapon = document.getElementById('coc-add-weapon');
         if (addWeapon) {
             addWeapon.onclick = () => {
@@ -2188,7 +1747,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 添加物品
         const addPossession = document.getElementById('coc-add-possession');
         if (addPossession) {
             addPossession.onclick = () => {
@@ -2207,25 +1765,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 添加疯狂症状按钮
-        const addInsanity = document.getElementById('coc-add-insanity');
-        if (addInsanity) {
-            addInsanity.onclick = () => {
-                const container = document.getElementById('coc-edit-insanity');
-                if (container) {
-                    const newRow = document.createElement('div');
-                    newRow.className = 'coc-edit-relationship-row';
-                    newRow.innerHTML = `
-                        <input type="text" class="coc-edit-input coc-edit-insanity-type" placeholder="恐惧症/躁狂症" style="flex:1; padding:4px;">
-                        <input type="text" class="coc-edit-input coc-edit-insanity-desc" placeholder="描述" style="flex:1; padding:4px;">
-                        <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
-                    `;
-                    container.appendChild(newRow);
-                }
-            };
-        }
-
-        // 添加关系
         const addRelationship = document.getElementById('coc-add-relationship');
         if (addRelationship) {
             addRelationship.onclick = () => {
@@ -2244,7 +1783,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 为已有的武器选择框绑定自动填充事件
         document.querySelectorAll('.coc-edit-weapon-select').forEach(select => {
             select.addEventListener('change', function() {
                 const row = this.closest('.coc-select-row');
@@ -2262,7 +1800,6 @@ function registerCharacterPanel(context, data, core) {
             });
         });
 
-        // 保存编辑
         const saveEdit = document.getElementById('coc-save-edit');
         if (saveEdit) {
             saveEdit.onclick = () => {
@@ -2296,7 +1833,6 @@ function registerCharacterPanel(context, data, core) {
             };
         }
 
-        // 取消编辑
         const cancelEdit = document.getElementById('coc-cancel-edit');
         if (cancelEdit) {
             cancelEdit.onclick = () => {
@@ -2319,7 +1855,6 @@ function registerCharacterPanel(context, data, core) {
         stats.birthYear = parseInt(document.getElementById('coc-edit-birth-year')?.value) || 1890;
         stats.currentYear = parseInt(document.getElementById('coc-edit-current-year')?.value) || 1925;
 
-        // 职业技能
         const occupationalSkills = {};
         document.querySelectorAll('#coc-edit-occupational-skills .coc-select-row').forEach(row => {
             const select = row.querySelector('.coc-edit-occ-skill-name');
@@ -2332,7 +1867,6 @@ function registerCharacterPanel(context, data, core) {
             stats.occupationalSkills = occupationalSkills;
         }
 
-        // 兴趣技能
         const interestSkills = {};
         document.querySelectorAll('#coc-edit-interest-skills .coc-select-row').forEach(row => {
             const select = row.querySelector('.coc-edit-int-skill-name');
@@ -2345,7 +1879,6 @@ function registerCharacterPanel(context, data, core) {
             stats.interestSkills = interestSkills;
         }
 
-        // 格斗技能
         const fightingSkills = {};
         document.querySelectorAll('#coc-edit-fighting-skills .coc-select-row').forEach(row => {
             const select = row.querySelector('.coc-edit-fight-skill-name');
@@ -2358,7 +1891,6 @@ function registerCharacterPanel(context, data, core) {
             stats.fightingSkills = fightingSkills;
         }
 
-        // 武器
         const weapons = [];
         document.querySelectorAll('#coc-edit-weapons .coc-select-row').forEach(row => {
             const select = row.querySelector('.coc-edit-weapon-select');
@@ -2378,7 +1910,6 @@ function registerCharacterPanel(context, data, core) {
 
         stats.backstory = document.getElementById('coc-edit-backstory')?.value || '';
 
-        // 装备物品
         const possessions = [];
         document.querySelectorAll('#coc-edit-possessions .coc-edit-possession-row').forEach(row => {
             const nameInput = row.querySelector('.coc-edit-possession-name');
@@ -2400,23 +1931,6 @@ function registerCharacterPanel(context, data, core) {
             assets: document.querySelector('.coc-edit-assets')?.value || ''
         };
 
-        // 疯狂症状
-        const insanity = [];
-        document.querySelectorAll('#coc-edit-insanity .coc-edit-relationship-row').forEach(row => {
-            const typeInput = row.querySelector('.coc-edit-insanity-type');
-            const descInput = row.querySelector('.coc-edit-insanity-desc');
-            if (typeInput && typeInput.value.trim()) {
-                insanity.push({
-                    type: typeInput.value.trim(),
-                    description: descInput?.value.trim() || ''
-                });
-            }
-        });
-        if (insanity.length > 0) {
-            stats.insanity = insanity;
-        }
-
-        // 同伴关系
         const relationships = [];
         document.querySelectorAll('#coc-edit-relationships .coc-edit-relationship-row').forEach(row => {
             const nameInput = row.querySelector('.coc-edit-rel-name');
@@ -2432,7 +1946,6 @@ function registerCharacterPanel(context, data, core) {
             stats.relationships = relationships;
         }
 
-        // 重新计算HP和SAN
         stats.HP = Math.floor((stats.CON + stats.SIZ) / 10);
         stats.SAN = stats.POW;
 
@@ -2573,7 +2086,7 @@ function registerCharacterPanel(context, data, core) {
             });
     }
     
-    // 成长面板函数（可选）
+    // 成长面板函数
     function renderGrowthPanel(name, stats) {
         const usedSkills = stats.usedSkills || [];
         
@@ -2624,9 +2137,172 @@ function registerCharacterPanel(context, data, core) {
             alert(`❌ ${skillName} 成长失败，未能突破当前值`);
         }
     }
-    
+
+    // ==================== 疯狂系统核心函数 ====================
+
+    function triggerTemporaryInsanity(characterName, sanLoss, source) {
+        const char = data.get(characterName);
+        if (!char) return null;
+        
+        if (sanLoss < 5) return { triggered: false, reason: 'SAN损失不足' };
+        
+        const int = char.stats.INT;
+        const intRoll = rollD100();
+        const intSuccess = intRoll <= int;
+        
+        if (!intSuccess) {
+            return {
+                triggered: false,
+                reason: '智力检定失败，压抑了恐怖记忆',
+                intRoll,
+                int
+            };
+        }
+        
+        const duration = Math.floor(Math.random() * 10) + 1;
+        const symptom = INSTANT_INSANITY_SYMPTOMS[Math.floor(Math.random() * INSTANT_INSANITY_SYMPTOMS.length)];
+        
+        char.stats.insanity = {
+            type: 'temporary',
+            symptom,
+            duration,
+            source,
+            startTime: new Date().toISOString(),
+            phase: 'active',
+            intRoll,
+            int
+        };
+        
+        if (source && source.includes('神话')) {
+            const currentMythos = char.stats.skills?.['克苏鲁神话'] || 0;
+            if (!char.stats.skills) char.stats.skills = {};
+            if (currentMythos === 0) {
+                char.stats.skills['克苏鲁神话'] = 5;
+            } else {
+                char.stats.skills['克苏鲁神话'] = currentMythos + 1;
+            }
+        }
+        
+        data.save();
+        
+        return {
+            triggered: true,
+            type: 'temporary',
+            symptom,
+            duration,
+            intRoll,
+            int,
+            source
+        };
+    }
+
+    function checkIndefiniteInsanity(characterName, totalLossToday) {
+        const char = data.get(characterName);
+        if (!char) return null;
+        
+        const currentSan = char.stats.SAN || 50;
+        const threshold = Math.floor(currentSan / 5);
+        
+        if (totalLossToday < threshold) {
+            return { triggered: false, reason: '损失不足' };
+        }
+        
+        const symptom = INSTANT_INSANITY_SYMPTOMS[Math.floor(Math.random() * INSTANT_INSANITY_SYMPTOMS.length)];
+        
+        char.stats.insanity = {
+            type: 'indefinite',
+            symptom,
+            source: 'cumulative trauma',
+            startTime: new Date().toISOString(),
+            phase: 'active',
+            totalLossToday
+        };
+        
+        data.save();
+        
+        return {
+            triggered: true,
+            type: 'indefinite',
+            symptom
+        };
+    }
+
+    function endInsanityEpisode(characterName) {
+        const char = data.get(characterName);
+        if (!char || !char.stats.insanity) return null;
+        
+        char.stats.insanity.phase = 'latent';
+        char.stats.insanity.episodeEndTime = new Date().toISOString();
+        
+        if (char.stats.insanity.type === 'temporary') {
+            const summarySymptom = SUMMARY_INSANITY_SYMPTOMS[
+                Math.floor(Math.random() * SUMMARY_INSANITY_SYMPTOMS.length)
+            ];
+            char.stats.insanity.summarySymptom = summarySymptom;
+            
+            if (summarySymptom.includes('恐惧症')) {
+                if (!char.stats.phobias) char.stats.phobias = [];
+                const phobia = PHOBIAS[Math.floor(Math.random() * PHOBIAS.length)];
+                char.stats.phobias.push({
+                    name: phobia,
+                    source: char.stats.insanity.source
+                });
+            } else if (summarySymptom.includes('躁狂症')) {
+                if (!char.stats.manias) char.stats.manias = [];
+                const mania = MANIAS[Math.floor(Math.random() * MANIAS.length)];
+                char.stats.manias.push({
+                    name: mania,
+                    source: char.stats.insanity.source
+                });
+            }
+        }
+        
+        data.save();
+        
+        return char.stats.insanity;
+    }
+
+    function realityCheck(characterName) {
+        const char = data.get(characterName);
+        if (!char) return null;
+        
+        if (!char.stats.insanity || char.stats.insanity.phase !== 'latent') {
+            return { allowed: false, reason: '不在潜在疯狂阶段' };
+        }
+        
+        const currentSan = char.stats.SAN || 50;
+        const roll = rollD100();
+        const success = roll <= currentSan;
+        
+        if (success) {
+            char.stats.insanity.realityCheckPassed = true;
+            data.save();
+            return {
+                success: true,
+                roll,
+                san: currentSan,
+                message: '你意识到眼前景象的虚幻本质'
+            };
+        } else {
+            const newSan = Math.max(0, currentSan - 1);
+            char.stats.SAN = newSan;
+            data.save();
+            return {
+                success: false,
+                roll,
+                san: currentSan,
+                newSan,
+                message: '你无法分辨真实与虚幻，理智受到侵蚀'
+            };
+        }
+    }
+
     // 暴露全局函数
     window.applySkillGrowth = applySkillGrowth;
+    window.triggerTemporaryInsanity = triggerTemporaryInsanity;
+    window.checkIndefiniteInsanity = checkIndefiniteInsanity;
+    window.endInsanityEpisode = endInsanityEpisode;
+    window.realityCheck = realityCheck;
     
     return buildUI;
 }
