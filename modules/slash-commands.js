@@ -13,11 +13,11 @@ function registerSlashCommands(context, data, core) {
         return data.getAttribute(characterName, attributeName);
     }
     
-    // ✅ 修正版：统一由 system 发出
+    // ✅ 修正版：用 /sendas system 让系统发出消息
     function sendMessageAs(text, sender) {
         try {
-            // 强制用 system 发送，忽略 sender 和 KP 设置
-            context.executeSlashCommands(`/send system ${text}`);
+            // 使用 /sendas system 而不是 /send system
+            context.executeSlashCommands(`/sendas system ${text}`);
         } catch (e) {
             console.error('[COC] 发送消息失败:', e);
         }
@@ -173,7 +173,7 @@ function registerSlashCommands(context, data, core) {
         }
         
         if (!command) {
-            sendMessageAs('❌ 用法: /coc 侦查 @KP 或 /coc 100', 'system');
+            sendMessageAs('❌ 用法: /coc 侦查 @KP 或 /coc 100');
             return '';
         }
         
@@ -220,7 +220,7 @@ function registerSlashCommands(context, data, core) {
                      `结果: ${result.emoji} **${result.text}**`;
         }
         
-        sendMessageAs(message, 'system');
+        sendMessageAs(message);
         return '';
         
     }, ['cocroll', 'cr'], 'COC命令 - 用@指定角色');
@@ -248,7 +248,7 @@ function registerSlashCommands(context, data, core) {
         try {
             const result = sanCheck(targetChar, lossFormula, source);
             if (!result) {
-                sendMessageAs(`❌ 角色 ${targetChar} 不存在`, 'system');
+                sendMessageAs(`❌ 角色 ${targetChar} 不存在`);
                 return '';
             }
             
@@ -267,15 +267,15 @@ function registerSlashCommands(context, data, core) {
                 message += `\n😱 **临时疯狂！**`;
             }
             
-            sendMessageAs(message, 'system');
+            sendMessageAs(message);
         } catch (e) {
-            sendMessageAs(`❌ 理智检定格式错误: ${lossFormula}`, 'system');
+            sendMessageAs(`❌ 理智检定格式错误: ${lossFormula}`);
         }
         
         return '';
     }, [], '理智检定 - 格式: /san 1d3/1d6 @角色名 [来源]');
 
-    // /setkp 命令（保留，用于记录谁是KP，但不用来转发消息）
+    // /setkp 命令
     context.registerSlashCommand(
         'setkp',
         (args, value) => {
@@ -283,18 +283,18 @@ function registerSlashCommands(context, data, core) {
             
             if (!kpName) {
                 const availableChars = getAvailableCharacters().join('、');
-                sendMessageAs(`❌ 请指定KP角色名。可用角色: ${availableChars}\n示例: /setkp 克苏鲁`, 'system');
+                sendMessageAs(`❌ 请指定KP角色名。可用角色: ${availableChars}\n示例: /setkp 克苏鲁`);
                 return '';
             }
             
             const availableChars = getAvailableCharacters();
             if (!availableChars.includes(kpName)) {
-                sendMessageAs(`❌ 角色 "${kpName}" 不存在。可用角色: ${availableChars.join('、')}`, 'system');
+                sendMessageAs(`❌ 角色 "${kpName}" 不存在。可用角色: ${availableChars.join('、')}`);
                 return '';
             }
             
             data.setKP(kpName);
-            sendMessageAs(`✅ 已将 ${kpName} 设置为KP。`, 'system');
+            sendMessageAs(`✅ 已将 ${kpName} 设置为KP。`);
             return '';
             
         },
@@ -315,14 +315,15 @@ function registerSlashCommands(context, data, core) {
     context.registerSlashCommand('getkp', () => {
         const kp = data.getKP();
         if (kp) {
-            sendMessageAs(`📋 当前KP: ${kp}`, 'system');
+            sendMessageAs(`📋 当前KP: ${kp}`);
         } else {
-            sendMessageAs('📋 当前未设置KP', 'system');
+            sendMessageAs('📋 当前未设置KP');
         }
         return '';
     }, [], '查看当前KP');
 
-    // ==================== 其他命令（保持不变，但都用新的 sendMessageAs）====================
+    // ==================== 其他命令（疯狂、伤害、幸运等）====================
+    // ... 这些命令都用 sendMessageAs 发送，已经改好了
     
     console.log('[COC] 斜杠命令注册成功');
 }
