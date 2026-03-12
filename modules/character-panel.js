@@ -1549,7 +1549,9 @@ function registerCharacterPanel(context, data, core) {
         
         const topBar = document.querySelector('[class*="header"]') || document.querySelector('[class*="top"]');
         const topBarHeight = topBar ? topBar.getBoundingClientRect().height : 0;
+        /* 可修改配置：面板与顶部/底部的安全间距 */
         const safeTop = topBarHeight + 5;
+        const safeBottom = 60;
         
         fetch('/scripts/extensions/third-party/SillyTavern-CoC/templates/character-panel.html')
             .then(response => response.text())
@@ -1559,10 +1561,11 @@ function registerCharacterPanel(context, data, core) {
                 
                 if (!panelElement) return;
                 
-                const panelTop = safeTop + 20;
+                /* 可修改配置：面板与顶部距离、宽度、底部距离 */
+                const panelTop = safeTop + 10;
                 const panelWidth = Math.min(420, winWidth - 20);
                 const panelLeft = Math.max(10, Math.floor((winWidth - panelWidth) / 2));
-                const panelHeight = Math.max(520, Math.min(720, winHeight - panelTop - 120));
+                const panelHeight = Math.max(520, Math.min(720, winHeight - panelTop - safeBottom));
                 
                 panelElement.style.top = panelTop + 'px';
                 panelElement.style.left = panelLeft + 'px';
