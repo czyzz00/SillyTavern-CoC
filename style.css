@@ -1,4 +1,5 @@
 /* COC7 角色卡样式 - 最终紧凑版 */
+/* 可修改配置：主题色、圆角、字号等视觉参数 */
 :root {
     --coc-bg: #2c241e;
     --coc-bg-light: #3f352c;
@@ -17,11 +18,12 @@
 }
 
 /* 面板定位在JS中动态设置 */
+/* 可修改配置：面板主圆角 */
 .coc-panel {
     position: fixed;
     background: var(--coc-bg);
     border: 1px solid var(--coc-border-light);
-    border-radius: 28px;
+    border-radius: 18px;
     z-index: 9999999;
     display: none;
     flex-direction: column;
@@ -66,13 +68,14 @@
 }
 
 /* 工具栏 */
+/* 可修改配置：工具栏圆角 */
 .coc-toolbar {
     display: flex;
     gap: 6px;
     margin-bottom: 16px;
     background: var(--coc-bg-dark);
     padding: 12px;
-    border-radius: 16px;
+    border-radius: 12px;
     border: 1px solid var(--coc-border);
 }
 
@@ -86,12 +89,13 @@
     border: 1px solid var(--coc-border);
 }
 
+/* 可修改配置：按钮圆角与字号 */
 .coc-btn {
     flex: 1;
     padding: 10px;
     border: none;
-    border-radius: 30px;
-    font-size: 14px;
+    border-radius: 20px;
+    font-size: 15px;
     cursor: pointer;
     color: white;
 }
@@ -99,15 +103,17 @@
 .coc-btn.import { background: var(--coc-san); }
 .coc-btn.export { background: var(--coc-gold); }
 .coc-btn.delete { background: var(--coc-fighting); }
+/* 可修改配置：主操作按钮圆角与字号 */
 .coc-btn.edit { 
     width: 100%; 
     padding: 12px; 
     background: var(--coc-gold); 
-    border-radius: 30px; 
+    border-radius: 20px; 
     margin-top: 8px; 
     color: var(--coc-text);
     border: none;
     cursor: pointer;
+    font-size: 15px;
 }
 
 /* 新增角色选项 */
@@ -124,15 +130,17 @@
 }
 
 /* 卡片基础 */
+/* 可修改配置：卡片圆角 */
 .coc-card {
     background: var(--coc-bg);
-    border-radius: 28px;
+    border-radius: 18px;
     padding: 20px;
     border: 1px solid var(--coc-border-light);
 }
 
+/* 可修改配置：分区标题字号 */
 .coc-section-title {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: #e6d5b8;
     margin: 16px 0 8px 0;
@@ -162,22 +170,25 @@
     justify-content: center;
 }
 
+/* 可修改配置：角色名字号 */
 .coc-name {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
     color: #e6d5b8;
 }
 
+/* 可修改配置：副标题字号 */
 .coc-subtitle {
-    font-size: 14px;
+    font-size: 15px;
     color: var(--coc-text-muted);
 }
 
+/* 可修改配置：基础信息字号 */
 .coc-info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .coc-info-label {
@@ -198,10 +209,11 @@
     border-radius: 16px;
 }
 
+/* 可修改配置：状态条标题字号 */
 .coc-bar-header {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: 13px;
     margin-bottom: 6px;
     color: #d4c3aa;
 }
@@ -238,13 +250,14 @@
     border: 1px solid var(--coc-border);
 }
 
+/* 可修改配置：属性卡字号 */
 .coc-stat-label {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--coc-text-muted);
 }
 
 .coc-stat-value {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--coc-text);
 }
@@ -282,13 +295,14 @@
     justify-content: space-between;
 }
 
+/* 可修改配置：技能列表字号 */
 .coc-skill-name {
-    font-size: 12px;
+    font-size: 13px;
     color: #d4c3aa;
 }
 
 .coc-skill-value {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
 }
 
@@ -317,17 +331,19 @@
 }
 
 /* 背景故事 */
+/* 可修改配置：背景故事字号与圆角 */
 .coc-backstory {
     background: var(--coc-bg-dark);
     padding: 12px;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid var(--coc-border);
-    font-size: 13px;
+    font-size: 14px;
     color: #d4c3aa;
     margin-bottom: 16px;
 }
 
 /* 资产网格 */
+/* 可修改配置：资产区域字号与圆角 */
 .coc-assets-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -338,41 +354,45 @@
 .coc-asset-item {
     background: var(--coc-bg-dark);
     padding: 8px;
-    border-radius: 12px;
+    border-radius: 10px;
     text-align: center;
 }
 
 .coc-asset-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--coc-text-muted);
 }
 
 .coc-asset-value {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
 }
 
 /* 空状态 */
+/* 可修改配置：空状态字号与圆角 */
 .coc-empty {
     color: var(--coc-text-dark);
     text-align: center;
     padding: 30px;
     background: var(--coc-bg-dark);
-    border-radius: 28px;
+    border-radius: 16px;
     border: 1px solid var(--coc-border);
+    font-size: 14px;
 }
 
 /* 编辑模式样式 - 紧凑版 */
+/* 可修改配置：编辑区圆角 */
 .coc-edit-section {
     background: var(--coc-bg-dark);
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 12px;
     border: 1px solid var(--coc-border);
     margin-bottom: 8px;
 }
 
+/* 可修改配置：编辑标题字号 */
 .coc-edit-title {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     color: #e6d5b8;
     margin-bottom: 12px;
@@ -385,12 +405,14 @@
     margin-bottom: 12px;
 }
 
+/* 可修改配置：编辑标签字号 */
 .coc-edit-label {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--coc-text-dark);
     margin-bottom: 2px;
 }
 
+/* 可修改配置：编辑输入框字号与圆角 */
 .coc-edit-input {
     width: 100%;
     padding: 4px;
@@ -398,9 +420,10 @@
     border: 1px solid var(--coc-border);
     background: var(--coc-bg-light);
     color: var(--coc-text);
-    font-size: 12px;
+    font-size: 13px;
 }
 
+/* 可修改配置：编辑文本域字号与圆角 */
 .coc-edit-textarea {
     width: 100%;
     padding: 6px;
@@ -410,13 +433,14 @@
     color: var(--coc-text);
     margin-bottom: 8px;
     min-height: 50px;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 /* 选择列表样式 - 紧凑版 */
+/* 可修改配置：选择列表圆角 */
 .coc-select-list {
     background: var(--coc-bg-dark);
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 6px;
     margin-bottom: 6px;
     border: 1px solid var(--coc-border);
@@ -431,6 +455,7 @@
     align-items: center;
 }
 
+/* 可修改配置：选择列表输入字号 */
 .coc-select-row select {
     flex: 1.5;
     padding: 4px;
@@ -438,7 +463,7 @@
     border: 1px solid var(--coc-border);
     background: var(--coc-bg-light);
     color: var(--coc-text);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .coc-select-row input {
@@ -448,7 +473,7 @@
     border: 1px solid var(--coc-border);
     background: var(--coc-bg-light);
     color: var(--coc-text);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 /* 武器区域特殊处理 */
@@ -474,6 +499,7 @@
     justify-content: center;
 }
 
+/* 可修改配置：新增按钮圆角与字号 */
 .coc-add-btn {
     width: 100%;
     margin: 4px 0 8px;
@@ -481,8 +507,8 @@
     background: var(--coc-gold);
     color: var(--coc-text);
     border: none;
-    border-radius: 30px;
-    font-size: 12px;
+    border-radius: 20px;
+    font-size: 13px;
     cursor: pointer;
 }
 
@@ -538,14 +564,15 @@
     margin-top: 8px;
 }
 
+/* 可修改配置：编辑操作按钮圆角与字号 */
 .coc-edit-save {
     flex: 1;
     padding: 8px;
     background: var(--coc-hp);
     color: white;
     border: none;
-    border-radius: 30px;
-    font-size: 13px;
+    border-radius: 20px;
+    font-size: 14px;
     cursor: pointer;
 }
 
@@ -555,17 +582,18 @@
     background: var(--coc-border);
     color: var(--coc-text-muted);
     border: none;
-    border-radius: 30px;
-    font-size: 13px;
+    border-radius: 20px;
+    font-size: 14px;
     cursor: pointer;
 }
 
 /* 浮动球 */
+/* 可修改配置：浮动球圆角 */
 .coc-floating-ball {
     position: fixed;
     width: 56px;
     height: 56px;
-    border-radius: 28px;
+    border-radius: 18px;
     background: var(--coc-hp);
     color: white;
     font-size: 28px;
