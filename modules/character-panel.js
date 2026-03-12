@@ -1,7 +1,7 @@
 // ==================== 角色卡面板UI ====================
 
 function registerCharacterPanel(context, data, core) {
-    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDamageBonus, calculateDB, rollD100 } = core;
+    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDB, rollD100 } = core;
     
     let panelElement = null;
     let isEditing = false;
@@ -1244,6 +1244,7 @@ function registerCharacterPanel(context, data, core) {
                                 occupationalSkills: {},
                                 interestSkills: {},
                                 fightingSkills: {},
+                                skills: {},
                                 possessions: [],
                                 assets: { spendingLevel: '', cash: '', assets: '' },
                                 relationships: [],
@@ -1323,6 +1324,16 @@ function registerCharacterPanel(context, data, core) {
         isEditing = true;
         currentEditName = name;
         currentEditStats = JSON.parse(JSON.stringify(stats));
+
+        currentEditStats.baseSTR = currentEditStats.baseSTR ?? currentEditStats.STR;
+        currentEditStats.baseDEX = currentEditStats.baseDEX ?? currentEditStats.DEX;
+        currentEditStats.baseCON = currentEditStats.baseCON ?? currentEditStats.CON;
+        currentEditStats.baseAPP = currentEditStats.baseAPP ?? currentEditStats.APP;
+        currentEditStats.basePOW = currentEditStats.basePOW ?? currentEditStats.POW;
+        currentEditStats.baseSIZ = currentEditStats.baseSIZ ?? currentEditStats.SIZ;
+        currentEditStats.baseINT = currentEditStats.baseINT ?? currentEditStats.INT;
+        currentEditStats.baseEDU = currentEditStats.baseEDU ?? currentEditStats.EDU;
+        currentEditStats.baseLUCK = currentEditStats.baseLUCK ?? currentEditStats.LUCK;
         
         const display = document.getElementById('coc-stats-display');
         if (display) display.style.display = 'none';
@@ -1601,15 +1612,15 @@ function registerCharacterPanel(context, data, core) {
             const age = currentYear - birthYear;
             
             const baseAttrs = {
-                baseSTR: currentEditStats.baseSTR || currentEditStats.STR,
-                baseDEX: currentEditStats.baseDEX || currentEditStats.DEX,
-                baseCON: currentEditStats.baseCON || currentEditStats.CON,
-                baseAPP: currentEditStats.baseAPP || currentEditStats.APP,
-                basePOW: currentEditStats.basePOW || currentEditStats.POW,
-                baseSIZ: currentEditStats.baseSIZ || currentEditStats.SIZ,
-                baseINT: currentEditStats.baseINT || currentEditStats.INT,
-                baseEDU: currentEditStats.baseEDU || currentEditStats.EDU,
-                baseLUCK: currentEditStats.baseLUCK || currentEditStats.LUCK
+                baseSTR: currentEditStats.baseSTR,
+                baseDEX: currentEditStats.baseDEX,
+                baseCON: currentEditStats.baseCON,
+                baseAPP: currentEditStats.baseAPP,
+                basePOW: currentEditStats.basePOW,
+                baseSIZ: currentEditStats.baseSIZ,
+                baseINT: currentEditStats.baseINT,
+                baseEDU: currentEditStats.baseEDU,
+                baseLUCK: currentEditStats.baseLUCK
             };
             
             const newAttrs = applyAgeEffects(baseAttrs, age);
@@ -1904,6 +1915,15 @@ function registerCharacterPanel(context, data, core) {
             stats.fightingSkills = fightingSkills;
         }
 
+        const mergedSkills = {
+            ...(stats.skills || {}),
+            ...occupationalSkills,
+            ...interestSkills,
+            ...fightingSkills
+        };
+
+        stats.skills = mergedSkills;
+
         const weapons = [];
         document.querySelectorAll('#coc-edit-weapons .coc-select-row').forEach(row => {
             const select = row.querySelector('.coc-edit-weapon-select');
@@ -1959,8 +1979,13 @@ function registerCharacterPanel(context, data, core) {
             stats.relationships = relationships;
         }
 
-        stats.HP = Math.floor((stats.CON + stats.SIZ) / 10);
-        stats.SAN = stats.POW;
+        if (stats.HP === undefined || stats.HP === null || Number.isNaN(stats.HP)) {
+            stats.HP = Math.floor((stats.CON + stats.SIZ) / 10);
+        }
+
+        if (stats.SAN === undefined || stats.SAN === null || Number.isNaN(stats.SAN)) {
+            stats.SAN = stats.POW;
+        }
 
         return stats;
     }
