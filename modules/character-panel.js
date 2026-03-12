@@ -2073,10 +2073,10 @@ function registerCharacterPanel(context, data, core) {
                 
                 if (!panelElement) return;
                 
-                const panelTop = safeTop;
-                const panelLeft = 10;
-                const panelWidth = winWidth - 20;
-                const panelHeight = 500;
+                const panelTop = safeTop + 20;
+                const panelWidth = Math.min(420, winWidth - 20);
+                const panelLeft = Math.max(10, Math.floor((winWidth - panelWidth) / 2));
+                const panelHeight = Math.max(520, Math.min(720, winHeight - panelTop - 120));
                 
                 panelElement.style.top = panelTop + 'px';
                 panelElement.style.left = panelLeft + 'px';
