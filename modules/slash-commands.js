@@ -13,13 +13,11 @@ function registerSlashCommands(context, data, core) {
         return data.getAttribute(characterName, attributeName);
     }
     
-    // ✅ 修正：发送消息（强制用KP发）
+    // ✅ 修正版：统一由 system 发出
     function sendMessageAs(text, sender) {
         try {
-            const kp = data.getKP();
-            // 如果有KP，所有消息都由KP发出，忽略sender参数
-            const finalSender = kp || sender || 'system';
-            context.executeSlashCommands(`/send ${finalSender} ${text}`);
+            // 强制用 system 发送，忽略 sender 和 KP 设置
+            context.executeSlashCommands(`/send system ${text}`);
         } catch (e) {
             console.error('[COC] 发送消息失败:', e);
         }
@@ -51,10 +49,9 @@ function registerSlashCommands(context, data, core) {
         return [...new Set(characters)].sort();
     }
     
-    // ✅ 修正版：COC7成功等级判定（带类型参数）
+    // ✅ 修正版：COC7成功等级判定
     function judgeCOC7(roll, targetValue, type = 'normal') {
         if (type === 'sanity') {
-            // 理智检定只有成功/失败
             return {
                 success: roll <= targetValue,
                 text: roll <= targetValue ? '成功' : '失败',
@@ -63,7 +60,6 @@ function registerSlashCommands(context, data, core) {
             };
         }
         
-        // 正常检定有成功等级
         if (roll === 100) return { 
             success: false, 
             text: '大失败', 
@@ -102,7 +98,7 @@ function registerSlashCommands(context, data, core) {
         };
     }
     
-    // ✅ 修正版：理智检定
+    // 理智检定
     function sanCheck(character, lossFormula, source = '未知恐怖') {
         const char = data.get(character);
         if (!char) return null;
@@ -110,7 +106,6 @@ function registerSlashCommands(context, data, core) {
         const currentSan = char.stats.SAN || 50;
         const roll = rollD100();
         
-        // 使用理智检定的判断规则
         const result = judgeCOC7(roll, currentSan, 'sanity');
         
         const [successLoss, failLoss] = lossFormula.split('/');
@@ -125,7 +120,6 @@ function registerSlashCommands(context, data, core) {
         const newSan = Math.max(0, currentSan - loss);
         char.stats.SAN = newSan;
         
-        // 检查是否触发疯狂
         let insanity = null;
         if (newSan <= 0) {
             char.stats.insanity = {
@@ -151,7 +145,7 @@ function registerSlashCommands(context, data, core) {
         };
     }
     
-    // ==================== 属性中文对照表 ====================
+    // 属性中文对照表
     const ATTRIBUTE_NAMES_CN = {
         'STR': '力量',
         'CON': '体质',
@@ -166,7 +160,6 @@ function registerSlashCommands(context, data, core) {
 
     // ==================== 原有命令 ====================
 
-    // ✅ 修正版：/coc 命令 - 使用新的judgeCOC7
     context.registerSlashCommand('coc', (args, value) => {
         const input = value || '';
         
@@ -186,13 +179,11 @@ function registerSlashCommands(context, data, core) {
         
         let message = '';
         
-        // 纯数字 - 掷骰子
         if (/^\d+$/.test(command)) {
             const max = parseInt(command);
             const roll = Math.floor(Math.random() * max) + 1;
             message = `🎲 ${targetChar} 掷出 d${max} = **${roll}**`;
         }
-        // 骰子公式
         else if (command.includes('d')) {
             try {
                 const result = parseDiceFormula(command);
@@ -206,8 +197,7 @@ function registerSlashCommands(context, data, core) {
                 message = `❌ 骰子公式错误: ${command}`;
             }
         }
-        // 技能检定
-        else if (command.match(/[^a-zA-Z]/)) { // 包含中文，视为技能
+        else if (command.match(/[^a-zA-Z]/)) {
             const skillName = command;
             const roll = rollD100();
             const skillValue = getSkillValue(targetChar, skillName);
@@ -217,7 +207,6 @@ function registerSlashCommands(context, data, core) {
                      `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
                      `结果: ${result.emoji} **${result.text}**`;
         }
-        // 属性检定（英文缩写）
         else {
             const attrName = command.toUpperCase();
             const attrValue = getAttributeValue(targetChar, attrName);
@@ -236,7 +225,6 @@ function registerSlashCommands(context, data, core) {
         
     }, ['cocroll', 'cr'], 'COC命令 - 用@指定角色');
 
-    // ✅ 修正版：/san 命令 - 使用新的理智检定
     context.registerSlashCommand('san', (args, value) => {
         const input = value || '';
         
@@ -287,7 +275,7 @@ function registerSlashCommands(context, data, core) {
         return '';
     }, [], '理智检定 - 格式: /san 1d3/1d6 @角色名 [来源]');
 
-    // /setkp 命令（不变）
+    // /setkp 命令（保留，用于记录谁是KP，但不用来转发消息）
     context.registerSlashCommand(
         'setkp',
         (args, value) => {
@@ -306,7 +294,7 @@ function registerSlashCommands(context, data, core) {
             }
             
             data.setKP(kpName);
-            sendMessageAs(`✅ 已将 ${kpName} 设置为KP。从此所有系统消息将由该角色发出。`, 'system');
+            sendMessageAs(`✅ 已将 ${kpName} 设置为KP。`, 'system');
             return '';
             
         },
@@ -334,10 +322,7 @@ function registerSlashCommands(context, data, core) {
         return '';
     }, [], '查看当前KP');
 
-    // ==================== 其余命令保持不变（但都使用新的 sendMessageAs）====================
-    
-    // ... 其他命令代码（疯狂、伤害、幸运等）...
-    // 注意：所有命令中的 sendMessageAs 已经修改为强制用KP发送
+    // ==================== 其他命令（保持不变，但都用新的 sendMessageAs）====================
     
     console.log('[COC] 斜杠命令注册成功');
 }
