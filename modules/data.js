@@ -66,13 +66,18 @@ class CharacterData {
         this.save();
     }
     
-    // 获取角色技能值
+    // 获取角色技能值（优先统一 skills，兼容分类技能）
     getSkill(characterName, skillName) {
         const char = this.get(characterName);
-        if (char?.stats?.skills && char.stats.skills[skillName]) {
+        if (char?.stats?.skills && char.stats.skills[skillName] !== undefined) {
             return char.stats.skills[skillName];
         }
-        return 50;
+        const allSkills = {
+            ...(char?.stats?.occupationalSkills || {}),
+            ...(char?.stats?.interestSkills || {}),
+            ...(char?.stats?.fightingSkills || {})
+        };
+        return allSkills[skillName] || 50;
     }
     
     // 获取角色属性值
@@ -81,19 +86,17 @@ class CharacterData {
         return char?.stats?.[attributeName] || 50;
     }
     
-    // 获取角色理智
+    // 获取角色理智（统一使用 SAN 字段）
     getSan(characterName) {
         const char = this.get(characterName);
-        return char?.stats?.san?.current || char?.stats?.POW || 50;
+        return char?.stats?.SAN || 50;
     }
     
-    // 更新角色理智
+    // 更新角色理智（统一使用 SAN 字段）
     updateSan(characterName, newSan) {
         const char = this.get(characterName);
         if (char) {
-            if (!char.stats.san) char.stats.san = {};
-            char.stats.san.current = newSan;
-            char.stats.san.max = char.stats.san.max || 99;
+            char.stats.SAN = newSan;
             this.save();
         }
     }
