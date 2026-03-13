@@ -868,6 +868,62 @@ function getOccupationsByEra(era) {
         .map(occ => occ.name);
 }
 
+// ==================== 理智检定（公共） ====================
+
+/**
+ * 理智检定公共函数
+ */
+function sanCheck(characterName, lossFormula, source, data) {
+    const char = data.get(characterName);
+    if (!char) return null;
+
+    const currentSan = char.stats.SAN || 50;
+    const roll = rollD100();
+
+    const result = {
+        success: roll <= currentSan,
+        text: roll <= currentSan ? '成功' : '失败',
+        emoji: roll <= currentSan ? '✅' : '❌',
+        level: roll <= currentSan ? 'success' : 'fail'
+    };
+
+    const [successLoss, failLoss] = lossFormula.split('/');
+
+    let loss;
+    if (result.success) {
+        loss = parseDiceFormula(successLoss).total;
+    } else {
+        loss = parseDiceFormula(failLoss).total;
+    }
+
+    const newSan = Math.max(0, currentSan - loss);
+    char.stats.SAN = newSan;
+
+    let insanity = null;
+    if (newSan <= 0) {
+        char.stats.insanity = {
+            type: 'permanent',
+            phase: 'active',
+            startTime: new Date().toISOString()
+        };
+        insanity = { type: 'permanent' };
+    } else if (loss >= 5 && typeof window.triggerTemporaryInsanity === 'function') {
+        insanity = window.triggerTemporaryInsanity(characterName, loss, source);
+    }
+
+    data.save();
+
+    return {
+        roll,
+        result,
+        loss,
+        newSan,
+        isInsane: newSan <= 0,
+        isTemporaryInsanity: loss >= 5 && result.success === false,
+        insanity
+    };
+}
+
 // ==================== 疯狂系统 ====================
 
 // 临时疯狂 - 即时症状（1D10）
@@ -1095,6 +1151,9 @@ const core = {
     LANGUAGE_SKILLS,
     CREDIT_RATING_RANGES,
     
+    // 理智检定
+    sanCheck,
+
     // 疯狂系统
     INSTANT_INSANITY,
     SUMMARY_INSANITY,
