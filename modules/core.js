@@ -8,21 +8,40 @@ function rollD100() {
     return Math.floor(Math.random() * 100) + 1;
 }
 
-// 带奖励/惩罚骰的掷骰
+function rollD10() {
+    return Math.floor(Math.random() * 10);
+}
+
+function buildD100(tens, units) {
+    const value = tens * 10 + units;
+    return value === 0 ? 100 : value;
+}
+
+// 带奖励/惩罚骰的掷骰（标准COC7：个位共享，十位择优/择劣）
 function rollWithBonusPenalty(bonusCount = 0, penaltyCount = 0) {
-    const rolls = [];
-    for (let i = 0; i < 3; i++) {
-        rolls.push(rollD100());
+    const netBonus = (bonusCount || 0) - (penaltyCount || 0);
+    const bonus = Math.max(0, netBonus);
+    const penalty = Math.max(0, -netBonus);
+
+    const units = rollD10();
+    const tensRolls = [];
+    const tensCount = 1 + Math.max(bonus, penalty);
+
+    for (let i = 0; i < tensCount; i++) {
+        tensRolls.push(rollD10());
     }
-    
-    if (bonusCount > 0) {
-        rolls.sort((a, b) => Math.floor(a/10) - Math.floor(b/10));
-        return rolls[0];
-    } else if (penaltyCount > 0) {
-        rolls.sort((a, b) => Math.floor(b/10) - Math.floor(a/10));
-        return rolls[0];
+
+    if (bonus > 0) {
+        const bestTens = Math.min(...tensRolls);
+        return buildD100(bestTens, units);
     }
-    return rolls[0];
+
+    if (penalty > 0) {
+        const worstTens = Math.max(...tensRolls);
+        return buildD100(worstTens, units);
+    }
+
+    return buildD100(tensRolls[0], units);
 }
 
 // 解析骰子公式
@@ -898,6 +917,10 @@ function sanCheck(characterName, lossFormula, source, data) {
 
     const newSan = Math.max(0, currentSan - loss);
     char.stats.SAN = newSan;
+
+    if (typeof data?.addDaySanLoss === 'function') {
+        data.addDaySanLoss(loss);
+    }
 
     let insanity = null;
     if (newSan <= 0) {
