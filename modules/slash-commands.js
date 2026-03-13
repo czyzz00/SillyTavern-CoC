@@ -615,7 +615,13 @@ function registerSlashCommands(context, data, core) {
             return '';
         }
         
-        const luck = char.stats.luck || { current: 50, max: 50 };
+        if (!char.stats.luck) {
+            const fallback = char.stats.LUCK ?? 50;
+            char.stats.luck = { current: fallback, max: fallback };
+            data.save();
+        }
+
+        const luck = char.stats.luck;
         sendMessageAs(`✨ **${charName}** 的幸运值：${luck.current}/${luck.max}`);
         return '';
     }, [], '查看幸运 - 格式: /luck 李昂');
@@ -636,7 +642,12 @@ function registerSlashCommands(context, data, core) {
             return '';
         }
         
-        const luck = char.stats.luck?.current || 0;
+        if (!char.stats.luck) {
+            const fallback = char.stats.LUCK ?? 0;
+            char.stats.luck = { current: fallback, max: fallback };
+        }
+
+        const luck = char.stats.luck?.current ?? 0;
         
         if (points > luck) {
             sendMessageAs(`❌ 幸运不足（需要${points}，现有${luck}）`);
@@ -716,7 +727,51 @@ function registerSlashCommands(context, data, core) {
         return '';
     }, [], '孤注一掷 - 格式: /push 李昂 侦查 再次检查暗格');
 
-    // ==================== 6. 帮助指令 ====================
+    // ==================== 6. 时间系统指令 ====================
+
+    /**
+     * /time - 查看时间状态
+     */
+    context.registerSlashCommand('time', () => {
+        const time = data.getTimeStatus();
+        sendMessageAs(
+            `🕒 当前时间状态\n` +
+            `天数：第 ${time.day} 天\n` +
+            `周数：第 ${time.week} 周\n` +
+            `场次：第 ${time.session} 场\n` +
+            `当日SAN累计损失：${time.daySanLoss}`
+        );
+        return '';
+    }, [], '查看当前跑团时间状态');
+
+    /**
+     * /nextday - 进入新的一天
+     */
+    context.registerSlashCommand('nextday', () => {
+        const time = data.advanceDay();
+        sendMessageAs(`✅ 已进入新的一天：第 ${time.day} 天（第 ${time.week} 周）\n当日SAN累计损失已清零`);
+        return '';
+    }, [], '进入新的一天（清空当日SAN累计）');
+
+    /**
+     * /nextweek - 进入新的一周
+     */
+    context.registerSlashCommand('nextweek', () => {
+        const time = data.advanceWeek();
+        sendMessageAs(`✅ 已进入新的一周：第 ${time.week} 周（第 ${time.day} 天）\n当日SAN累计损失已清零\n建议进行重伤恢复检定`);
+        return '';
+    }, [], '进入新的一周（清空当日SAN累计）');
+
+    /**
+     * /sessionend - 结束场次
+     */
+    context.registerSlashCommand('sessionend', () => {
+        const time = data.endSession();
+        sendMessageAs(`✅ 已结束场次，进入第 ${time.session} 场`);
+        return '';
+    }, [], '结束当前场次');
+
+    // ==================== 7. 帮助指令 ====================
 
     /**
      * /cochelp - 显示所有指令
@@ -755,6 +810,12 @@ function registerSlashCommands(context, data, core) {
 /luck 角色名 - 查看幸运
 /spendluck 角色名 原骰值 目标值 点数 - 使用幸运
 /push 角色名 技能名 情境 - 孤注一掷
+
+【时间系统】
+/time - 查看时间状态
+/nextday - 进入新的一天
+/nextweek - 进入新的一周
+/sessionend - 结束当前场次
         `;
         sendMessageAs(help);
         return '';
