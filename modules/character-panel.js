@@ -1,7 +1,7 @@
 // ==================== 角色卡面板UI ====================
 
 function registerCharacterPanel(context, data, core) {
-    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDB, rollD100, OCCUPATIONS, SOCIAL_SKILLS, SCIENCE_SKILLS, CRAFT_SKILLS, SKILL_BASE_VALUES, LANGUAGE_SKILLS } = core;
+    const { calculateMaxHP, calculateMaxSAN, calculateMove, calculateBuild, calculateDB, rollD100, parseDiceFormula, OCCUPATIONS, SOCIAL_SKILLS, SCIENCE_SKILLS, CRAFT_SKILLS, SKILL_BASE_VALUES, LANGUAGE_SKILLS } = core;
     
     let panelElement = null;
     let isEditing = false;
@@ -111,7 +111,12 @@ function registerCharacterPanel(context, data, core) {
     }
 
     // 生成基础属性（骰子原始值）
-    function generateBaseAttributes() {
+    function generateBaseAttributes(age = 30) {
+        const luckRolls = [roll3d6x5()];
+        if (age >= 15 && age <= 19) {
+            luckRolls.push(roll3d6x5());
+        }
+
         return {
             baseSTR: roll3d6x5(),
             baseDEX: roll3d6x5(),
@@ -121,7 +126,7 @@ function registerCharacterPanel(context, data, core) {
             baseSIZ: roll2d6plus6x5(),
             baseINT: roll2d6plus6x5(),
             baseEDU: roll2d6plus6x5(),
-            baseLUCK: roll3d6x5()
+            baseLUCK: Math.max(...luckRolls)
         };
     }
 
@@ -500,6 +505,9 @@ function registerCharacterPanel(context, data, core) {
                         <div class="coc-stat-row">
                             <div class="coc-stat-row-item">⚡ 闪避: ${Math.floor(stats.DEX / 2)}%</div>
                         </div>
+                        <div class="coc-stat-row">
+                            <div class="coc-stat-row-item">🍀 幸运: ${stats.luck?.current ?? stats.LUCK ?? '—'}/${stats.luck?.max ?? stats.LUCK ?? '—'}</div>
+                        </div>
                     </div>
 
                     <div>
@@ -668,11 +676,11 @@ function registerCharacterPanel(context, data, core) {
                 const value = e.target.value;
                 
                 if (value === '__NEW__') {
-                    // 生成基础属性
-                    const baseAttrs = generateBaseAttributes();
-                    
                     // 默认年龄30岁（20-39区间）
                     const defaultAge = 30;
+
+                    // 生成基础属性
+                    const baseAttrs = generateBaseAttributes(defaultAge);
                     
                     // 应用年龄修正
                     const finalAttrs = applyAgeEffects(baseAttrs, defaultAge);
@@ -702,6 +710,7 @@ function registerCharacterPanel(context, data, core) {
                                 ...finalAttrs,
                                 HP: Math.floor((finalAttrs.CON + finalAttrs.SIZ) / 10),
                                 SAN: finalAttrs.POW,
+                                luck: { current: finalAttrs.LUCK, max: finalAttrs.LUCK },
                                 occupationalSkills: {},
                                 interestSkills: {},
                                 fightingSkills: {},
@@ -909,6 +918,18 @@ function registerCharacterPanel(context, data, core) {
                             <input type="number" class="coc-edit-input" id="coc-attr-${attr}" value="${stats[attr] || 50}" readonly style="background:#555; color:#aaa;">
                         </div>
                     `).join('')}
+                </div>
+
+                <div class="coc-edit-label">幸运</div>
+                <div class="coc-edit-grid">
+                    <div>
+                        <div class="coc-edit-label">当前幸运</div>
+                        <input type="number" class="coc-edit-input" id="coc-edit-luck-current" value="${stats.luck?.current ?? stats.LUCK ?? 50}">
+                    </div>
+                    <div>
+                        <div class="coc-edit-label">幸运上限</div>
+                        <input type="number" class="coc-edit-input" id="coc-edit-luck-max" value="${stats.luck?.max ?? stats.LUCK ?? 50}">
+                    </div>
                 </div>
 
                 <div class="coc-edit-label">职业技能</div>
@@ -1340,6 +1361,13 @@ function registerCharacterPanel(context, data, core) {
         stats.birthYear = parseInt(document.getElementById('coc-edit-birth-year')?.value) || 1890;
         stats.currentYear = parseInt(document.getElementById('coc-edit-current-year')?.value) || 1925;
 
+        const luckCurrent = parseInt(document.getElementById('coc-edit-luck-current')?.value);
+        const luckMax = parseInt(document.getElementById('coc-edit-luck-max')?.value);
+        stats.luck = {
+            current: Number.isNaN(luckCurrent) ? (stats.luck?.current ?? stats.LUCK ?? 50) : luckCurrent,
+            max: Number.isNaN(luckMax) ? (stats.luck?.max ?? stats.LUCK ?? 50) : luckMax
+        };
+
         const occupationalSkills = {};
         document.querySelectorAll('#coc-edit-occupational-skills .coc-select-row').forEach(row => {
             const select = row.querySelector('.coc-edit-occ-skill-name');
@@ -1446,6 +1474,13 @@ function registerCharacterPanel(context, data, core) {
 
         if (stats.SAN === undefined || stats.SAN === null || Number.isNaN(stats.SAN)) {
             stats.SAN = stats.POW;
+        }
+
+        if (!stats.luck) {
+            stats.luck = { current: stats.LUCK || 50, max: stats.LUCK || 50 };
+        } else {
+            if (stats.luck.current === undefined) stats.luck.current = stats.LUCK || stats.luck.max || 50;
+            if (stats.luck.max === undefined) stats.luck.max = stats.LUCK || stats.luck.current || 50;
         }
 
         return stats;
@@ -1669,6 +1704,190 @@ function registerCharacterPanel(context, data, core) {
         }
     }
 
+    // ==================== 伤害/恢复系统核心函数 ====================
+
+    function ensureHealthState(stats) {
+        if (!stats.health) stats.health = {};
+        if (stats.health.isMajorWound === undefined) stats.health.isMajorWound = false;
+        if (stats.health.isDying === undefined) stats.health.isDying = false;
+        if (stats.health.isUnconscious === undefined) stats.health.isUnconscious = false;
+        if (!stats.health.naturalHealing) stats.health.naturalHealing = {};
+        if (!stats.health.majorWoundRecovery) stats.health.majorWoundRecovery = {};
+    }
+
+    function isSameDay(a, b) {
+        return new Date(a).toDateString() === new Date(b).toDateString();
+    }
+
+    function takeDamage(characterName, damage, { location } = {}) {
+        const char = data.get(characterName);
+        if (!char) return null;
+
+        const stats = char.stats || {};
+        const maxHP = calculateMaxHP(stats);
+        const oldHP = stats.HP ?? maxHP;
+        const newHP = Math.max(0, oldHP - Math.max(0, damage));
+
+        stats.HP = newHP;
+        ensureHealthState(stats);
+
+        const isMajorWound = damage >= Math.floor(maxHP / 2);
+        const isDying = newHP === 0;
+        const isUnconscious = newHP <= 0 || isDying;
+
+        stats.health.isMajorWound = stats.health.isMajorWound || isMajorWound;
+        stats.health.isDying = isDying;
+        stats.health.isUnconscious = isUnconscious;
+        stats.health.lastDamage = {
+            amount: damage,
+            location: location || '未知',
+            time: new Date().toISOString()
+        };
+
+        char.stats = stats;
+        data.save();
+
+        return {
+            oldHP,
+            newHP,
+            maxHP,
+            isMajorWound: stats.health.isMajorWound,
+            isDying,
+            isUnconscious
+        };
+    }
+
+    function firstAid(characterName, medicName) {
+        const char = data.get(characterName);
+        if (!char) return { message: `❌ 角色 ${characterName} 不存在` };
+
+        const stats = char.stats || {};
+        ensureHealthState(stats);
+
+        if (stats.health.isDying && stats.HP <= 0) {
+            stats.HP = 1;
+            stats.health.isDying = false;
+            stats.health.isUnconscious = false;
+        }
+
+        char.stats = stats;
+        data.save();
+
+        return {
+            message: `✅ ${medicName} 对 ${characterName} 进行急救，稳定伤势（HP：${stats.HP}/${calculateMaxHP(stats)}）`
+        };
+    }
+
+    function medicine(characterName, doctorName) {
+        const char = data.get(characterName);
+        if (!char) return { message: `❌ 角色 ${characterName} 不存在` };
+
+        const stats = char.stats || {};
+        ensureHealthState(stats);
+
+        if (stats.health.isMajorWound && stats.HP <= 0) {
+            return { message: `❌ ${characterName} 处于濒死状态，需先急救` };
+        }
+
+        stats.HP = Math.min(calculateMaxHP(stats), (stats.HP ?? calculateMaxHP(stats)) + 1);
+        char.stats = stats;
+        data.save();
+
+        return {
+            message: `✅ ${doctorName} 对 ${characterName} 进行医学治疗（HP：${stats.HP}/${calculateMaxHP(stats)}）`
+        };
+    }
+
+    function naturalHealing(characterName) {
+        const char = data.get(characterName);
+        if (!char) return { message: `❌ 角色 ${characterName} 不存在` };
+
+        const stats = char.stats || {};
+        ensureHealthState(stats);
+
+        const time = data.getTimeStatus();
+        const lastHeal = stats.health.naturalHealing.lastAt;
+        if (lastHeal && time.lastDayReset && !isSameDay(lastHeal, time.lastDayReset)) {
+            stats.health.naturalHealing.lastAt = null;
+        }
+
+        if (stats.health.naturalHealing.lastAt) {
+            return { message: `❌ ${characterName} 今天已经进行过自然恢复` };
+        }
+
+        stats.HP = Math.min(calculateMaxHP(stats), (stats.HP ?? calculateMaxHP(stats)) + 1);
+        stats.health.naturalHealing.lastAt = new Date().toISOString();
+        char.stats = stats;
+        data.save();
+
+        return { message: `🌿 ${characterName} 自然恢复 1 点 HP（HP：${stats.HP}/${calculateMaxHP(stats)}）` };
+    }
+
+    function majorWoundRecovery(characterName) {
+        const char = data.get(characterName);
+        if (!char) return null;
+
+        const stats = char.stats || {};
+        ensureHealthState(stats);
+
+        if (!stats.health.isMajorWound) {
+            return null;
+        }
+
+        const time = data.getTimeStatus();
+        const lastWeek = stats.health.majorWoundRecovery.lastWeek || 0;
+        if (lastWeek >= time.week) {
+            return { message: `❌ ${characterName} 本周已进行过重伤恢复检定` };
+        }
+
+        const con = stats.CON || 50;
+        const roll = rollD100();
+        const success = roll <= con;
+
+        stats.health.majorWoundRecovery.lastWeek = time.week;
+
+        if (success) {
+            stats.health.isMajorWound = false;
+            stats.health.isUnconscious = false;
+        }
+
+        char.stats = stats;
+        data.save();
+
+        return {
+            message: `🩹 ${characterName} 重伤恢复检定：D100=${roll} / CON=${con} → ${success ? '成功（脱离重伤）' : '失败（仍为重伤）'}`
+        };
+    }
+
+    function handleDying(characterName) {
+        const char = data.get(characterName);
+        if (!char) return null;
+
+        const stats = char.stats || {};
+        ensureHealthState(stats);
+
+        if (!stats.health.isDying) {
+            return { message: `❌ ${characterName} 不处于濒死状态` };
+        }
+
+        const con = stats.CON || 50;
+        const roll = rollD100();
+        const success = roll <= con;
+
+        if (success) {
+            stats.health.isDying = false;
+            stats.health.isUnconscious = true;
+            stats.HP = Math.max(1, stats.HP || 0);
+        }
+
+        char.stats = stats;
+        data.save();
+
+        return {
+            message: `💀 ${characterName} 濒死体质检定：D100=${roll} / CON=${con} → ${success ? '成功（稳定）' : '失败（仍濒死）'}`
+        };
+    }
+
     // ==================== 疯狂系统核心函数 ====================
 
     function triggerTemporaryInsanity(characterName, sanLoss, source) {
@@ -1733,9 +1952,13 @@ function registerCharacterPanel(context, data, core) {
         
         const currentSan = char.stats.SAN || 50;
         const threshold = Math.floor(currentSan / 5);
+        const timeStatus = typeof data.getTimeStatus === 'function' ? data.getTimeStatus() : null;
+        const effectiveLoss = (typeof totalLossToday === 'number')
+            ? totalLossToday
+            : (timeStatus?.daySanLoss || 0);
         
-        if (totalLossToday < threshold) {
-            return { triggered: false, reason: '损失不足' };
+        if (effectiveLoss < threshold) {
+            return { triggered: false, reason: '损失不足', totalLossToday: effectiveLoss, threshold };
         }
         
         const symptom = INSTANT_INSANITY_SYMPTOMS[Math.floor(Math.random() * INSTANT_INSANITY_SYMPTOMS.length)];
@@ -1746,7 +1969,7 @@ function registerCharacterPanel(context, data, core) {
             source: 'cumulative trauma',
             startTime: new Date().toISOString(),
             phase: 'active',
-            totalLossToday
+            totalLossToday: effectiveLoss
         };
         
         data.save();
@@ -1754,7 +1977,9 @@ function registerCharacterPanel(context, data, core) {
         return {
             triggered: true,
             type: 'indefinite',
-            symptom
+            symptom,
+            totalLossToday: effectiveLoss,
+            threshold
         };
     }
 
@@ -1834,6 +2059,12 @@ function registerCharacterPanel(context, data, core) {
     window.checkIndefiniteInsanity = checkIndefiniteInsanity;
     window.endInsanityEpisode = endInsanityEpisode;
     window.realityCheck = realityCheck;
+    window.takeDamage = takeDamage;
+    window.firstAid = firstAid;
+    window.medicine = medicine;
+    window.naturalHealing = naturalHealing;
+    window.majorWoundRecovery = majorWoundRecovery;
+    window.handleDying = handleDying;
     
     return buildUI;
 }
