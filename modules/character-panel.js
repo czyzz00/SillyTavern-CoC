@@ -1591,6 +1591,12 @@ function registerCharacterPanel(context, data, core) {
     // 成长面板函数
     function renderGrowthPanel(name, stats) {
         const usedSkills = stats.usedSkills || [];
+        const allSkills = {
+            ...(stats.occupationalSkills || {}),
+            ...(stats.interestSkills || {}),
+            ...(stats.fightingSkills || {}),
+            ...(stats.skills || {})
+        };
         
         return `
             <div class="coc-edit-section">
@@ -1600,7 +1606,7 @@ function registerCharacterPanel(context, data, core) {
                     ${usedSkills.length > 0 ? usedSkills.map(skill => `
                         <div class="coc-select-row">
                             <span class="coc-skill-name">${skill}</span>
-                            <span class="coc-skill-value">${stats.skills?.[skill] || 0}%</span>
+                            <span class="coc-skill-value">${allSkills[skill] || 0}%</span>
                             <button class="coc-btn small" onclick="applySkillGrowth('${name}', '${skill}')">📈 成长</button>
                         </div>
                     `).join('') : '<div style="color: #8e7c68;">本次剧本未使用技能</div>'}
@@ -1617,23 +1623,46 @@ function registerCharacterPanel(context, data, core) {
     function applySkillGrowth(characterName, skillName) {
         const char = data.get(characterName);
         if (!char) return;
-        
-        const currentValue = char.stats.skills?.[skillName] || 50;
+
+        const stats = char.stats || {};
+
+        // 优先从分类技能读取（更符合UI）
+        const currentValue =
+            (stats.occupationalSkills && stats.occupationalSkills[skillName] !== undefined) ? stats.occupationalSkills[skillName]
+            : (stats.interestSkills && stats.interestSkills[skillName] !== undefined) ? stats.interestSkills[skillName]
+            : (stats.fightingSkills && stats.fightingSkills[skillName] !== undefined) ? stats.fightingSkills[skillName]
+            : (stats.skills && stats.skills[skillName] !== undefined) ? stats.skills[skillName]
+            : 50;
+
         const roll = rollD100();
-        
+
         if (roll > currentValue) {
             const increase = Math.floor(Math.random() * 10) + 1;
             const newValue = currentValue + increase;
-            
-            if (!char.stats.skills) char.stats.skills = {};
-            char.stats.skills[skillName] = newValue;
-            
-            if (char.stats.usedSkills) {
-                char.stats.usedSkills = char.stats.usedSkills.filter(s => s !== skillName);
+
+            // 回写到对应分类；如果找不到分类，就回写到 skills
+            if (stats.occupationalSkills && stats.occupationalSkills[skillName] !== undefined) {
+                stats.occupationalSkills[skillName] = newValue;
+            } else if (stats.interestSkills && stats.interestSkills[skillName] !== undefined) {
+                stats.interestSkills[skillName] = newValue;
+            } else if (stats.fightingSkills && stats.fightingSkills[skillName] !== undefined) {
+                stats.fightingSkills[skillName] = newValue;
+            } else {
+                if (!stats.skills) stats.skills = {};
+                stats.skills[skillName] = newValue;
             }
-            
+
+            // 同步到 skills（保证斜杠命令/工具调用总能读到最新值）
+            if (!stats.skills) stats.skills = {};
+            stats.skills[skillName] = newValue;
+
+            if (stats.usedSkills) {
+                stats.usedSkills = stats.usedSkills.filter(s => s !== skillName);
+            }
+
+            char.stats = stats;
             data.save();
-            
+
             alert(`✅ ${skillName} 成长成功！ ${currentValue}% → ${newValue}% (+${increase})`);
         } else {
             alert(`❌ ${skillName} 成长失败，未能突破当前值`);
