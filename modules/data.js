@@ -12,7 +12,24 @@ class CharacterData {
         if (!this.context.extensionSettings[DATA_MODULE]) {
             this.context.extensionSettings[DATA_MODULE] = {
                 kpCharacter: '',
-                characters: {}
+                characters: {},
+                time: {
+                    day: 1,
+                    week: 1,
+                    session: 1,
+                    daySanLoss: 0,
+                    lastDayReset: new Date().toISOString()
+                }
+            };
+        }
+
+        if (!this.context.extensionSettings[DATA_MODULE].time) {
+            this.context.extensionSettings[DATA_MODULE].time = {
+                day: 1,
+                week: 1,
+                session: 1,
+                daySanLoss: 0,
+                lastDayReset: new Date().toISOString()
             };
         }
     }
@@ -58,6 +75,80 @@ class CharacterData {
     // 获取KP
     getKP() {
         return this.context.extensionSettings[DATA_MODULE].kpCharacter || '';
+    }
+
+    // ==================== 时间系统 ====================
+
+    // 获取时间状态
+    getTimeStatus() {
+        return this.context.extensionSettings[DATA_MODULE].time || {
+            day: 1,
+            week: 1,
+            session: 1,
+            daySanLoss: 0,
+            lastDayReset: new Date().toISOString()
+        };
+    }
+
+    // 设置时间状态
+    setTimeStatus(nextStatus) {
+        this.context.extensionSettings[DATA_MODULE].time = {
+            ...this.getTimeStatus(),
+            ...nextStatus
+        };
+        this.save();
+    }
+
+    // 记录当日SAN损失
+    addDaySanLoss(amount) {
+        const time = this.getTimeStatus();
+        time.daySanLoss = Math.max(0, (time.daySanLoss || 0) + amount);
+        this.setTimeStatus(time);
+        return time.daySanLoss;
+    }
+
+    // 清空当日SAN损失
+    resetDaySanLoss() {
+        const time = this.getTimeStatus();
+        time.daySanLoss = 0;
+        time.lastDayReset = new Date().toISOString();
+        this.setTimeStatus(time);
+    }
+
+    // 推进一天
+    advanceDay() {
+        const time = this.getTimeStatus();
+        const nextDay = (time.day || 1) + 1;
+        const nextWeek = ((nextDay - 1) % 7 === 0) ? (time.week || 1) + 1 : (time.week || 1);
+        this.setTimeStatus({
+            day: nextDay,
+            week: nextWeek,
+            daySanLoss: 0,
+            lastDayReset: new Date().toISOString()
+        });
+        return this.getTimeStatus();
+    }
+
+    // 推进一周
+    advanceWeek() {
+        const time = this.getTimeStatus();
+        const nextWeek = (time.week || 1) + 1;
+        const nextDay = (time.day || 1) + 7;
+        this.setTimeStatus({
+            day: nextDay,
+            week: nextWeek,
+            daySanLoss: 0,
+            lastDayReset: new Date().toISOString()
+        });
+        return this.getTimeStatus();
+    }
+
+    // 结束场次
+    endSession() {
+        const time = this.getTimeStatus();
+        const nextSession = (time.session || 1) + 1;
+        this.setTimeStatus({ session: nextSession });
+        return this.getTimeStatus();
     }
     
     // 设置KP
