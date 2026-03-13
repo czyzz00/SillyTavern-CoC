@@ -1,16 +1,17 @@
 // ==================== 斜杠命令 ====================
 
 function registerSlashCommands(context, data, core) {
-    const { rollD100, rollWithBonusPenalty, parseDiceFormula, judgeCOC, calculateDB, calculateMaxHP } = core;
+    const { rollD100, parseDiceFormula, sanCheck } = core;
     
-    // 获取角色技能值
+    // 获取角色技能值（合并职业/兴趣/格斗）
     function getSkillValue(characterName, skillName) {
         return data.getSkill(characterName, skillName);
     }
     
     // 获取角色属性值
     function getAttributeValue(characterName, attributeName) {
-        return data.getAttribute(characterName, attributeName);
+        const char = data.get(characterName);
+        return char?.stats?.[attributeName] || 50;
     }
     
     // ✅ 发送消息（统一由 system 发出）
@@ -49,16 +50,7 @@ function registerSlashCommands(context, data, core) {
     }
     
     // ✅ COC7成功等级判定
-    function judgeCOC7(roll, targetValue, type = 'normal') {
-        if (type === 'sanity') {
-            return {
-                success: roll <= targetValue,
-                text: roll <= targetValue ? '成功' : '失败',
-                emoji: roll <= targetValue ? '✅' : '❌',
-                level: roll <= targetValue ? 'success' : 'fail'
-            };
-        }
-        
+    function judgeCOC7(roll, targetValue) {
         if (roll === 100) return { 
             success: false, 
             text: '大失败', 
@@ -208,55 +200,24 @@ function registerSlashCommands(context, data, core) {
         }
         
         try {
-            const char = data.get(targetChar);
-            if (!char) {
+            const result = sanCheck(targetChar, lossFormula, source, data);
+            if (!result) {
                 sendMessageAs(`❌ 角色 ${targetChar} 不存在`);
                 return '';
             }
             
-            const currentSan = char.stats.SAN || 50;
-            const roll = rollD100();
-            const result = judgeCOC7(roll, currentSan, 'sanity');
-            
-            const [successLoss, failLoss] = lossFormula.split('/');
-            
-            let loss;
-            if (result.success) {
-                loss = parseDiceFormula(successLoss).total;
-            } else {
-                loss = parseDiceFormula(failLoss).total;
-            }
-            
-            const newSan = Math.max(0, currentSan - loss);
-            char.stats.SAN = newSan;
-            
-            // 检查是否触发疯狂
-            let insanity = null;
-            if (newSan <= 0) {
-                char.stats.insanity = {
-                    type: 'permanent',
-                    phase: 'active',
-                    startTime: new Date().toISOString()
-                };
-                insanity = { type: 'permanent' };
-            } else if (loss >= 5 && typeof window.triggerTemporaryInsanity === 'function') {
-                insanity = window.triggerTemporaryInsanity(targetChar, loss, source);
-            }
-            
-            data.save();
-            
             let message = `**${targetChar}** 进行理智检定\n` +
-                         `🎲 D100 = \`${roll}\` | 当前理智 \`${newSan + loss}\`\n` +
-                         `结果: ${result.emoji} **${result.text}**，损失 \`${loss}\` 点理智\n` +
-                         `剩余理智: **${newSan}**`;
+                         `🎲 D100 = \`${result.roll}\` | 当前理智 \`${result.newSan + result.loss}\`\n` +
+                         `结果: ${result.result.emoji} **${result.result.text}**，损失 \`${result.loss}\` 点理智\n` +
+                         `剩余理智: **${result.newSan}**`;
             
-            if (insanity) {
-                if (insanity.type === 'permanent') {
+            if (result.insanity) {
+                if (result.insanity.type === 'permanent') {
                     message += `\n💔 **角色永久疯狂！**`;
-                } else if (insanity.triggered) {
-                    message += `\n😱 **触发临时疯狂！**\n症状：${insanity.symptom}\n持续时间：${insanity.duration}小时`;
+                } else if (result.insanity.triggered) {
+                    message += `\n😱 **触发临时疯狂！**\n症状：${result.insanity.symptom}\n持续时间：${result.insanity.duration}小时`;
                 }
-            } else if (loss >= 5 && result.success === false) {
+            } else if (result.isTemporaryInsanity) {
                 message += `\n😱 **临时疯狂！**`;
             }
             
