@@ -276,6 +276,72 @@ function registerFunctionCalls(context, data, core) {
         stealth: false
     });
 
+    // ==================== 时间系统函数 ====================
+
+    context.registerFunctionTool({
+        name: "coc_get_time_status",
+        displayName: "获取时间状态",
+        description: "查看当前的跑团时间状态（天/周/场次/SAN日累计）。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {}
+        },
+        action: async () => {
+            const time = data.getTimeStatus();
+            return `🕒 当前时间状态\n天数：第 ${time.day} 天\n周数：第 ${time.week} 周\n场次：第 ${time.session} 场\n当日SAN累计损失：${time.daySanLoss}`;
+        },
+        stealth: false
+    });
+
+    context.registerFunctionTool({
+        name: "coc_advance_day",
+        displayName: "推进一天",
+        description: "推进到新的一天，清空当日SAN累计损失。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {}
+        },
+        action: async () => {
+            const time = data.advanceDay();
+            return `✅ 已进入新的一天：第 ${time.day} 天（第 ${time.week} 周）\n当日SAN累计损失已清零`; 
+        },
+        stealth: false
+    });
+
+    context.registerFunctionTool({
+        name: "coc_advance_week",
+        displayName: "推进一周",
+        description: "推进到新的一周，清空当日SAN累计损失。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {}
+        },
+        action: async () => {
+            const time = data.advanceWeek();
+            return `✅ 已进入新的一周：第 ${time.week} 周（第 ${time.day} 天）\n当日SAN累计损失已清零\n建议进行重伤恢复检定`; 
+        },
+        stealth: false
+    });
+
+    context.registerFunctionTool({
+        name: "coc_end_session",
+        displayName: "结束场次",
+        description: "结束当前场次并进入下一场次。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {}
+        },
+        action: async () => {
+            const time = data.endSession();
+            return `✅ 已结束场次，进入第 ${time.session} 场`; 
+        },
+        stealth: false
+    });
+
     // ==================== 新增疯狂相关函数 ====================
 
     /**
@@ -429,10 +495,10 @@ function registerFunctionCalls(context, data, core) {
                 },
                 totalLossToday: {
                     type: 'integer',
-                    description: '本日累计理智损失'
+                    description: '本日累计理智损失（可选，默认读取时间系统）'
                 }
             },
-            required: ['character', 'totalLossToday']
+            required: ['character']
         },
         action: async ({ character, totalLossToday }) => {
             if (typeof window.checkIndefiniteInsanity !== 'function') {
@@ -446,11 +512,13 @@ function registerFunctionCalls(context, data, core) {
             }
             
             if (!result.triggered) {
-                return `✅ ${character} 未触发不定性疯狂（${result.reason}）`;
+                return `✅ ${character} 未触发不定性疯狂（${result.reason}）\n` +
+                       `当日累计损失：${result.totalLossToday || 0} / 阈值：${result.threshold || 0}`;
             }
             
             return `⚠️ **${character} 触发不定性疯狂！**\n` +
                    `症状：${result.symptom}\n` +
+                   `当日累计损失：${result.totalLossToday} / 阈值：${result.threshold}\n` +
                    `类型：不定性疯狂（持续整个模组）`;
         },
         stealth: false
@@ -855,7 +923,11 @@ function registerFunctionCalls(context, data, core) {
             const char = data.get(character);
             if (!char) return `❌ 角色 ${character} 不存在`;
             
-            const luck = char.stats.luck?.current || 0;
+            const luck = char.stats.luck?.current ?? char.stats.LUCK ?? 0;
+
+            if (!char.stats.luck) {
+                char.stats.luck = { current: luck, max: char.stats.LUCK ?? luck };
+            }
             
             if (points > luck) {
                 return `❌ 幸运不足（需要${points}，现有${luck}）`;
