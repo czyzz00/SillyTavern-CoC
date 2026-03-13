@@ -6,7 +6,7 @@ function registerFunctionCalls(context, data, core) {
         return;
     }
     
-    const { rollD100, rollWithBonusPenalty, parseDiceFormula, judgeCOC, calculateDB } = core;
+    const { rollD100, rollWithBonusPenalty, parseDiceFormula, judgeCOC, calculateDB, sanCheck } = core;
     
     // ==================== 原有函数 ====================
     
@@ -178,7 +178,10 @@ function registerFunctionCalls(context, data, core) {
             required: ['character', 'lossFormula']
         },
         action: async ({ character, lossFormula, source = '未知恐怖' }) => {
-            const result = sanCheck(character, lossFormula, source);
+            const result = sanCheck(character, lossFormula, source, data);
+            if (!result) {
+                return `❌ 角色 ${character} 不存在`;
+            }
             
             let message = `**${character}** 进行理智检定：\n` +
                          `🎲 D100 = \`${result.roll}\` | 当前理智 \`${result.newSan + result.loss}\`\n` +
