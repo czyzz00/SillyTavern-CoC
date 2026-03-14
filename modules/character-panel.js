@@ -8,6 +8,7 @@ function registerCharacterPanel(context, data, core) {
     let currentEditName = '';
     let currentEditStats = null;
     let currentPanelMode = 'pc';
+    let npcViewMode = 'kp';
     
     // 预定义技能列表
     const SKILLS_LIST = {
@@ -727,6 +728,320 @@ function registerCharacterPanel(context, data, core) {
         }
     }
 
+    function isNpcKpMode() {
+        return npcViewMode === 'kp';
+    }
+
+    function renderNpcCard(name, stats, viewMode) {
+        const baseInfo = {
+            name,
+            occupation: stats.occupation || '未知',
+            age: stats.age || '',
+            appearance: stats.appearance || '',
+            firstImpression: stats.firstImpression || ''
+        };
+
+        const investigation = stats.investigation || {};
+        const kpInfo = stats.kpInfo || {};
+        const attributes = stats.attributes || {};
+        const skills = stats.skills || [];
+        const attacks = stats.attacks || [];
+
+        const hp = stats.HP ?? stats.hp ?? '';
+        const san = stats.SAN ?? stats.san ?? '';
+        const mp = stats.MP ?? stats.mp ?? '';
+
+        const baseInfoSection = `
+            <div class="coc-section-title">基础信息</div>
+            <div class="coc-info-grid">
+                <div><span class="coc-info-label">名字</span> ${baseInfo.name}</div>
+                <div><span class="coc-info-label">职业</span> ${baseInfo.occupation}</div>
+                <div><span class="coc-info-label">年龄/外貌</span> ${[baseInfo.age, baseInfo.appearance].filter(Boolean).join(' / ') || '—'}</div>
+                <div><span class="coc-info-label">第一印象</span> ${baseInfo.firstImpression || '—'}</div>
+            </div>
+        `;
+
+        const investigationSection = `
+            <details class="coc-kp-details">
+                <summary>调查信息（点击展开）</summary>
+                <div class="coc-kp-block">
+                    <div><span class="coc-info-label">侦查成功</span> ${investigation.spotHidden || '—'}</div>
+                    <div><span class="coc-info-label">心理学成功</span> ${investigation.psychology || '—'}</div>
+                    <div><span class="coc-info-label">图书馆使用</span> ${investigation.libraryUse || '—'}</div>
+                </div>
+            </details>
+        `;
+
+        if (viewMode === 'player') {
+            return `
+                <div class="coc-card">
+                    <div class="coc-profile">
+                        <div class="coc-avatar">${renderAvatar(stats.avatar, name)}</div>
+                        <div>
+                            <div class="coc-name">${name}</div>
+                            <div class="coc-subtitle">${baseInfo.occupation}</div>
+                        </div>
+                    </div>
+                    ${baseInfoSection}
+                    ${investigationSection}
+                </div>
+            `;
+        }
+
+        const attrRows = ['STR','CON','SIZ','DEX','APP','INT','POW','EDU'].map(attr => {
+            const value = attributes[attr] ?? stats[attr] ?? '';
+            return `<div><span class="coc-info-label">${attr}</span> ${value || '—'}</div>`;
+        }).join('');
+
+        const skillRows = skills.length
+            ? skills.map(skill => `<div class="coc-relationship-row"><span>${skill.name || ''}</span><span>${skill.value || ''}</span></div>`).join('')
+            : '<div style="color: var(--coc-text-muted);">无</div>';
+
+        const attackRows = attacks.length
+            ? attacks.map(atk => `<div class="coc-relationship-row"><span>${atk.name || ''}</span><span>${atk.damage || ''}</span></div>`).join('')
+            : '<div style="color: var(--coc-text-muted);">无</div>';
+
+        return `
+            <div class="coc-card">
+                <div class="coc-profile">
+                    <div class="coc-avatar">${renderAvatar(stats.avatar, name)}</div>
+                    <div>
+                        <div class="coc-name">${name}</div>
+                        <div class="coc-subtitle">${baseInfo.occupation}</div>
+                    </div>
+                </div>
+                ${baseInfoSection}
+                ${investigationSection}
+
+                <div class="coc-section-title">KP信息</div>
+                <div class="coc-kp-block">
+                    <div><span class="coc-info-label">真实身份</span> ${kpInfo.identity || '—'}</div>
+                    <div><span class="coc-info-label">动机</span> ${kpInfo.motivation || '—'}</div>
+                    <div><span class="coc-info-label">隐藏剧情</span> ${kpInfo.secrets || '—'}</div>
+                </div>
+
+                <div class="coc-section-title">数值区</div>
+                <div class="coc-info-grid">
+                    ${attrRows}
+                </div>
+                <div class="coc-info-grid" style="margin-top:8px;">
+                    <div><span class="coc-info-label">HP</span> ${hp || '—'}</div>
+                    <div><span class="coc-info-label">SAN</span> ${san || '—'}</div>
+                    <div><span class="coc-info-label">MP</span> ${mp || '—'}</div>
+                </div>
+
+                <div class="coc-section-title">技能</div>
+                <div class="coc-weapons-list">${skillRows}</div>
+
+                <div class="coc-section-title">攻击</div>
+                <div class="coc-weapons-list">${attackRows}</div>
+
+                <button class="coc-btn edit" id="coc-npc-edit-btn">✏️ 编辑NPC</button>
+            </div>
+        `;
+    }
+
+    function renderNpcEditForm(name, stats) {
+        const attributes = stats.attributes || {};
+        const skills = stats.skills || [];
+        const attacks = stats.attacks || [];
+        const investigation = stats.investigation || {};
+        const kpInfo = stats.kpInfo || {};
+
+        return `
+            <div class="coc-edit-section">
+                <div class="coc-edit-title">✏️ 编辑NPC ${name}</div>
+
+                <div class="coc-edit-label">基础信息</div>
+                <div class="coc-info-grid">
+                    <input class="coc-edit-input" id="npc-occupation" placeholder="职业" value="${stats.occupation || ''}">
+                    <input class="coc-edit-input" id="npc-age" placeholder="年龄" value="${stats.age || ''}">
+                    <input class="coc-edit-input" id="npc-appearance" placeholder="外貌" value="${stats.appearance || ''}">
+                    <input class="coc-edit-input" id="npc-first-impression" placeholder="第一印象" value="${stats.firstImpression || ''}">
+                </div>
+
+                <div class="coc-edit-label">调查信息（剧透）</div>
+                <textarea class="coc-edit-textarea" id="npc-spot-hidden" placeholder="侦查成功获得信息">${investigation.spotHidden || ''}</textarea>
+                <textarea class="coc-edit-textarea" id="npc-psychology" placeholder="心理学成功获得信息">${investigation.psychology || ''}</textarea>
+                <textarea class="coc-edit-textarea" id="npc-library-use" placeholder="图书馆使用获得信息">${investigation.libraryUse || ''}</textarea>
+
+                <div class="coc-edit-label">KP信息</div>
+                <textarea class="coc-edit-textarea" id="npc-identity" placeholder="真实身份">${kpInfo.identity || ''}</textarea>
+                <textarea class="coc-edit-textarea" id="npc-motivation" placeholder="动机">${kpInfo.motivation || ''}</textarea>
+                <textarea class="coc-edit-textarea" id="npc-secrets" placeholder="隐藏剧情">${kpInfo.secrets || ''}</textarea>
+
+                <div class="coc-edit-label">数值区</div>
+                <div class="coc-info-grid">
+                    ${['STR','CON','SIZ','DEX','APP','INT','POW','EDU'].map(attr => `
+                        <input class="coc-edit-input" data-npc-attr="${attr}" placeholder="${attr}" value="${attributes[attr] ?? stats[attr] ?? ''}">
+                    `).join('')}
+                </div>
+
+                <div class="coc-info-grid" style="margin-top:8px;">
+                    <input class="coc-edit-input" id="npc-hp" placeholder="HP" value="${stats.HP ?? stats.hp ?? ''}">
+                    <input class="coc-edit-input" id="npc-san" placeholder="SAN" value="${stats.SAN ?? stats.san ?? ''}">
+                    <input class="coc-edit-input" id="npc-mp" placeholder="MP" value="${stats.MP ?? stats.mp ?? ''}">
+                </div>
+
+                <div class="coc-edit-label">技能</div>
+                <div id="npc-skills" class="coc-select-list">
+                    ${skills.map(skill => `
+                        <div class="coc-select-row">
+                            <input class="coc-edit-input npc-skill-name" placeholder="技能" value="${skill.name || ''}">
+                            <input class="coc-edit-input npc-skill-value" placeholder="数值" value="${skill.value || ''}">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="npc-add-skill">+ 添加技能</button>
+
+                <div class="coc-edit-label">攻击</div>
+                <div id="npc-attacks" class="coc-select-list">
+                    ${attacks.map(atk => `
+                        <div class="coc-select-row">
+                            <input class="coc-edit-input npc-attack-name" placeholder="攻击" value="${atk.name || ''}">
+                            <input class="coc-edit-input npc-attack-damage" placeholder="伤害" value="${atk.damage || ''}">
+                            <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="coc-add-btn" id="npc-add-attack">+ 添加攻击</button>
+
+                <div class="coc-edit-actions">
+                    <button class="coc-edit-save" id="npc-save-edit">💾 保存</button>
+                    <button class="coc-edit-cancel" id="npc-cancel-edit">✖ 取消</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function collectNpcEditData() {
+        const stats = { ...currentEditStats };
+
+        stats.occupation = document.getElementById('npc-occupation')?.value || '';
+        stats.age = document.getElementById('npc-age')?.value || '';
+        stats.appearance = document.getElementById('npc-appearance')?.value || '';
+        stats.firstImpression = document.getElementById('npc-first-impression')?.value || '';
+
+        stats.investigation = {
+            spotHidden: document.getElementById('npc-spot-hidden')?.value || '',
+            psychology: document.getElementById('npc-psychology')?.value || '',
+            libraryUse: document.getElementById('npc-library-use')?.value || ''
+        };
+
+        stats.kpInfo = {
+            identity: document.getElementById('npc-identity')?.value || '',
+            motivation: document.getElementById('npc-motivation')?.value || '',
+            secrets: document.getElementById('npc-secrets')?.value || ''
+        };
+
+        const attributes = {};
+        document.querySelectorAll('[data-npc-attr]').forEach(input => {
+            const key = input.getAttribute('data-npc-attr');
+            attributes[key] = parseInt(input.value) || input.value || '';
+        });
+        stats.attributes = attributes;
+
+        stats.HP = document.getElementById('npc-hp')?.value || '';
+        stats.SAN = document.getElementById('npc-san')?.value || '';
+        stats.MP = document.getElementById('npc-mp')?.value || '';
+
+        const skills = [];
+        document.querySelectorAll('#npc-skills .coc-select-row').forEach(row => {
+            const name = row.querySelector('.npc-skill-name')?.value || '';
+            const value = row.querySelector('.npc-skill-value')?.value || '';
+            if (name) skills.push({ name, value });
+        });
+        stats.skills = skills;
+
+        const attacks = [];
+        document.querySelectorAll('#npc-attacks .coc-select-row').forEach(row => {
+            const name = row.querySelector('.npc-attack-name')?.value || '';
+            const damage = row.querySelector('.npc-attack-damage')?.value || '';
+            if (name) attacks.push({ name, damage });
+        });
+        stats.attacks = attacks;
+
+        return stats;
+    }
+
+    function bindNpcEditEvents() {
+        const addSkill = document.getElementById('npc-add-skill');
+        if (addSkill) {
+            addSkill.onclick = () => {
+                const container = document.getElementById('npc-skills');
+                if (container) {
+                    const row = document.createElement('div');
+                    row.className = 'coc-select-row';
+                    row.innerHTML = `
+                        <input class="coc-edit-input npc-skill-name" placeholder="技能">
+                        <input class="coc-edit-input npc-skill-value" placeholder="数值">
+                        <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                    `;
+                    container.appendChild(row);
+                }
+            };
+        }
+
+        const addAttack = document.getElementById('npc-add-attack');
+        if (addAttack) {
+            addAttack.onclick = () => {
+                const container = document.getElementById('npc-attacks');
+                if (container) {
+                    const row = document.createElement('div');
+                    row.className = 'coc-select-row';
+                    row.innerHTML = `
+                        <input class="coc-edit-input npc-attack-name" placeholder="攻击">
+                        <input class="coc-edit-input npc-attack-damage" placeholder="伤害">
+                        <button class="coc-remove-btn" onclick="this.parentElement.remove()">✖</button>
+                    `;
+                    container.appendChild(row);
+                }
+            };
+        }
+
+        const saveEdit = document.getElementById('npc-save-edit');
+        if (saveEdit) {
+            saveEdit.onclick = () => {
+                const newStats = collectNpcEditData();
+                if (currentEditStats.avatar) {
+                    newStats.avatar = currentEditStats.avatar;
+                }
+
+                setNpc(currentEditName, newStats);
+
+                isEditing = false;
+                const display = document.getElementById('coc-npc-display');
+                if (display) display.style.display = 'block';
+
+                const editSection = document.getElementById('coc-npc-edit-section');
+                if (editSection) editSection.style.display = 'none';
+
+                if (display) {
+                    display.innerHTML = renderNpcCard(currentEditName, newStats, npcViewMode);
+                    if (isNpcKpMode()) {
+                        const editBtn = document.getElementById('coc-npc-edit-btn');
+                        if (editBtn) {
+                            editBtn.onclick = () => enterNpcEditMode(currentEditName, newStats);
+                        }
+                    }
+                }
+            };
+        }
+
+        const cancelEdit = document.getElementById('npc-cancel-edit');
+        if (cancelEdit) {
+            cancelEdit.onclick = () => {
+                isEditing = false;
+                const display = document.getElementById('coc-npc-display');
+                if (display) display.style.display = 'block';
+
+                const editSection = document.getElementById('coc-npc-edit-section');
+                if (editSection) editSection.style.display = 'none';
+            };
+        }
+    }
+
     function setPanelMode(mode) {
         currentPanelMode = mode;
         const pcToolbar = document.getElementById('coc-pc-toolbar');
@@ -941,12 +1256,6 @@ function registerCharacterPanel(context, data, core) {
                 const value = e.target.value;
 
                 if (value === '__NEW__') {
-                    const defaultAge = 30;
-                    const baseAttrs = generateBaseAttributes(defaultAge);
-                    const defaultAdjustments = { STR: 0, CON: 0, DEX: 0, SIZ: 0 };
-                    const normalized = normalizeAgeAdjustments(defaultAge, defaultAdjustments);
-                    const finalAttrs = applyAgeEffects(baseAttrs, defaultAge, normalized.normalized);
-
                     const newName = prompt('请输入新NPC名:');
                     if (newName && newName.trim()) {
                         const name = newName.trim();
@@ -954,36 +1263,18 @@ function registerCharacterPanel(context, data, core) {
                             alert('❌ NPC已存在');
                         } else {
                             const defaultStats = {
-                                occupation: 'NPC',
-                                gender: '未知',
-                                birthYear: 1895,
-                                currentYear: 1925,
-                                birthplace: '',
-                                residence: '',
-                                baseSTR: baseAttrs.baseSTR,
-                                baseDEX: baseAttrs.baseDEX,
-                                baseCON: baseAttrs.baseCON,
-                                baseAPP: baseAttrs.baseAPP,
-                                basePOW: baseAttrs.basePOW,
-                                baseSIZ: baseAttrs.baseSIZ,
-                                baseINT: baseAttrs.baseINT,
-                                baseEDU: baseAttrs.baseEDU,
-                                baseLUCK: baseAttrs.baseLUCK,
-                                ageAdjustments: normalized.normalized,
-                                ...finalAttrs,
-                                HP: Math.floor((finalAttrs.CON + finalAttrs.SIZ) / 10),
-                                SAN: finalAttrs.POW,
-                                luck: { current: finalAttrs.LUCK, max: finalAttrs.LUCK },
-                                occupationalSkills: {},
-                                interestSkills: {},
-                                fightingSkills: {},
-                                skills: {},
-                                possessions: [],
-                                assets: { spendingLevel: '', cash: '', assets: '' },
-                                relationships: [],
-                                insanity: [],
-                                phobias: [],
-                                manias: []
+                                occupation: '',
+                                age: '',
+                                appearance: '',
+                                firstImpression: '',
+                                investigation: { spotHidden: '', psychology: '', libraryUse: '' },
+                                kpInfo: { identity: '', motivation: '', secrets: '' },
+                                attributes: { STR: '', CON: '', SIZ: '', DEX: '', APP: '', INT: '', POW: '', EDU: '' },
+                                HP: '',
+                                SAN: '',
+                                MP: '',
+                                skills: [],
+                                attacks: []
                             };
                             setNpc(name, defaultStats);
                             renderNpcViewMode();
@@ -1010,19 +1301,19 @@ function registerCharacterPanel(context, data, core) {
                 const npc = getNpc(value);
                 if (npc) {
                     try {
-                        const cardHtml = renderCharacterCard(value, npc.stats);
+                        const cardHtml = renderNpcCard(value, npc.stats, npcViewMode);
                         const display = document.getElementById('coc-npc-display');
                         if (display) {
                             display.innerHTML = cardHtml;
 
-                            setTimeout(() => {
-                                const editBtn = document.getElementById('coc-edit-mode-btn');
+                            if (isNpcKpMode()) {
+                                const editBtn = document.getElementById('coc-npc-edit-btn');
                                 if (editBtn) {
                                     editBtn.onclick = () => {
                                         enterNpcEditMode(value, npc.stats);
                                     };
                                 }
-                            }, 50);
+                            }
                         }
                     } catch (e) {
                         console.error('[COC] 显示NPC卡片出错:', e);
@@ -1035,6 +1326,30 @@ function registerCharacterPanel(context, data, core) {
                     const display = document.getElementById('coc-npc-display');
                     if (display) {
                         display.innerHTML = '<div class="coc-empty">👆 NPC数据为空</div>';
+                    }
+                }
+            });
+        }
+
+        const npcViewSelect = document.getElementById('coc-npc-view-mode');
+        if (npcViewSelect) {
+            npcViewSelect.value = npcViewMode;
+            npcViewSelect.addEventListener('change', (e) => {
+                npcViewMode = e.target.value || 'kp';
+                const selectedName = npcSelect?.value;
+                if (selectedName) {
+                    const npc = getNpc(selectedName);
+                    if (npc) {
+                        const display = document.getElementById('coc-npc-display');
+                        if (display) {
+                            display.innerHTML = renderNpcCard(selectedName, npc.stats, npcViewMode);
+                            if (isNpcKpMode()) {
+                                const editBtn = document.getElementById('coc-npc-edit-btn');
+                                if (editBtn) {
+                                    editBtn.onclick = () => enterNpcEditMode(selectedName, npc.stats);
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -1057,6 +1372,7 @@ function registerCharacterPanel(context, data, core) {
 
         const npcDeleteBtn = document.getElementById('coc-npc-delete-btn');
         if (npcDeleteBtn) npcDeleteBtn.onclick = () => deleteNpcEntry();
+
 
         bindPanelTabs();
     }
@@ -1090,19 +1406,14 @@ function registerCharacterPanel(context, data, core) {
     }
 
     function enterNpcEditMode(name, stats) {
+        if (npcViewMode !== 'kp') {
+            alert('❌ 只有KP视角可以编辑NPC');
+            return;
+        }
+
         isEditing = true;
         currentEditName = name;
         currentEditStats = JSON.parse(JSON.stringify(stats));
-
-        currentEditStats.baseSTR = currentEditStats.baseSTR ?? currentEditStats.STR;
-        currentEditStats.baseDEX = currentEditStats.baseDEX ?? currentEditStats.DEX;
-        currentEditStats.baseCON = currentEditStats.baseCON ?? currentEditStats.CON;
-        currentEditStats.baseAPP = currentEditStats.baseAPP ?? currentEditStats.APP;
-        currentEditStats.basePOW = currentEditStats.basePOW ?? currentEditStats.POW;
-        currentEditStats.baseSIZ = currentEditStats.baseSIZ ?? currentEditStats.SIZ;
-        currentEditStats.baseINT = currentEditStats.baseINT ?? currentEditStats.INT;
-        currentEditStats.baseEDU = currentEditStats.baseEDU ?? currentEditStats.EDU;
-        currentEditStats.baseLUCK = currentEditStats.baseLUCK ?? currentEditStats.LUCK;
 
         const display = document.getElementById('coc-npc-display');
         if (display) display.style.display = 'none';
