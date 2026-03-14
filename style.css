@@ -67,6 +67,30 @@
     background: var(--coc-bg);
 }
 
+/* 标签栏 */
+.coc-tabbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.coc-tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 18px;
+    border: 1px solid var(--coc-border);
+    background: var(--coc-bg-dark);
+    color: var(--coc-text-muted);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.coc-tab-btn.active {
+    background: var(--coc-bg-light);
+    color: var(--coc-text);
+    border-color: var(--coc-border-light);
+}
+
 /* 工具栏 */
 /* 可修改配置：工具栏圆角 */
 .coc-toolbar {
