@@ -140,6 +140,28 @@
     font-size: 15px;
 }
 
+.coc-kp-details {
+    background: var(--coc-bg-dark);
+    border: 1px dashed var(--coc-border-light);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-top: 8px;
+}
+
+.coc-kp-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--coc-text);
+}
+
+.coc-kp-details summary::marker {
+    color: var(--coc-text-muted);
+}
+
+.coc-kp-details .coc-kp-block {
+    margin-top: 8px;
+}
+
 /* 新增角色选项 */
 .coc-add-role-option {
     color: var(--coc-hp);
