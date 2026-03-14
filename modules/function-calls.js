@@ -94,7 +94,8 @@ function registerFunctionCalls(context, data, core) {
             
             return `**${character}** 进行 **${skill}** 检定${difficultyText}${bonusText}：\n` +
                    `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
-                   `结果: ${result.emoji} **${result.text}**`;
+                   `结果: ${result.emoji} **${result.text}**\n` +
+                   `判定等级: ${result.text}`;
         },
         stealth: false
     });
@@ -147,7 +148,8 @@ function registerFunctionCalls(context, data, core) {
             
             return `**${character}** 进行 **${attribute}** 属性检定${bonusText}：\n` +
                    `🎲 D100 = \`${roll}\` | 属性值 \`${attributeValue}\`\n` +
-                   `结果: ${result.emoji} **${result.text}**`;
+                   `结果: ${result.emoji} **${result.text}**\n` +
+                   `判定等级: ${result.text}`;
         },
         stealth: false
     });
@@ -239,7 +241,8 @@ function registerFunctionCalls(context, data, core) {
             let message = `⚔️ **战斗检定**\n\n`;
             message += `**${attacker}** 使用 **${weaponSkill}** 攻击：\n`;
             message += `🎲 D100 = \`${attackRoll}\` | 技能值 \`${skillValue}\`\n`;
-            message += `攻击结果: ${attackResult.emoji} **${attackResult.text}**\n\n`;
+            message += `攻击结果: ${attackResult.emoji} **${attackResult.text}**\n`;
+            message += `判定等级: ${attackResult.text}\n\n`;
             
             if (attackResult.text !== '失败' && attackResult.text !== '大失败') {
                 const damage = parseDiceFormula(weaponDamage).total;
@@ -272,6 +275,155 @@ function registerFunctionCalls(context, data, core) {
             }
             
             return message;
+        },
+        stealth: false
+    });
+
+    // ==================== 战斗轮系统函数 ====================
+
+    function buildCombatOrder(participants) {
+        const unique = [...new Set(participants)].filter(Boolean);
+        if (unique.length === 0) return [];
+
+        const entries = unique.map(name => ({
+            name,
+            dex: data.getAttribute(name, 'DEX')
+        }));
+
+        return entries
+            .sort((a, b) => b.dex - a.dex)
+            .map(entry => entry.name);
+    }
+
+    function formatCombatOrder(order, acted = []) {
+        return order.map((name, index) => {
+            const actedMark = acted.includes(name) ? '✅' : '⬜';
+            return `${index + 1}. ${actedMark} ${name}`;
+        }).join('\n');
+    }
+
+    function formatCurrentActor(state) {
+        if (!state.active || state.order.length === 0) return '当前无战斗轮进行中';
+        const current = state.order[state.index] || state.order[0];
+        return `当前行动者：${current}（第 ${state.round} 轮）`;
+    }
+
+    context.registerFunctionTool({
+        name: "coc_combat_start",
+        displayName: "开始战斗轮",
+        description: "按DEX排序开始战斗轮，需提供参战角色列表。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {
+                participants: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: '参战角色列表'
+                }
+            },
+            required: ['participants']
+        },
+        action: async ({ participants }) => {
+            if (!participants?.length) {
+                return '❌ 参战者为空，无法开始战斗轮';
+            }
+
+            const order = buildCombatOrder(participants);
+            if (!order.length) {
+                return '❌ 参战者为空，无法开始战斗轮';
+            }
+
+            data.setCombatState({
+                active: true,
+                round: 1,
+                order,
+                index: 0,
+                acted: [],
+                participants
+            });
+
+            return `⚔️ 战斗开始！\n行动顺序（按DEX）：\n${formatCombatOrder(order)}\n当前行动者：${order[0]}（第 1 轮）`;
+        },
+        stealth: false
+    });
+
+    context.registerFunctionTool({
+        name: "coc_combat_next",
+        displayName: "下一行动者",
+        description: "推进到下一位行动者（自动换轮）。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {}
+        },
+        action: async () => {
+            const state = data.getCombatState();
+            if (!state.active) {
+                return '❌ 当前没有进行中的战斗轮，请先开始战斗轮';
+            }
+
+            const order = state.order || [];
+            if (!order.length) {
+                return '❌ 行动顺序为空，无法推进战斗轮';
+            }
+
+            const current = order[state.index] || order[0];
+            const acted = state.acted.includes(current) ? state.acted : [...state.acted, current];
+
+            let nextIndex = (state.index + 1) % order.length;
+            let nextRound = state.round;
+            let nextActed = acted;
+
+            if (nextIndex === 0) {
+                nextRound += 1;
+                nextActed = [];
+            }
+
+            data.setCombatState({
+                round: nextRound,
+                index: nextIndex,
+                acted: nextActed
+            });
+
+            const nextState = data.getCombatState();
+            return `➡️ 轮到下一位行动者\n${formatCurrentActor(nextState)}\n行动顺序：\n${formatCombatOrder(nextState.order, nextState.acted)}`;
+        },
+        stealth: false
+    });
+
+    context.registerFunctionTool({
+        name: "coc_combat_status",
+        displayName: "战斗轮状态",
+        description: "查看当前战斗轮状态。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {}
+        },
+        action: async () => {
+            const state = data.getCombatState();
+            if (!state.active) {
+                return '❌ 当前没有进行中的战斗轮';
+            }
+
+            return `⚔️ 战斗轮状态\n${formatCurrentActor(state)}\n行动顺序：\n${formatCombatOrder(state.order, state.acted)}`;
+        },
+        stealth: false
+    });
+
+    context.registerFunctionTool({
+        name: "coc_combat_end",
+        displayName: "结束战斗轮",
+        description: "结束战斗轮并清空状态。",
+        parameters: {
+            $schema: 'http://json-schema.org/draft-04/schema#',
+            type: 'object',
+            properties: {}
+        },
+        action: async () => {
+            data.clearCombatState();
+            return '✅ 战斗结束，战斗轮状态已清空';
         },
         stealth: false
     });
