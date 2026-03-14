@@ -77,6 +77,7 @@ function parseDiceFormula(formula) {
 
 // COC7成功等级判定
 function judgeCOC(roll, skillValue) {
+    if (roll === 1) return { text: '大成功', emoji: '🎯' };
     if (roll === 100) return { text: '大失败', emoji: '💀' };
     if (roll >= 96 && roll <= 99 && skillValue < 50) return { text: '大失败', emoji: '💀' };
     if (roll <= Math.floor(skillValue / 5)) return { text: '极难成功', emoji: '✨' };
@@ -112,7 +113,9 @@ function calculateMove(stats) {
     const str = stats.STR || 50;
     const dex = stats.DEX || 50;
     const siz = stats.SIZ || 50;
-    const age = stats.age || 30;
+    const birthYear = stats.birthYear;
+    const currentYear = stats.currentYear;
+    const age = Number.isFinite(birthYear) && Number.isFinite(currentYear) ? (currentYear - birthYear) : (stats.age || 30);
     
     let base = 8;
     if (str < siz && dex < siz) base = 7;
@@ -137,7 +140,8 @@ function calculateMaxHP(stats) {
 
 // 计算最大SAN
 function calculateMaxSAN(stats) {
-    return stats.POW || 60;
+    const mythos = stats?.skills?.['克苏鲁神话'] || 0;
+    return Math.max(0, 99 - mythos);
 }
 
 // ==================== 职业系统 ====================
@@ -685,7 +689,8 @@ const SKILL_BASE_VALUES = {
     '无线电': 1, '电子': 1, '气象': 1, '农业': 1, '打字': 20,
     '偷窃': 10, '躲藏': 10, '攀爬': 20, '战术': 1, '地质': 1,
     '药学': 1, '化学': 1, '生物': 1, '数学': 1, '天文': 1,
-    '计算机使用': 5, '摄影': 5, '魅惑': 15, '快速交谈': 5
+    '计算机使用': 5, '摄影': 5, '魅惑': 15, '快速交谈': 5,
+    '乔装': 5
 };
 
 // ==================== 职业系统核心函数 ====================
@@ -915,6 +920,7 @@ function sanCheck(characterName, lossFormula, source, data) {
         loss = parseDiceFormula(failLoss).total;
     }
 
+    const previousSan = currentSan;
     const newSan = Math.max(0, currentSan - loss);
     char.stats.SAN = newSan;
 
@@ -934,6 +940,13 @@ function sanCheck(characterName, lossFormula, source, data) {
         insanity = window.triggerTemporaryInsanity(characterName, loss, source);
     }
 
+    if (typeof window.checkIndefiniteInsanity === 'function') {
+        const check = window.checkIndefiniteInsanity(characterName);
+        if (check?.triggered) {
+            insanity = check;
+        }
+    }
+
     data.save();
 
     return {
@@ -942,8 +955,9 @@ function sanCheck(characterName, lossFormula, source, data) {
         loss,
         newSan,
         isInsane: newSan <= 0,
-        isTemporaryInsanity: loss >= 5 && result.success === false,
-        insanity
+        isTemporaryInsanity: loss >= 5,
+        insanity,
+        previousSan
     };
 }
 
