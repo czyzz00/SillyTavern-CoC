@@ -11,18 +11,18 @@ function registerCharacterPanel(context, data, core) {
     // 预定义技能列表
     const SKILLS_LIST = {
         occupational: [
-            '会计', '人类学', '估价', '考古学', '艺术', '手艺', '信用评级', '克苏鲁神话',
-            '戏剧', '驾驶', '电气维修', '电子学', '格斗(斗殴)', '射击(手枪)', '射击(步枪)',
+            '会计', '人类学', '估价', '考古学', '艺术/工艺', '信用评级', '克苏鲁神话',
+            '乔装', '驾驶', '电气维修', '电子', '格斗(斗殴)', '射击(手枪)', '射击(步枪)',
             '急救', '历史', '恐吓', '跳跃', '法律', '图书馆使用', '聆听', '锁匠', '机械维修',
             '医学', '自然', '导航', '神秘学', '操作重型机械', '说服', '攀爬', '精神分析',
-            '心理学', '骑术', '科学', '妙手', '侦查', '潜行', '生存', '游泳', '投掷', '追踪'
+            '心理', '骑术', '科学', '妙手', '侦查', '潜行', '生存', '游泳', '投掷', '追踪'
         ],
         interest: [
-            '会计', '人类学', '估价', '考古学', '艺术', '手艺', '信用评级', '克苏鲁神话',
-            '戏剧', '驾驶', '电气维修', '电子学', '格斗(斗殴)', '射击(手枪)', '射击(步枪)',
+            '会计', '人类学', '估价', '考古学', '艺术/工艺', '信用评级', '克苏鲁神话',
+            '乔装', '驾驶', '电气维修', '电子', '格斗(斗殴)', '射击(手枪)', '射击(步枪)',
             '急救', '历史', '恐吓', '跳跃', '法律', '图书馆使用', '聆听', '锁匠', '机械维修',
             '医学', '自然', '导航', '神秘学', '操作重型机械', '说服', '攀爬', '精神分析',
-            '心理学', '骑术', '科学', '妙手', '侦查', '潜行', '生存', '游泳', '投掷', '追踪'
+            '心理', '骑术', '科学', '妙手', '侦查', '潜行', '生存', '游泳', '投掷', '追踪'
         ],
         fighting: [
             '格斗(斗殴)', '格斗(刀)', '格斗(剑)', '格斗(棍)', '格斗(斧)', 
@@ -95,6 +95,60 @@ function registerCharacterPanel(context, data, core) {
 
     // ==================== 属性生成和年龄修正函数 ====================
 
+    function getAgeAdjustmentRule(age) {
+        if (!Number.isFinite(age)) return null;
+        if (age >= 15 && age <= 19) {
+            return { eduGrowthTimes: 0, eduLoss: 5, appLoss: 0, physicalLoss: 5, physicalFields: ['STR', 'SIZ'] };
+        }
+        if (age >= 20 && age <= 39) {
+            return { eduGrowthTimes: 1, eduLoss: 0, appLoss: 0, physicalLoss: 0, physicalFields: [] };
+        }
+        if (age >= 40 && age <= 49) {
+            return { eduGrowthTimes: 2, eduLoss: 0, appLoss: 5, physicalLoss: 5, physicalFields: ['STR', 'CON', 'DEX'] };
+        }
+        if (age >= 50 && age <= 59) {
+            return { eduGrowthTimes: 3, eduLoss: 0, appLoss: 10, physicalLoss: 10, physicalFields: ['STR', 'CON', 'DEX'] };
+        }
+        if (age >= 60 && age <= 69) {
+            return { eduGrowthTimes: 4, eduLoss: 0, appLoss: 15, physicalLoss: 20, physicalFields: ['STR', 'CON', 'DEX'] };
+        }
+        if (age >= 70 && age <= 79) {
+            return { eduGrowthTimes: 4, eduLoss: 0, appLoss: 20, physicalLoss: 40, physicalFields: ['STR', 'CON', 'DEX'] };
+        }
+        if (age >= 80 && age <= 89) {
+            return { eduGrowthTimes: 4, eduLoss: 0, appLoss: 25, physicalLoss: 80, physicalFields: ['STR', 'CON', 'DEX'] };
+        }
+        return null;
+    }
+
+    function normalizeAgeAdjustments(age, adjustments = {}) {
+        const rule = getAgeAdjustmentRule(age);
+        if (!rule || rule.physicalLoss <= 0) return { normalized: {}, rule };
+
+        const normalized = {};
+        const fields = rule.physicalFields;
+        let total = 0;
+        fields.forEach((field, index) => {
+            const value = Math.max(0, parseInt(adjustments[field]) || 0);
+            normalized[field] = value;
+            total += value;
+        });
+
+        if (total > rule.physicalLoss) {
+            let overflow = total - rule.physicalLoss;
+            for (let i = fields.length - 1; i >= 0 && overflow > 0; i -= 1) {
+                const field = fields[i];
+                const reduce = Math.min(normalized[field], overflow);
+                normalized[field] -= reduce;
+                overflow -= reduce;
+            }
+        } else if (total < rule.physicalLoss && fields.length > 0) {
+            normalized[fields[0]] += (rule.physicalLoss - total);
+        }
+
+        return { normalized, rule };
+    }
+
     // 3D6 × 5
     function roll3d6x5() {
         const roll = Math.floor(Math.random() * 6) + 1 + 
@@ -141,7 +195,7 @@ function registerCharacterPanel(context, data, core) {
     }
 
     // 根据年龄应用属性修正
-    function applyAgeEffects(baseAttrs, age) {
+    function applyAgeEffects(baseAttrs, age, adjustments = {}) {
         // 复制基础值
         let result = {
             STR: baseAttrs.baseSTR,
@@ -154,80 +208,30 @@ function registerCharacterPanel(context, data, core) {
             EDU: baseAttrs.baseEDU,
             LUCK: baseAttrs.baseLUCK
         };
-        
-        // 年龄范围判断
-        if (age >= 15 && age <= 19) {
-            // STR+SIZ合计减5
-            result.STR = Math.max(15, result.STR - 5);
-            result.SIZ = Math.max(15, result.SIZ - 5);
-            // EDU减5
-            result.EDU = Math.max(0, result.EDU - 5);
-            // 幸运可投两次取高（在创建角色时已处理）
-            
-        } else if (age >= 20 && age <= 39) {
-            // EDU成长判定一次
+
+        const rule = getAgeAdjustmentRule(age);
+        if (!rule) return result;
+
+        for (let i = 0; i < rule.eduGrowthTimes; i += 1) {
             result.EDU = applyEduGrowth(result.EDU);
-            
-        } else if (age >= 40 && age <= 49) {
-            // EDU成长两次
-            result.EDU = applyEduGrowth(result.EDU);
-            result.EDU = applyEduGrowth(result.EDU);
-            // STR+CON+DEX合计减5
-            result.STR = Math.max(15, result.STR - 5);
-            result.CON = Math.max(15, result.CON - 5);
-            result.DEX = Math.max(15, result.DEX - 5);
-            // APP减5
-            result.APP = Math.max(15, result.APP - 5);
-            
-        } else if (age >= 50 && age <= 59) {
-            // EDU成长三次
-            for (let i = 0; i < 3; i++) {
-                result.EDU = applyEduGrowth(result.EDU);
-            }
-            // STR+CON+DEX合计减10
-            result.STR = Math.max(15, result.STR - 10);
-            result.CON = Math.max(15, result.CON - 10);
-            result.DEX = Math.max(15, result.DEX - 10);
-            // APP减10
-            result.APP = Math.max(15, result.APP - 10);
-            
-        } else if (age >= 60 && age <= 69) {
-            // EDU成长四次
-            for (let i = 0; i < 4; i++) {
-                result.EDU = applyEduGrowth(result.EDU);
-            }
-            // STR+CON+DEX合计减20
-            result.STR = Math.max(15, result.STR - 20);
-            result.CON = Math.max(15, result.CON - 20);
-            result.DEX = Math.max(15, result.DEX - 20);
-            // APP减15
-            result.APP = Math.max(15, result.APP - 15);
-            
-        } else if (age >= 70 && age <= 79) {
-            // EDU成长四次
-            for (let i = 0; i < 4; i++) {
-                result.EDU = applyEduGrowth(result.EDU);
-            }
-            // STR+CON+DEX合计减40
-            result.STR = Math.max(15, result.STR - 40);
-            result.CON = Math.max(15, result.CON - 40);
-            result.DEX = Math.max(15, result.DEX - 40);
-            // APP减20
-            result.APP = Math.max(15, result.APP - 20);
-            
-        } else if (age >= 80 && age <= 89) {
-            // EDU成长四次
-            for (let i = 0; i < 4; i++) {
-                result.EDU = applyEduGrowth(result.EDU);
-            }
-            // STR+CON+DEX合计减80
-            result.STR = Math.max(15, result.STR - 80);
-            result.CON = Math.max(15, result.CON - 80);
-            result.DEX = Math.max(15, result.DEX - 80);
-            // APP减25
-            result.APP = Math.max(15, result.APP - 25);
         }
-        
+
+        if (rule.eduLoss > 0) {
+            result.EDU = Math.max(0, result.EDU - rule.eduLoss);
+        }
+
+        if (rule.appLoss > 0) {
+            result.APP = Math.max(15, result.APP - rule.appLoss);
+        }
+
+        if (rule.physicalLoss > 0 && rule.physicalFields.length > 0) {
+            const { normalized } = normalizeAgeAdjustments(age, adjustments);
+            rule.physicalFields.forEach(field => {
+                const loss = normalized[field] || 0;
+                result[field] = Math.max(15, result[field] - loss);
+            });
+        }
+
         return result;
     }
 
@@ -681,9 +685,11 @@ function registerCharacterPanel(context, data, core) {
 
                     // 生成基础属性
                     const baseAttrs = generateBaseAttributes(defaultAge);
+                    const defaultAdjustments = { STR: 0, CON: 0, DEX: 0, SIZ: 0 };
+                    const normalized = normalizeAgeAdjustments(defaultAge, defaultAdjustments);
                     
                     // 应用年龄修正
-                    const finalAttrs = applyAgeEffects(baseAttrs, defaultAge);
+                    const finalAttrs = applyAgeEffects(baseAttrs, defaultAge, normalized.normalized);
                     
                     const newName = prompt('请输入新角色名:');
                     if (newName && newName.trim()) {
@@ -707,6 +713,7 @@ function registerCharacterPanel(context, data, core) {
                                 baseINT: baseAttrs.baseINT,
                                 baseEDU: baseAttrs.baseEDU,
                                 baseLUCK: baseAttrs.baseLUCK,
+                                ageAdjustments: normalized.normalized,
                                 ...finalAttrs,
                                 HP: Math.floor((finalAttrs.CON + finalAttrs.SIZ) / 10),
                                 SAN: finalAttrs.POW,
@@ -910,6 +917,17 @@ function registerCharacterPanel(context, data, core) {
                     </div>
                 </div>
 
+                <div class="coc-edit-label">年龄修正（可分配扣点）</div>
+                <div class="coc-edit-grid" id="coc-age-adjustment-grid">
+                    ${['STR', 'CON', 'DEX', 'SIZ'].map(attr => `
+                        <div>
+                            <div class="coc-edit-label">${attr}</div>
+                            <input type="number" min="0" class="coc-edit-input coc-edit-age-${attr}" value="${(stats.ageAdjustments && stats.ageAdjustments[attr]) || 0}">
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="coc-edit-label" id="coc-age-adjustment-hint" style="color:#b8a68f; font-size:11px;">年龄修正会在保存时自动校正总值</div>
+
                 <div class="coc-edit-label">属性</div>
                 <div class="coc-edit-grid">
                     ${['STR', 'DEX', 'CON', 'APP', 'POW', 'SIZ', 'INT', 'EDU', 'LUCK'].map(attr => `
@@ -1092,6 +1110,12 @@ function registerCharacterPanel(context, data, core) {
             const birthYear = parseInt(birthYearInput.value) || 1890;
             const currentYear = parseInt(currentYearInput.value) || 1925;
             const age = currentYear - birthYear;
+            const adjustments = {
+                STR: parseInt(document.querySelector('.coc-edit-age-STR')?.value) || 0,
+                CON: parseInt(document.querySelector('.coc-edit-age-CON')?.value) || 0,
+                DEX: parseInt(document.querySelector('.coc-edit-age-DEX')?.value) || 0,
+                SIZ: parseInt(document.querySelector('.coc-edit-age-SIZ')?.value) || 0
+            };
             
             const baseAttrs = {
                 baseSTR: currentEditStats.baseSTR,
@@ -1104,8 +1128,11 @@ function registerCharacterPanel(context, data, core) {
                 baseEDU: currentEditStats.baseEDU,
                 baseLUCK: currentEditStats.baseLUCK
             };
+
+            const normalized = normalizeAgeAdjustments(age, adjustments);
+            currentEditStats.ageAdjustments = normalized.normalized;
             
-            const newAttrs = applyAgeEffects(baseAttrs, age);
+            const newAttrs = applyAgeEffects(baseAttrs, age, normalized.normalized);
             
             currentEditStats.STR = newAttrs.STR;
             currentEditStats.DEX = newAttrs.DEX;
@@ -1126,6 +1153,15 @@ function registerCharacterPanel(context, data, core) {
             document.getElementById('coc-attr-INT').value = newAttrs.INT;
             document.getElementById('coc-attr-EDU').value = newAttrs.EDU;
             document.getElementById('coc-attr-LUCK').value = newAttrs.LUCK;
+
+            if (normalized.rule) {
+                const hint = document.getElementById('coc-age-adjustment-hint');
+                if (hint) {
+                    const total = normalized.rule.physicalLoss;
+                    const currentTotal = Object.values(normalized.normalized).reduce((sum, value) => sum + value, 0);
+                    hint.textContent = `年龄修正需分配 ${total} 点（当前 ${currentTotal}）`;
+                }
+            }
             
             const occPoints = calculateOccupationPoints(currentEditStats.occupation, newAttrs);
             const intPoints = calculateInterestPoints(newAttrs.INT);
@@ -1137,6 +1173,12 @@ function registerCharacterPanel(context, data, core) {
             birthYearInput.addEventListener('change', recalcAgeAndAttributes);
             currentYearInput.addEventListener('change', recalcAgeAndAttributes);
         }
+
+        document.querySelectorAll('#coc-age-adjustment-grid input').forEach(input => {
+            input.addEventListener('change', recalcAgeAndAttributes);
+        });
+
+        recalcAgeAndAttributes();
         
         const uploadBtn = document.getElementById('coc-avatar-upload-btn');
         const avatarInput = document.getElementById('coc-avatar-input');
@@ -1360,6 +1402,39 @@ function registerCharacterPanel(context, data, core) {
         stats.gender = document.querySelector('.coc-edit-gender')?.value || '男';
         stats.birthYear = parseInt(document.getElementById('coc-edit-birth-year')?.value) || 1890;
         stats.currentYear = parseInt(document.getElementById('coc-edit-current-year')?.value) || 1925;
+
+        const age = stats.currentYear - stats.birthYear;
+        const adjustments = {
+            STR: parseInt(document.querySelector('.coc-edit-age-STR')?.value) || 0,
+            CON: parseInt(document.querySelector('.coc-edit-age-CON')?.value) || 0,
+            DEX: parseInt(document.querySelector('.coc-edit-age-DEX')?.value) || 0,
+            SIZ: parseInt(document.querySelector('.coc-edit-age-SIZ')?.value) || 0
+        };
+        const normalized = normalizeAgeAdjustments(age, adjustments);
+        stats.ageAdjustments = normalized.normalized;
+
+        const baseAttrs = {
+            baseSTR: stats.baseSTR,
+            baseDEX: stats.baseDEX,
+            baseCON: stats.baseCON,
+            baseAPP: stats.baseAPP,
+            basePOW: stats.basePOW,
+            baseSIZ: stats.baseSIZ,
+            baseINT: stats.baseINT,
+            baseEDU: stats.baseEDU,
+            baseLUCK: stats.baseLUCK
+        };
+
+        const recalculated = applyAgeEffects(baseAttrs, age, normalized.normalized);
+        stats.STR = recalculated.STR;
+        stats.DEX = recalculated.DEX;
+        stats.CON = recalculated.CON;
+        stats.APP = recalculated.APP;
+        stats.POW = recalculated.POW;
+        stats.SIZ = recalculated.SIZ;
+        stats.INT = recalculated.INT;
+        stats.EDU = recalculated.EDU;
+        stats.LUCK = recalculated.LUCK;
 
         const luckCurrent = parseInt(document.getElementById('coc-edit-luck-current')?.value);
         const luckMax = parseInt(document.getElementById('coc-edit-luck-max')?.value);
@@ -1731,13 +1806,15 @@ function registerCharacterPanel(context, data, core) {
         stats.HP = newHP;
         ensureHealthState(stats);
 
+        const instantDeath = damage >= maxHP;
         const isMajorWound = damage >= Math.floor(maxHP / 2);
-        const isDying = newHP === 0;
+        const isDying = newHP === 0 && !instantDeath;
         const isUnconscious = newHP <= 0 || isDying;
 
         stats.health.isMajorWound = stats.health.isMajorWound || isMajorWound;
         stats.health.isDying = isDying;
         stats.health.isUnconscious = isUnconscious;
+        stats.health.isDead = instantDeath;
         stats.health.lastDamage = {
             amount: damage,
             location: location || '未知',
@@ -1753,7 +1830,8 @@ function registerCharacterPanel(context, data, core) {
             maxHP,
             isMajorWound: stats.health.isMajorWound,
             isDying,
-            isUnconscious
+            isUnconscious,
+            isDead: stats.health.isDead
         };
     }
 
@@ -1763,6 +1841,10 @@ function registerCharacterPanel(context, data, core) {
 
         const stats = char.stats || {};
         ensureHealthState(stats);
+
+        if (stats.health.isDead) {
+            return { message: `❌ ${characterName} 已死亡，无法急救` };
+        }
 
         if (stats.health.isDying && stats.HP <= 0) {
             stats.HP = 1;
@@ -1784,6 +1866,10 @@ function registerCharacterPanel(context, data, core) {
 
         const stats = char.stats || {};
         ensureHealthState(stats);
+
+        if (stats.health.isDead) {
+            return { message: `❌ ${characterName} 已死亡，无法治疗` };
+        }
 
         if (stats.health.isMajorWound && stats.HP <= 0) {
             return { message: `❌ ${characterName} 处于濒死状态，需先急救` };
@@ -1865,6 +1951,10 @@ function registerCharacterPanel(context, data, core) {
 
         const stats = char.stats || {};
         ensureHealthState(stats);
+
+        if (stats.health.isDead) {
+            return { message: `❌ ${characterName} 已死亡` };
+        }
 
         if (!stats.health.isDying) {
             return { message: `❌ ${characterName} 不处于濒死状态` };
