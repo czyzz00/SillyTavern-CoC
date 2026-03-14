@@ -19,6 +19,14 @@ class CharacterData {
                     session: 1,
                     daySanLoss: 0,
                     lastDayReset: new Date().toISOString()
+                },
+                combat: {
+                    active: false,
+                    round: 0,
+                    order: [],
+                    index: 0,
+                    acted: [],
+                    participants: []
                 }
             };
         }
@@ -30,6 +38,17 @@ class CharacterData {
                 session: 1,
                 daySanLoss: 0,
                 lastDayReset: new Date().toISOString()
+            };
+        }
+
+        if (!this.context.extensionSettings[DATA_MODULE].combat) {
+            this.context.extensionSettings[DATA_MODULE].combat = {
+                active: false,
+                round: 0,
+                order: [],
+                index: 0,
+                acted: [],
+                participants: []
             };
         }
     }
@@ -155,6 +174,38 @@ class CharacterData {
     setKP(name) {
         this.context.extensionSettings[DATA_MODULE].kpCharacter = name;
         this.save();
+    }
+
+    // ==================== 战斗轮系统 ====================
+
+    getCombatState() {
+        return this.context.extensionSettings[DATA_MODULE].combat || {
+            active: false,
+            round: 0,
+            order: [],
+            index: 0,
+            acted: [],
+            participants: []
+        };
+    }
+
+    setCombatState(nextState) {
+        this.context.extensionSettings[DATA_MODULE].combat = {
+            ...this.getCombatState(),
+            ...nextState
+        };
+        this.save();
+    }
+
+    clearCombatState() {
+        this.setCombatState({
+            active: false,
+            round: 0,
+            order: [],
+            index: 0,
+            acted: [],
+            participants: []
+        });
     }
     
     // 获取角色技能值（优先统一 skills，兼容分类技能）
