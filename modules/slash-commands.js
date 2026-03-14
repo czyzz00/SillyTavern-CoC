@@ -51,6 +51,12 @@ function registerSlashCommands(context, data, core) {
     
     // ✅ COC7成功等级判定
     function judgeCOC7(roll, targetValue) {
+        if (roll === 1) return {
+            success: true,
+            text: '大成功',
+            emoji: '🎯',
+            level: 'critical_success'
+        };
         if (roll === 100) return { 
             success: false, 
             text: '大失败', 
@@ -507,7 +513,9 @@ function registerSlashCommands(context, data, core) {
         if (result.isMajorWound) {
             message += `⚠️ **造成重伤！**\n`;
         }
-        if (result.isDying) {
+        if (result.isDead) {
+            message += `☠️ **角色当场死亡！**\n`;
+        } else if (result.isDying) {
             message += `💀 **角色进入濒死状态！**\n`;
         } else if (result.isUnconscious) {
             message += `😵 **角色昏迷！**\n`;
