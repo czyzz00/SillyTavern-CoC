@@ -108,25 +108,34 @@ function registerSlashCommands(context, data, core) {
         'LUCK': '幸运'
     };
 
+    function parseMentions(input) {
+        const names = [];
+        const cleaned = input.replace(/@([^\s]+)/g, (_, name) => {
+            names.push(name);
+            return '';
+        });
+        return { names, rest: cleaned.trim().replace(/\s+/g, ' ') };
+    }
+
     // ==================== 1. 基础指令 ====================
 
     /**
      * /coc - 多功能指令（技能检定、掷骰子、属性检定）
      */
-    context.registerSlashCommand('coc', (args, value) => {
+    context.registerSlashCommand('coc', (_, value) => {
         const input = value || '';
         
         let targetChar = context.name2 || '未知角色';
         let command = input;
         
-        const atMatch = input.match(/@(\S+)/);
-        if (atMatch) {
-            targetChar = atMatch[1];
-            command = input.replace(/@\S+/, '').trim();
+        const parsed = parseMentions(input);
+        if (parsed.names[0]) {
+            targetChar = parsed.names[0];
+            command = parsed.rest;
         }
         
         if (!command) {
-            sendMessageAs('❌ 用法: /coc 侦查 @KP 或 /coc 100');
+            sendMessageAs('❌ 用法: /coc 侦查 @角色 或 /coc 100');
             return '';
         }
         
@@ -161,7 +170,8 @@ function registerSlashCommands(context, data, core) {
             
             message = `**${targetChar}** 进行 **${skillName}** 检定\n` +
                      `🎲 D100 = \`${roll}\` | 技能值 \`${skillValue}\`\n` +
-                     `结果: ${result.emoji} **${result.text}**`;
+                     `结果: ${result.emoji} **${result.text}**\n` +
+                     `判定等级: ${result.text}`;
         }
         // 属性检定（英文缩写）
         else {
@@ -174,7 +184,8 @@ function registerSlashCommands(context, data, core) {
             
             message = `**${targetChar}** 进行 **${attrCN}(${attrName})** 属性检定\n` +
                      `🎲 D100 = \`${roll}\` | 属性值 \`${attrValue}\`\n` +
-                     `结果: ${result.emoji} **${result.text}**`;
+                     `结果: ${result.emoji} **${result.text}**\n` +
+                     `判定等级: ${result.text}`;
         }
         
         sendMessageAs(message);
@@ -185,25 +196,20 @@ function registerSlashCommands(context, data, core) {
     /**
      * /san - 理智检定
      */
-    context.registerSlashCommand('san', (args, value) => {
+    context.registerSlashCommand('san', (_, value) => {
         const input = value || '';
         
         let targetChar = context.name2 || '未知角色';
         let lossFormula = '1d3/1d6';
         let source = '未知恐怖';
         
-        const atMatch = input.match(/@(\S+)/);
-        if (atMatch) {
-            targetChar = atMatch[1];
-            const remaining = input.replace(/@\S+/, '').trim();
-            const parts = remaining.split(' ');
-            if (parts[0]) lossFormula = parts[0];
-            if (parts[1]) source = parts.slice(1).join(' ');
-        } else {
-            const parts = input.split(' ');
-            if (parts[0]) lossFormula = parts[0];
-            if (parts[1]) source = parts.slice(1).join(' ');
+        const parsed = parseMentions(input);
+        if (parsed.names[0]) {
+            targetChar = parsed.names[0];
         }
+        const parts = (parsed.rest || input).split(' ').filter(Boolean);
+        if (parts[0]) lossFormula = parts[0];
+        if (parts[1]) source = parts.slice(1).join(' ');
         
         try {
             const result = sanCheck(targetChar, lossFormula, source, data);
@@ -242,12 +248,14 @@ function registerSlashCommands(context, data, core) {
      */
     context.registerSlashCommand(
         'setkp',
-        (args, value) => {
-            const kpName = value || args?.name || '';
+        (_, value) => {
+            const input = value || '';
+            const parsed = parseMentions(input);
+            const kpName = parsed.names[0] || parsed.rest || '';
             
             if (!kpName) {
                 const availableChars = getAvailableCharacters().join('、');
-                sendMessageAs(`❌ 请指定KP角色名。可用角色: ${availableChars}\n示例: /setkp 克苏鲁`);
+                sendMessageAs(`❌ 请使用 @指定KP角色名。可用角色: ${availableChars}\n示例: /setkp @克苏鲁`);
                 return '';
             }
             
@@ -263,16 +271,7 @@ function registerSlashCommands(context, data, core) {
             
         },
         ['setkeeper', 'kp'],
-        '设置KP角色',
-        [
-            {
-                name: 'name',
-                type: 'string',
-                description: '角色名',
-                required: true,
-                enumProvider: () => getAvailableCharacters()
-            }
-        ]
+        '设置KP角色'
     );
     
     /**
@@ -293,11 +292,18 @@ function registerSlashCommands(context, data, core) {
     /**
      * /insanity - 触发临时疯狂
      */
-    context.registerSlashCommand('insanity', (args, value) => {
-        const parts = value.split(' ');
-        const charName = parts[0];
-        const sanLoss = parseInt(parts[1]) || 5;
-        const source = parts.slice(2).join(' ') || '未知恐怖';
+    context.registerSlashCommand('insanity', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const parts = (parsed.rest || '').split(' ').filter(Boolean);
+        const sanLoss = parseInt(parts[0]) || 5;
+        const source = parts.slice(1).join(' ') || '未知恐怖';
+        
+        if (!charName) {
+            sendMessageAs('❌ 用法: /insanity @角色 损失 [来源]');
+            return '';
+        }
         
         if (typeof window.triggerTemporaryInsanity !== 'function') {
             sendMessageAs('❌ 疯狂系统未加载');
@@ -326,8 +332,16 @@ function registerSlashCommands(context, data, core) {
     /**
      * /endinsanity - 结束疯狂发作
      */
-    context.registerSlashCommand('endinsanity', (args, value) => {
-        const charName = value;
+    context.registerSlashCommand('endinsanity', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0] || parsed.rest;
+        
+        if (!charName) {
+            sendMessageAs('❌ 用法: /endinsanity @角色');
+            return '';
+        }
+        
         
         if (typeof window.endInsanityEpisode !== 'function') {
             sendMessageAs('❌ 疯狂系统未加载');
@@ -353,8 +367,15 @@ function registerSlashCommands(context, data, core) {
     /**
      * /reality - 现实认知检定
      */
-    context.registerSlashCommand('reality', (args, value) => {
-        const charName = value;
+    context.registerSlashCommand('reality', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0] || parsed.rest;
+        
+        if (!charName) {
+            sendMessageAs('❌ 用法: /reality @角色');
+            return '';
+        }
         
         if (typeof window.realityCheck !== 'function') {
             sendMessageAs('❌ 疯狂系统未加载');
@@ -383,8 +404,16 @@ function registerSlashCommands(context, data, core) {
     /**
      * /insanitystatus - 查看疯狂状态
      */
-    context.registerSlashCommand('insanitystatus', (args, value) => {
-        const charName = value;
+    context.registerSlashCommand('insanitystatus', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0] || parsed.rest;
+
+        if (!charName) {
+            sendMessageAs('❌ 用法: /insanitystatus @角色');
+            return '';
+        }
+
         const char = data.get(charName);
         
         if (!char) {
@@ -437,10 +466,16 @@ function registerSlashCommands(context, data, core) {
     /**
      * /addphobia - 添加恐惧症
      */
-    context.registerSlashCommand('addphobia', (args, value) => {
-        const parts = value.split(' ');
-        const charName = parts[0];
-        const phobia = parts.slice(1).join(' ');
+    context.registerSlashCommand('addphobia', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const phobia = parsed.rest || '';
+
+        if (!charName || !phobia) {
+            sendMessageAs('❌ 用法: /addphobia @角色 恐惧症名');
+            return '';
+        }
         
         const char = data.get(charName);
         if (!char) {
@@ -462,10 +497,16 @@ function registerSlashCommands(context, data, core) {
     /**
      * /addmania - 添加躁狂症
      */
-    context.registerSlashCommand('addmania', (args, value) => {
-        const parts = value.split(' ');
-        const charName = parts[0];
-        const mania = parts.slice(1).join(' ');
+    context.registerSlashCommand('addmania', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const mania = parsed.rest || '';
+
+        if (!charName || !mania) {
+            sendMessageAs('❌ 用法: /addmania @角色 躁狂症名');
+            return '';
+        }
         
         const char = data.get(charName);
         if (!char) {
@@ -489,11 +530,18 @@ function registerSlashCommands(context, data, core) {
     /**
      * /damage - 造成伤害
      */
-    context.registerSlashCommand('damage', (args, value) => {
-        const parts = value.split(' ');
-        const charName = parts[0];
-        const damage = parseInt(parts[1]);
-        const source = parts.slice(2).join(' ') || '未知';
+    context.registerSlashCommand('damage', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const parts = (parsed.rest || '').split(' ').filter(Boolean);
+        const damage = parseInt(parts[0]);
+        const source = parts.slice(1).join(' ') || '未知';
+
+        if (!charName || Number.isNaN(damage)) {
+            sendMessageAs('❌ 用法: /damage @角色 伤害值 [来源]');
+            return '';
+        }
         
         if (typeof window.takeDamage !== 'function') {
             sendMessageAs('❌ 伤害系统未加载');
@@ -528,8 +576,16 @@ function registerSlashCommands(context, data, core) {
     /**
      * /firstaid - 急救
      */
-    context.registerSlashCommand('firstaid', (args, value) => {
-        const [charName, medicName] = value.split(' ');
+    context.registerSlashCommand('firstaid', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const medicName = parsed.names[1] || parsed.rest;
+
+        if (!charName || !medicName) {
+            sendMessageAs('❌ 用法: /firstaid @伤者 @施救者');
+            return '';
+        }
         
         if (typeof window.firstAid !== 'function') {
             sendMessageAs('❌ 急救系统未加载');
@@ -544,8 +600,16 @@ function registerSlashCommands(context, data, core) {
     /**
      * /medicine - 医学治疗
      */
-    context.registerSlashCommand('medicine', (args, value) => {
-        const [charName, doctorName] = value.split(' ');
+    context.registerSlashCommand('medicine', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const doctorName = parsed.names[1] || parsed.rest;
+
+        if (!charName || !doctorName) {
+            sendMessageAs('❌ 用法: /medicine @伤者 @医生');
+            return '';
+        }
         
         if (typeof window.medicine !== 'function') {
             sendMessageAs('❌ 医学系统未加载');
@@ -560,8 +624,15 @@ function registerSlashCommands(context, data, core) {
     /**
      * /heal - 自然恢复
      */
-    context.registerSlashCommand('heal', (args, value) => {
-        const charName = value;
+    context.registerSlashCommand('heal', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0] || parsed.rest;
+
+        if (!charName) {
+            sendMessageAs('❌ 用法: /heal @角色');
+            return '';
+        }
         
         if (typeof window.naturalHealing !== 'function') {
             sendMessageAs('❌ 恢复系统未加载');
@@ -576,8 +647,15 @@ function registerSlashCommands(context, data, core) {
     /**
      * /woundrecovery - 重伤恢复检定
      */
-    context.registerSlashCommand('woundrecovery', (args, value) => {
-        const charName = value;
+    context.registerSlashCommand('woundrecovery', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0] || parsed.rest;
+
+        if (!charName) {
+            sendMessageAs('❌ 用法: /woundrecovery @角色');
+            return '';
+        }
         
         if (typeof window.majorWoundRecovery !== 'function') {
             sendMessageAs('❌ 重伤系统未加载');
@@ -596,8 +674,15 @@ function registerSlashCommands(context, data, core) {
     /**
      * /dying - 濒死体质检定
      */
-    context.registerSlashCommand('dying', (args, value) => {
-        const charName = value;
+    context.registerSlashCommand('dying', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0] || parsed.rest;
+
+        if (!charName) {
+            sendMessageAs('❌ 用法: /dying @角色');
+            return '';
+        }
         
         if (typeof window.handleDying !== 'function') {
             sendMessageAs('❌ 濒死系统未加载');
@@ -614,8 +699,16 @@ function registerSlashCommands(context, data, core) {
     /**
      * /luck - 查看幸运
      */
-    context.registerSlashCommand('luck', (args, value) => {
-        const charName = value;
+    context.registerSlashCommand('luck', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0] || parsed.rest;
+
+        if (!charName) {
+            sendMessageAs('❌ 用法: /luck @角色');
+            return '';
+        }
+
         const char = data.get(charName);
         
         if (!char) {
@@ -637,12 +730,19 @@ function registerSlashCommands(context, data, core) {
     /**
      * /spendluck - 使用幸运
      */
-    context.registerSlashCommand('spendluck', (args, value) => {
-        const parts = value.split(' ');
-        const charName = parts[0];
-        const originalRoll = parseInt(parts[1]);
-        const targetValue = parseInt(parts[2]);
-        const points = parseInt(parts[3]);
+    context.registerSlashCommand('spendluck', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const parts = (parsed.rest || '').split(' ').filter(Boolean);
+        const originalRoll = parseInt(parts[0]);
+        const targetValue = parseInt(parts[1]);
+        const points = parseInt(parts[2]);
+
+        if (!charName || Number.isNaN(originalRoll) || Number.isNaN(targetValue) || Number.isNaN(points)) {
+            sendMessageAs('❌ 用法: /spendluck @角色 原骰值 目标值 点数');
+            return '';
+        }
         
         const char = data.get(charName);
         if (!char) {
@@ -683,11 +783,18 @@ function registerSlashCommands(context, data, core) {
     /**
      * /push - 孤注一掷
      */
-    context.registerSlashCommand('push', (args, value) => {
-        const parts = value.split(' ');
-        const charName = parts[0];
-        const skill = parts[1];
-        const contextStr = parts.slice(2).join(' ') || '未知情境';
+    context.registerSlashCommand('push', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const charName = parsed.names[0];
+        const parts = (parsed.rest || '').split(' ').filter(Boolean);
+        const skill = parts[0];
+        const contextStr = parts.slice(1).join(' ') || '未知情境';
+
+        if (!charName || !skill) {
+            sendMessageAs('❌ 用法: /push @角色 技能 情境');
+            return '';
+        }
         
         const char = data.get(charName);
         if (!char) {
@@ -779,45 +886,181 @@ function registerSlashCommands(context, data, core) {
         return '';
     }, [], '结束当前场次');
 
-    // ==================== 7. 帮助指令 ====================
+    // ==================== 7. 战斗轮系统指令 ====================
+
+    function buildCombatOrder(participants) {
+        const unique = [...new Set(participants)].filter(Boolean);
+        if (unique.length === 0) return [];
+
+        const entries = unique.map(name => ({
+            name,
+            dex: getAttributeValue(name, 'DEX')
+        }));
+
+        return entries
+            .sort((a, b) => b.dex - a.dex)
+            .map(entry => entry.name);
+    }
+
+    function formatCombatOrder(order, acted = []) {
+        return order.map((name, index) => {
+            const actedMark = acted.includes(name) ? '✅' : '⬜';
+            return `${index + 1}. ${actedMark} ${name}`;
+        }).join('\n');
+    }
+
+    function formatCurrentActor(state) {
+        if (!state.active || state.order.length === 0) return '当前无战斗轮进行中';
+        const current = state.order[state.index] || state.order[0];
+        return `当前行动者：${current}（第 ${state.round} 轮）`;
+    }
+
+    context.registerSlashCommand('combat', (_, value) => {
+        const input = value || '';
+        const parsed = parseMentions(input);
+        const parts = parsed.rest.split(' ').filter(Boolean);
+        const subCommand = (parts.shift() || '').toLowerCase();
+
+        if (!subCommand) {
+            sendMessageAs('❌ 用法: /combat start @角色们 | /combat next | /combat status | /combat end');
+            return '';
+        }
+
+        const state = data.getCombatState();
+
+        if (subCommand === 'start') {
+            const participants = parsed.names;
+            if (!participants.length) {
+                sendMessageAs('❌ 用法: /combat start @角色们');
+                return '';
+            }
+
+            const order = buildCombatOrder(participants);
+            if (!order.length) {
+                sendMessageAs('❌ 参战者为空，无法开始战斗轮');
+                return '';
+            }
+
+            data.setCombatState({
+                active: true,
+                round: 1,
+                order,
+                index: 0,
+                acted: [],
+                participants
+            });
+
+            sendMessageAs(
+                `⚔️ 战斗开始！\n` +
+                `行动顺序（按DEX）：\n${formatCombatOrder(order)}\n` +
+                `当前行动者：${order[0]}（第 1 轮）`
+            );
+            return '';
+        }
+
+        if (!state.active) {
+            sendMessageAs('❌ 当前没有进行中的战斗轮，请先使用 /combat start');
+            return '';
+        }
+
+        if (subCommand === 'status') {
+            sendMessageAs(
+                `⚔️ 战斗轮状态\n` +
+                `${formatCurrentActor(state)}\n` +
+                `行动顺序：\n${formatCombatOrder(state.order, state.acted)}`
+            );
+            return '';
+        }
+
+        if (subCommand === 'next') {
+            const order = state.order || [];
+            if (!order.length) {
+                sendMessageAs('❌ 行动顺序为空，无法推进战斗轮');
+                return '';
+            }
+
+            const current = order[state.index] || order[0];
+            const acted = state.acted.includes(current) ? state.acted : [...state.acted, current];
+
+            let nextIndex = (state.index + 1) % order.length;
+            let nextRound = state.round;
+            let nextActed = acted;
+
+            if (nextIndex === 0) {
+                nextRound += 1;
+                nextActed = [];
+            }
+
+            data.setCombatState({
+                round: nextRound,
+                index: nextIndex,
+                acted: nextActed
+            });
+
+            const nextState = data.getCombatState();
+            sendMessageAs(
+                `➡️ 轮到下一位行动者\n` +
+                `${formatCurrentActor(nextState)}\n` +
+                `行动顺序：\n${formatCombatOrder(nextState.order, nextState.acted)}`
+            );
+            return '';
+        }
+
+        if (subCommand === 'end') {
+            data.clearCombatState();
+            sendMessageAs('✅ 战斗结束，战斗轮状态已清空');
+            return '';
+        }
+
+        sendMessageAs('❌ 未知子命令，用法: /combat start @角色们 | /combat next | /combat status | /combat end');
+        return '';
+    }, [], '战斗轮控制 - /combat start|next|status|end');
+
+    // ==================== 8. 帮助指令 ====================
 
     /**
      * /cochelp - 显示所有指令
      */
     context.registerSlashCommand('cochelp', () => {
         const help = `
-📋 **COC7 完整指令列表**
+📋 **COC7 完整指令列表（统一@角色）**
 
 【基础指令】
-/coc 技能名 @角色名 - 技能检定
-/coc 数字 @角色名 - 掷骰子
-/coc 属性 @角色名 - 属性检定（如 STR）
-/san 损失公式 @角色名 [来源] - 理智检定
+/coc 技能名 @角色 - 技能检定
+/coc 数字 @角色 - 掷骰子
+/coc 属性 @角色 - 属性检定（如 STR）
+/san 损失公式 @角色 [来源] - 理智检定
 
 【KP设置】
-/setkp name=角色名 - 设置KP
+/setkp @角色 - 设置KP
 /getkp - 查看当前KP
 
 【疯狂系统】
-/insanity 角色名 损失 [来源] - 触发临时疯狂
-/endinsanity 角色名 - 结束疯狂发作
-/reality 角色名 - 现实认知检定
-/insanitystatus 角色名 - 查看疯狂状态
-/addphobia 角色名 恐惧症名 - 添加恐惧症
-/addmania 角色名 躁狂症名 - 添加躁狂症
+/insanity @角色 损失 [来源] - 触发临时疯狂
+/endinsanity @角色 - 结束疯狂发作
+/reality @角色 - 现实认知检定
+/insanitystatus @角色 - 查看疯狂状态
+/addphobia @角色 恐惧症名 - 添加恐惧症
+/addmania @角色 躁狂症名 - 添加躁狂症
 
 【伤害系统】
-/damage 角色名 伤害值 [来源] - 造成伤害
-/firstaid 角色名 施救者名 - 急救
-/medicine 角色名 医生名 - 医学治疗
-/heal 角色名 - 自然恢复
-/woundrecovery 角色名 - 重伤恢复检定
-/dying 角色名 - 濒死体质检定
+/damage @角色 伤害值 [来源] - 造成伤害
+/firstaid @伤者 @施救者 - 急救
+/medicine @伤者 @医生 - 医学治疗
+/heal @角色 - 自然恢复
+/woundrecovery @角色 - 重伤恢复检定
+/dying @角色 - 濒死体质检定
 
 【幸运系统】
-/luck 角色名 - 查看幸运
-/spendluck 角色名 原骰值 目标值 点数 - 使用幸运
-/push 角色名 技能名 情境 - 孤注一掷
+/luck @角色 - 查看幸运
+/spendluck @角色 原骰值 目标值 点数 - 使用幸运
+/push @角色 技能 情境 - 孤注一掷
+
+【战斗轮系统】
+/combat start @角色们 - 开始战斗轮（按DEX排序）
+/combat next - 下一行动者
+/combat status - 查看战斗轮状态
+/combat end - 结束战斗轮
 
 【时间系统】
 /time - 查看时间状态
