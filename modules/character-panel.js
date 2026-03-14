@@ -7,6 +7,7 @@ function registerCharacterPanel(context, data, core) {
     let isEditing = false;
     let currentEditName = '';
     let currentEditStats = null;
+    let currentPanelMode = 'pc';
     
     // 预定义技能列表
     const SKILLS_LIST = {
@@ -671,6 +672,154 @@ function registerCharacterPanel(context, data, core) {
             display.innerHTML = '<div class="coc-empty">👆 请选择角色</div>';
         }
     }
+
+    function getNpcStore() {
+        if (!data.context.extensionSettings) return {};
+        if (!data.context.extensionSettings.npcData) {
+            data.context.extensionSettings.npcData = {};
+        }
+        return data.context.extensionSettings.npcData;
+    }
+
+    function saveNpcStore() {
+        data.context.saveSettingsDebounced();
+    }
+
+    function getNpc(name) {
+        const store = getNpcStore();
+        return store[name] || null;
+    }
+
+    function setNpc(name, stats) {
+        const store = getNpcStore();
+        store[name] = {
+            stats,
+            updatedAt: new Date().toISOString()
+        };
+        saveNpcStore();
+    }
+
+    function deleteNpc(name) {
+        const store = getNpcStore();
+        if (store[name]) {
+            delete store[name];
+            saveNpcStore();
+            return true;
+        }
+        return false;
+    }
+
+    function renderNpcViewMode() {
+        const npcs = getNpcStore();
+        const names = Object.keys(npcs).sort();
+        const select = document.getElementById('coc-npc-select');
+
+        if (select) {
+            let options = '<option value="">选择NPC</option>';
+            options += names.map(name => `<option value="${name}">${name}</option>`).join('');
+            options += `<option value="__NEW__" class="coc-add-role-option">➕ 新增NPC...</option>`;
+            select.innerHTML = options;
+        }
+
+        const display = document.getElementById('coc-npc-display');
+        if (display) {
+            display.innerHTML = '<div class="coc-empty">👆 请选择NPC</div>';
+        }
+    }
+
+    function setPanelMode(mode) {
+        currentPanelMode = mode;
+        const pcToolbar = document.getElementById('coc-pc-toolbar');
+        const pcDisplay = document.getElementById('coc-stats-display');
+        const pcEdit = document.getElementById('coc-edit-section');
+        const npcToolbar = document.getElementById('coc-npc-toolbar');
+        const npcDisplay = document.getElementById('coc-npc-display');
+        const npcEdit = document.getElementById('coc-npc-edit-section');
+
+        const isPc = mode === 'pc';
+        if (pcToolbar) pcToolbar.style.display = isPc ? 'flex' : 'none';
+        if (pcDisplay) pcDisplay.style.display = isPc ? 'block' : 'none';
+        if (pcEdit) pcEdit.style.display = 'none';
+
+        if (npcToolbar) npcToolbar.style.display = isPc ? 'none' : 'flex';
+        if (npcDisplay) npcDisplay.style.display = isPc ? 'none' : 'block';
+        if (npcEdit) npcEdit.style.display = 'none';
+
+        const pcTab = document.getElementById('coc-tab-pc');
+        const npcTab = document.getElementById('coc-tab-npc');
+        if (pcTab) pcTab.classList.toggle('active', isPc);
+        if (npcTab) npcTab.classList.toggle('active', !isPc);
+    }
+
+    function bindPanelTabs() {
+        const pcTab = document.getElementById('coc-tab-pc');
+        const npcTab = document.getElementById('coc-tab-npc');
+
+        if (pcTab) {
+            pcTab.onclick = () => {
+                setPanelMode('pc');
+            };
+        }
+
+        if (npcTab) {
+            npcTab.onclick = () => {
+                setPanelMode('npc');
+            };
+        }
+    }
+
+    function renderNpcEditForm(name, stats) {
+        return renderEditForm(name, stats).replace('编辑 ' + name, '编辑NPC ' + name);
+    }
+
+    function bindNpcEditEvents() {
+        bindEditEvents();
+
+        const saveEdit = document.getElementById('coc-save-edit');
+        if (saveEdit) {
+            saveEdit.onclick = () => {
+                const newStats = collectEditData();
+
+                if (currentEditStats.avatar) {
+                    newStats.avatar = currentEditStats.avatar;
+                }
+
+                setNpc(currentEditName, newStats);
+
+                isEditing = false;
+                const display = document.getElementById('coc-npc-display');
+                if (display) display.style.display = 'block';
+
+                const editSection = document.getElementById('coc-npc-edit-section');
+                if (editSection) editSection.style.display = 'none';
+
+                if (display) {
+                    display.innerHTML = renderCharacterCard(currentEditName, newStats);
+
+                    setTimeout(() => {
+                        const editBtn = document.getElementById('coc-edit-mode-btn');
+                        if (editBtn) {
+                            editBtn.onclick = () => {
+                                enterNpcEditMode(currentEditName, newStats);
+                            };
+                        }
+                    }, 50);
+                }
+            };
+        }
+
+        const cancelEdit = document.getElementById('coc-cancel-edit');
+        if (cancelEdit) {
+            cancelEdit.onclick = () => {
+                isEditing = false;
+                const display = document.getElementById('coc-npc-display');
+                if (display) display.style.display = 'block';
+
+                const editSection = document.getElementById('coc-npc-edit-section');
+                if (editSection) editSection.style.display = 'none';
+            };
+        }
+    }
     
     // 绑定工具栏事件
     function bindToolbarEvents() {
@@ -785,6 +934,111 @@ function registerCharacterPanel(context, data, core) {
                 }
             });
         }
+
+        const npcSelect = document.getElementById('coc-npc-select');
+        if (npcSelect) {
+            npcSelect.addEventListener('change', (e) => {
+                const value = e.target.value;
+
+                if (value === '__NEW__') {
+                    const defaultAge = 30;
+                    const baseAttrs = generateBaseAttributes(defaultAge);
+                    const defaultAdjustments = { STR: 0, CON: 0, DEX: 0, SIZ: 0 };
+                    const normalized = normalizeAgeAdjustments(defaultAge, defaultAdjustments);
+                    const finalAttrs = applyAgeEffects(baseAttrs, defaultAge, normalized.normalized);
+
+                    const newName = prompt('请输入新NPC名:');
+                    if (newName && newName.trim()) {
+                        const name = newName.trim();
+                        if (getNpc(name)) {
+                            alert('❌ NPC已存在');
+                        } else {
+                            const defaultStats = {
+                                occupation: 'NPC',
+                                gender: '未知',
+                                birthYear: 1895,
+                                currentYear: 1925,
+                                birthplace: '',
+                                residence: '',
+                                baseSTR: baseAttrs.baseSTR,
+                                baseDEX: baseAttrs.baseDEX,
+                                baseCON: baseAttrs.baseCON,
+                                baseAPP: baseAttrs.baseAPP,
+                                basePOW: baseAttrs.basePOW,
+                                baseSIZ: baseAttrs.baseSIZ,
+                                baseINT: baseAttrs.baseINT,
+                                baseEDU: baseAttrs.baseEDU,
+                                baseLUCK: baseAttrs.baseLUCK,
+                                ageAdjustments: normalized.normalized,
+                                ...finalAttrs,
+                                HP: Math.floor((finalAttrs.CON + finalAttrs.SIZ) / 10),
+                                SAN: finalAttrs.POW,
+                                luck: { current: finalAttrs.LUCK, max: finalAttrs.LUCK },
+                                occupationalSkills: {},
+                                interestSkills: {},
+                                fightingSkills: {},
+                                skills: {},
+                                possessions: [],
+                                assets: { spendingLevel: '', cash: '', assets: '' },
+                                relationships: [],
+                                insanity: [],
+                                phobias: [],
+                                manias: []
+                            };
+                            setNpc(name, defaultStats);
+                            renderNpcViewMode();
+
+                            setTimeout(() => {
+                                npcSelect.value = name;
+                                npcSelect.dispatchEvent(new Event('change'));
+                            }, 100);
+                        }
+                    } else {
+                        npcSelect.value = '';
+                    }
+                    return;
+                }
+
+                if (!value) {
+                    const display = document.getElementById('coc-npc-display');
+                    if (display) {
+                        display.innerHTML = '<div class="coc-empty">👆 请选择NPC</div>';
+                    }
+                    return;
+                }
+
+                const npc = getNpc(value);
+                if (npc) {
+                    try {
+                        const cardHtml = renderCharacterCard(value, npc.stats);
+                        const display = document.getElementById('coc-npc-display');
+                        if (display) {
+                            display.innerHTML = cardHtml;
+
+                            setTimeout(() => {
+                                const editBtn = document.getElementById('coc-edit-mode-btn');
+                                if (editBtn) {
+                                    editBtn.onclick = () => {
+                                        enterNpcEditMode(value, npc.stats);
+                                    };
+                                }
+                            }, 50);
+                        }
+                    } catch (e) {
+                        console.error('[COC] 显示NPC卡片出错:', e);
+                        const display = document.getElementById('coc-npc-display');
+                        if (display) {
+                            display.innerHTML = `<div style="color:red; padding:20px;">❌ 显示错误: ${e.message}</div>`;
+                        }
+                    }
+                } else {
+                    const display = document.getElementById('coc-npc-display');
+                    if (display) {
+                        display.innerHTML = '<div class="coc-empty">👆 NPC数据为空</div>';
+                    }
+                }
+            });
+        }
         
         const importBtn = document.getElementById('coc-import-btn');
         if (importBtn) importBtn.onclick = () => importFromFile();
@@ -794,6 +1048,17 @@ function registerCharacterPanel(context, data, core) {
         
         const deleteBtn = document.getElementById('coc-delete-btn');
         if (deleteBtn) deleteBtn.onclick = () => deleteCharacter();
+
+        const npcImportBtn = document.getElementById('coc-npc-import-btn');
+        if (npcImportBtn) npcImportBtn.onclick = () => importNpcFromFile();
+
+        const npcExportBtn = document.getElementById('coc-npc-export-btn');
+        if (npcExportBtn) npcExportBtn.onclick = () => exportNpc();
+
+        const npcDeleteBtn = document.getElementById('coc-npc-delete-btn');
+        if (npcDeleteBtn) npcDeleteBtn.onclick = () => deleteNpcEntry();
+
+        bindPanelTabs();
     }
     
     // 进入编辑模式
@@ -822,6 +1087,33 @@ function registerCharacterPanel(context, data, core) {
         }
         
         bindEditEvents();
+    }
+
+    function enterNpcEditMode(name, stats) {
+        isEditing = true;
+        currentEditName = name;
+        currentEditStats = JSON.parse(JSON.stringify(stats));
+
+        currentEditStats.baseSTR = currentEditStats.baseSTR ?? currentEditStats.STR;
+        currentEditStats.baseDEX = currentEditStats.baseDEX ?? currentEditStats.DEX;
+        currentEditStats.baseCON = currentEditStats.baseCON ?? currentEditStats.CON;
+        currentEditStats.baseAPP = currentEditStats.baseAPP ?? currentEditStats.APP;
+        currentEditStats.basePOW = currentEditStats.basePOW ?? currentEditStats.POW;
+        currentEditStats.baseSIZ = currentEditStats.baseSIZ ?? currentEditStats.SIZ;
+        currentEditStats.baseINT = currentEditStats.baseINT ?? currentEditStats.INT;
+        currentEditStats.baseEDU = currentEditStats.baseEDU ?? currentEditStats.EDU;
+        currentEditStats.baseLUCK = currentEditStats.baseLUCK ?? currentEditStats.LUCK;
+
+        const display = document.getElementById('coc-npc-display');
+        if (display) display.style.display = 'none';
+
+        const editSection = document.getElementById('coc-npc-edit-section');
+        if (editSection) {
+            editSection.style.display = 'block';
+            editSection.innerHTML = renderNpcEditForm(name, currentEditStats);
+        }
+
+        bindNpcEditEvents();
     }
     
     // 渲染技能选项（已有，但上面已定义）
@@ -1605,6 +1897,49 @@ function registerCharacterPanel(context, data, core) {
         
         input.click();
     }
+
+    function importNpcFromFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const jsonData = JSON.parse(event.target.result);
+
+                    let name, stats;
+                    if (jsonData.character && jsonData.stats) {
+                        name = jsonData.character;
+                        stats = jsonData.stats;
+                    } else {
+                        name = file.name.replace('.json', '').replace(/-coc-npc$/, '');
+                        stats = jsonData;
+                    }
+
+                    setNpc(name, stats);
+                    renderNpcViewMode();
+
+                    setTimeout(() => {
+                        const select = document.getElementById('coc-npc-select');
+                        if (select) {
+                            select.value = name;
+                            select.dispatchEvent(new Event('change'));
+                        }
+                    }, 100);
+                } catch (error) {
+                    alert(`❌ 导入失败: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        input.click();
+    }
     
     // 导出角色
     function exportCharacter() {
@@ -1633,6 +1968,33 @@ function registerCharacterPanel(context, data, core) {
         a.download = `${name}-coc-stats.json`;
         a.click();
     }
+
+    function exportNpc() {
+        const select = document.getElementById('coc-npc-select');
+        if (!select) return;
+
+        const name = select.value;
+        if (!name) {
+            alert('❌ 请先选择NPC');
+            return;
+        }
+
+        const npc = getNpc(name);
+        if (!npc) return;
+
+        const exportData = {
+            character: name,
+            stats: npc.stats,
+            exportDate: new Date().toISOString()
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name}-coc-npc.json`;
+        a.click();
+    }
     
     // 删除角色
     function deleteCharacter() {
@@ -1649,6 +2011,22 @@ function registerCharacterPanel(context, data, core) {
         if (confirm(`确定删除 ${name} 吗？`)) {
             data.delete(name);
             renderViewMode();
+        }
+    }
+
+    function deleteNpcEntry() {
+        const select = document.getElementById('coc-npc-select');
+        if (!select) return;
+
+        const name = select.value;
+        if (!name) {
+            alert('❌ 请先选择NPC');
+            return;
+        }
+
+        if (confirm(`确定删除 ${name} 吗？`)) {
+            deleteNpc(name);
+            renderNpcViewMode();
         }
     }
     
@@ -1692,6 +2070,8 @@ function registerCharacterPanel(context, data, core) {
                 
                 bindToolbarEvents();
                 renderViewMode();
+                renderNpcViewMode();
+                setPanelMode('pc');
             })
             .catch(err => {
                 console.error('[COC] 加载模板失败:', err);
