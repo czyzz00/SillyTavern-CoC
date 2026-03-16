@@ -113,6 +113,59 @@
     border: 1px solid var(--coc-border);
 }
 
+.coc-select.npc-view {
+    flex: 1.1;
+}
+
+.coc-npc-summary {
+    white-space: pre-line;
+    color: var(--coc-text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.coc-npc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.coc-npc-stat {
+    background: var(--coc-bg-light);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.coc-npc-section {
+    margin-top: 14px;
+}
+
+.coc-npc-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e6d5b8;
+    margin-bottom: 6px;
+}
+
+.coc-npc-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.coc-npc-list-item {
+    background: var(--coc-bg-light);
+    border-radius: 10px;
+    padding: 6px 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
 /* 可修改配置：按钮圆角与字号 */
 .coc-btn {
     flex: 1;
@@ -138,28 +191,6 @@
     border: none;
     cursor: pointer;
     font-size: 15px;
-}
-
-.coc-kp-details {
-    background: var(--coc-bg-dark);
-    border: 1px dashed var(--coc-border-light);
-    border-radius: 12px;
-    padding: 10px 12px;
-    margin-top: 8px;
-}
-
-.coc-kp-details summary {
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--coc-text);
-}
-
-.coc-kp-details summary::marker {
-    color: var(--coc-text-muted);
-}
-
-.coc-kp-details .coc-kp-block {
-    margin-top: 8px;
 }
 
 /* 新增角色选项 */
